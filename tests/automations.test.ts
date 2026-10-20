@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { emptyBoard, emptyCard, emptyList, emptyRule } from '../src/renderer/shared/document';
+import {
+  emptyBoard,
+  emptyCard,
+  emptyList,
+  emptyRule,
+  seedDocument,
+} from '../src/renderer/shared/document';
 import { reducer, type Action } from '../src/renderer/shared/reducer';
 import {
   DEFAULT_LABELS,
@@ -430,4 +436,140 @@ test('uma regra apontando para lista inexistente nao quebra o dispatch', () => {
     toIndex: 0,
   });
   assert.equal(theCard(next).list.title, 'B');
+});
+
+/* ------------------------------------------------------------------ *
+ * O cenario relatado: "ao mover para Concluido, marcar como concluido"
+ * ------------------------------------------------------------------ */
+
+test('mark-checklist-done nao faz nada quando a checklist ja esta completa', () => {
+  // Esta era a causa do relato: a regra rodava, mas nao havia item pendente.
+  const doc = fixture(({ c }) => [
+    rule({ type: 'card-moved', listId: c }, [{ type: 'mark-checklist-done' }]),
+  ]);
+  const id = cardId(doc);
+
+  const withItems = run(
+    doc,
+    { type: 'checklist/add', cardId: id, text: 'um' },
+    { type: 'checklist/add', cardId: id, text: 'dois' },
+  );
+  const items = theCard(withItems).card.checklist;
+  const allDone = run(
+    withItems,
+    { type: 'checklist/toggle', cardId: id, itemId: items[0].id },
+    { type: 'checklist/toggle', cardId: id, itemId: items[1].id },
+  );
+
+  const moved = run(allDone, {
+    type: 'card/move',
+    cardId: id,
+    toListId: listNamed(doc, 'C').id,
+    toIndex: 0,
+  });
+
+  // Nenhuma mudanca visivel, e nenhum erro: a acao nao tinha o que marcar.
+  assert.ok(theCard(moved).card.checklist.every((item) => item.done));
+  assert.equal(theCard(moved).card.done, false, 'a checklist nao marca o cartao');
+});
+
+test('mark-checklist-done nao faz nada em cartao sem checklist', () => {
+  const doc = fixture(({ c }) => [
+    rule({ type: 'card-moved', listId: c }, [{ type: 'mark-checklist-done' }]),
+  ]);
+
+  const moved = run(doc, {
+    type: 'card/move',
+    cardId: cardId(doc),
+    toListId: listNamed(doc, 'C').id,
+    toIndex: 0,
+  });
+
+  assert.deepEqual(theCard(moved).card.checklist, []);
+  assert.equal(theCard(moved).list.title, 'C');
+});
+
+test('mark-card-done conclui o cartao mesmo sem checklist', () => {
+  // A acao que expressa de verdade "mover para Concluido marca como concluido".
+  const doc = fixture(({ c }) => [
+    rule({ type: 'card-moved', listId: c }, [{ type: 'mark-card-done' }]),
+  ]);
+
+  assert.equal(theCard(doc).card.done, false);
+
+  const moved = run(doc, {
+    type: 'card/move',
+    cardId: cardId(doc),
+    toListId: listNamed(doc, 'C').id,
+    toIndex: 0,
+  });
+
+  assert.equal(theCard(moved).card.done, true);
+  assert.deepEqual(theCard(moved).card.checklist, [], 'nao depende de checklist');
+});
+
+test('mark-card-undone reabre o cartao', () => {
+  const doc = fixture(({ a }) => [
+    rule({ type: 'card-moved', listId: a }, [{ type: 'mark-card-undone' }]),
+  ]);
+  const id = cardId(doc);
+
+  const done = run(doc, { type: 'card/update', cardId: id, patch: { done: true } });
+  const reopened = run(done, {
+    type: 'card/move',
+    cardId: id,
+    toListId: listNamed(doc, 'B').id,
+    toIndex: 0,
+  });
+  // Primeiro move para B (sem regra), depois volta para A (com regra).
+  const back = run(reopened, {
+    type: 'card/move',
+    cardId: id,
+    toListId: listNamed(doc, 'A').id,
+    toIndex: 0,
+  });
+
+  assert.equal(theCard(reopened).card.done, true);
+  assert.equal(theCard(back).card.done, false);
+});
+
+test('mark-card-done em cartao ja concluido nao emite acao', () => {
+  const doc = fixture(({ c }) => [
+    rule({ type: 'card-moved', listId: c }, [{ type: 'mark-card-done' }]),
+  ]);
+  const id = cardId(doc);
+
+  const done = run(doc, { type: 'card/update', cardId: id, patch: { done: true } });
+  const moved = run(done, {
+    type: 'card/move',
+    cardId: id,
+    toListId: listNamed(doc, 'C').id,
+    toIndex: 0,
+  });
+
+  assert.equal(theCard(moved).card.done, true);
+});
+
+test('a regra semente conclui o cartao ao chegar em Concluido', () => {
+  // Agora com o documento semente de verdade, nao com o fixture.
+  const doc = seedDocument();
+  const board = doc.boards[0];
+  const done = board.lists.find((list) => list.title === 'Concluido')!;
+  const source = board.lists.find((list) => list.title === 'A fazer')!;
+  const card = source.cards[0];
+
+  const next = reducer(doc, {
+    type: 'card/move',
+    cardId: card.id,
+    toListId: done.id,
+    toIndex: 0,
+  });
+
+  const moved = next.boards[0].lists
+    .flatMap((list) => list.cards)
+    .find((candidate) => candidate.id === card.id)!;
+
+  assert.equal(moved.done, true, 'mark-card-done');
+  assert.ok(moved.labelIds.includes('lbl-green'), 'add-label');
+  assert.equal(moved.due, null, 'clear-due');
 });

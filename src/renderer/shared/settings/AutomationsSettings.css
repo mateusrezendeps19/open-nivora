@@ -1,5 +1,3 @@
-@import '../shared/styles/panel.css';
-
 .auto__master {
   padding: var(--space-150);
   border: 1px solid var(--border-subtle);
@@ -126,4 +124,13 @@
 .auto__editor-actions {
   display: flex;
   gap: var(--space-50);
+}
+
+.auto__caveat {
+  margin: 0 0 var(--space-100);
+  padding-left: var(--space-100);
+  border-left: 2px solid var(--warning);
+  color: var(--text-subtle);
+  font-size: 11px;
+  max-width: 70ch;
 }

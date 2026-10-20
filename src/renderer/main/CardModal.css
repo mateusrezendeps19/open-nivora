@@ -28,6 +28,33 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.modal__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: var(--space-100);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    background var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
+}
+
+.modal__done:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.modal__done--on {
+  border-color: transparent;
+  background: var(--success);
+  color: var(--text-inverse);
+}
+
 .modal__title {
   display: block;
   width: 100%;

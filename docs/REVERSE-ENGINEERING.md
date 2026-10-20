@@ -165,7 +165,7 @@ O REA reporta 17 limitações. As que importam para este trabalho:
 
 | Evidência | Onde foi aplicada |
 |---|---|
-| 10 renderers + 1 main | `electron/windows.ts` — as dez janelas registradas |
+| 10 renderers + 1 main | `electron/windows.ts` — as dez janelas registradas (a `preferences` é exibida como "Configurações") |
 | Geometria (`frame:!1`, 500×325, 900×620, 900×640, minWidth/minHeight) | `electron/windows.ts` |
 | `exposeInMainWorld("electron", { logger, ipc })` com 7 membros | `electron/preload/bridge.ts` |
 | `init_config` só na janela main | `electron/preload/main.ts` vs. `electron/preload/window.ts` |
@@ -191,9 +191,10 @@ próprio:
 
 | Funcionalidade | Onde | Observação |
 |---|---|---|
-| Fundo do quadro | `shared/background.ts`, `main/BackgroundPanel.tsx` | Cores, gradientes próprios e imagem local. O Trello usa fotos do Unsplash, que exigem rede e chave de API; o Nivora é offline. |
+| Fundo do quadro | `shared/background.ts`, `shared/settings/BackgroundSettings.tsx` | Cores, gradientes próprios e imagem local. O Trello usa fotos do Unsplash, que exigem rede e chave de API; o Nivora é offline. |
+| Estado "concluído" do cartão | `shared/types.ts`, `main/CardModal.tsx` | O Trello marca conclusão pelo `dueComplete` do prazo; aqui é um booleano no cartão, que funciona sem prazo e sem checklist. |
 | Anexos e imagens | `electron/assets.ts`, `main/Attachments.tsx` | Loja de ativos em `userData/assets` e protocolo `nivora://`. Os canais `assets-*` são invenção do Nivora, marcados como tal em `electron/channels.ts`. |
-| Automações | `shared/automations.ts`, `main/AutomationsPanel.tsx` | Inspirado no Butler do Trello, mas o motor, os gatilhos, as ações e as travas contra loop são desenho próprio. |
+| Automações | `shared/automations.ts`, `shared/settings/AutomationsSettings.tsx` | Inspirado no Butler do Trello, mas o motor, os gatilhos, as ações e as travas contra loop são desenho próprio. |
 
 Os temas Atlaskit embutidos no asar provam que o app original usa um sistema de tokens, e
 `tokens.css` segue essa mesma estrutura — mas com cores e escalas próprias, nunca os valores da

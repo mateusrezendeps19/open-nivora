@@ -7,12 +7,7 @@ interface ToolbarProps {
   onToggleSidebar: () => void;
   onNewCard: () => void;
   onFind: () => void;
-  onBackground: () => void;
-  onAutomations: () => void;
-  /** Enabled rules on the active board, shown as a badge. */
-  automationCount: number;
-  theme: 'dark' | 'light';
-  onToggleTheme: () => void;
+  onSettings: () => void;
 }
 
 export function Toolbar({
@@ -21,11 +16,7 @@ export function Toolbar({
   onToggleSidebar,
   onNewCard,
   onFind,
-  onBackground,
-  onAutomations,
-  automationCount,
-  theme,
-  onToggleTheme,
+  onSettings,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -60,13 +51,6 @@ export function Toolbar({
       </label>
 
       <div className="toolbar__actions">
-        <button type="button" className="btn btn--subtle" onClick={onBackground}>
-          Fundo
-        </button>
-        <button type="button" className="btn btn--subtle" onClick={onAutomations}>
-          Automacoes
-          {automationCount > 0 && <span className="toolbar__badge">{automationCount}</span>}
-        </button>
         {hasShell() && (
           <>
             <button type="button" className="btn btn--subtle" onClick={onNewCard}>
@@ -77,13 +61,8 @@ export function Toolbar({
             </button>
           </>
         )}
-        <button
-          type="button"
-          className="btn btn--subtle"
-          onClick={onToggleTheme}
-          title="Alternar tema"
-        >
-          {theme === 'dark' ? 'Claro' : 'Escuro'}
+        <button type="button" className="btn btn--subtle" onClick={onSettings}>
+          Configuracoes
         </button>
       </div>
     </div>

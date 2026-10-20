@@ -92,7 +92,7 @@ export const WINDOWS: Record<WindowName, WindowSpec> = {
   },
   preferences: {
     entry: 'preferences',
-    title: 'Preferencias',
+    title: 'Configuracoes',
     singleton: true,
     options: {
       width: 900,

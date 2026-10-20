@@ -148,6 +148,14 @@ function expand(action: RuleAction, card: Card, board: Board): Action[] {
       return [{ type: 'checklist/add', cardId: card.id, text }];
     }
 
+    case 'mark-card-done':
+      if (card.done) return [];
+      return [{ type: 'card/update', cardId: card.id, patch: { done: true } }];
+
+    case 'mark-card-undone':
+      if (!card.done) return [];
+      return [{ type: 'card/update', cardId: card.id, patch: { done: false } }];
+
     case 'mark-checklist-done': {
       const pending = card.checklist.filter((item) => !item.done);
       if (pending.length === 0) return [];
@@ -265,4 +273,17 @@ export const ACTION_LABELS: Record<RuleAction['type'], string> = {
   'clear-due': 'Remover o prazo',
   'add-checklist-item': 'Adicionar item a checklist',
   'mark-checklist-done': 'Marcar a checklist como concluida',
+  'mark-card-done': 'Marcar o cartao como concluido',
+  'mark-card-undone': 'Desmarcar o cartao',
+};
+
+/**
+ * Actions that quietly do nothing unless the card is in the right shape. The
+ * panel shows this so a rule that cannot act is not mistaken for a broken one.
+ */
+export const ACTION_CAVEATS: Partial<Record<RuleAction['type'], string>> = {
+  'mark-checklist-done':
+    'So afeta cartoes que tenham itens pendentes na checklist. Para marcar o cartao em si, use "Marcar o cartao como concluido".',
+  'clear-due': 'So afeta cartoes que tenham prazo.',
+  'remove-label': 'So afeta cartoes que tenham essa etiqueta.',
 };

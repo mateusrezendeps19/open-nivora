@@ -98,6 +98,28 @@ export function CardModal({
         ref={dialogRef}
       >
         <header className="modal__header">
+          <button
+            type="button"
+            className={`modal__done${card.done ? ' modal__done--on' : ''}`}
+            aria-pressed={card.done}
+            title={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
+            onClick={() =>
+              dispatch({ type: 'card/update', cardId: card.id, patch: { done: !card.done } })
+            }
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+              <path
+                d="M3 8.5 6.2 11.7 13 5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {card.done ? 'Concluido' : 'Marcar como concluido'}
+          </button>
+
           <textarea
             className="modal__title"
             rows={1}

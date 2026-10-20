@@ -34,6 +34,12 @@ export interface Card {
   attachments: Attachment[];
   /** An image attachment shown as the card cover, or null. */
   coverAttachmentId: string | null;
+  /**
+   * Whether the card itself is finished. Distinct from the checklist: a card
+   * with no checklist still needs a way to be marked done, which is what
+   * "mover para Concluido e marcar como concluido" asks for.
+   */
+  done: boolean;
   createdAt: string;
 }
 
@@ -84,7 +90,9 @@ export type RuleActionType =
   | 'set-due'
   | 'clear-due'
   | 'add-checklist-item'
-  | 'mark-checklist-done';
+  | 'mark-checklist-done'
+  | 'mark-card-done'
+  | 'mark-card-undone';
 
 export interface RuleAction {
   type: RuleActionType;

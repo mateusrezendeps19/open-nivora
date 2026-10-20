@@ -79,13 +79,13 @@ ipcMain.on(WindowChannel.CLOSED, (_event, name: unknown) => {
  * app-store: single JSON document, atomic writes, userData directory.
  * ------------------------------------------------------------------ */
 
-ipcMain.handle(AppChannel.STORE, async (_event, op: string, payload: unknown) => {
+ipcMain.handle(AppChannel.STORE, async (event, op: string, payload: unknown) => {
   switch (op) {
     case StoreOp.READ:
       return readStore<unknown>(null);
     case StoreOp.WRITE:
       await writeStore(payload);
-      broadcastStoreChange(payload);
+      broadcastStoreChange(payload, event.sender.id);
       return true;
     case StoreOp.PATH:
       return getStorePath();
@@ -94,9 +94,19 @@ ipcMain.handle(AppChannel.STORE, async (_event, op: string, payload: unknown) =>
   }
 });
 
-/** Keeps secondary windows (newcard, preferences) in sync with the board. */
-function broadcastStoreChange(payload: unknown): void {
-  each((win) => win.webContents.send(AppChannel.STORE, StoreOp.WRITE, payload));
+/**
+ * Keeps the other windows (newcard, preferences) in sync with the board.
+ *
+ * The sender is skipped on purpose. Echoing its own write back is not just
+ * redundant, it loses data: the renderer debounces saves, so an edit made in
+ * the gap between the write leaving and the echo arriving would be replaced by
+ * the older document the echo carries.
+ */
+function broadcastStoreChange(payload: unknown, senderId: number): void {
+  each((win) => {
+    if (win.webContents.id === senderId) return;
+    win.webContents.send(AppChannel.STORE, StoreOp.WRITE, payload);
+  });
 }
 
 ipcMain.handle(AppChannel.CONFIG, () => ({
@@ -200,7 +210,7 @@ function buildMenu(): void {
           click: () => openWindow('newcard'),
         },
         {
-          label: 'Preferencias',
+          label: 'Configuracoes',
           accelerator: 'CmdOrCtrl+,',
           click: () => openWindow('preferences'),
         },

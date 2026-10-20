@@ -82,3 +82,13 @@
   background: color-mix(in srgb, var(--danger) 22%, transparent);
   color: var(--danger);
 }
+
+.tile--done .tile__title {
+  color: var(--text-subtle);
+}
+
+.tile__done {
+  color: var(--success);
+  margin-right: 4px;
+  vertical-align: -2px;
+}

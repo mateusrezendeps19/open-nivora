@@ -1,0 +1,23 @@
+.facts {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--space-100) var(--space-200);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+.facts__path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  word-break: break-all;
+  color: var(--text-subtle);
+}

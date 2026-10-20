@@ -1,43 +1,42 @@
-/* Shared chrome for the board panels (background, automations). */
-
-.panel__backdrop {
+.settings__backdrop {
   position: fixed;
   inset: 0;
   z-index: 60;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 48px var(--space-200);
+  padding: 40px var(--space-200);
   background: rgb(9 30 66 / 0.54);
   overflow-y: auto;
 }
 
-.panel {
-  width: min(100%, 560px);
+.settings__modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 820px);
+  max-height: calc(100vh - 80px);
   border-radius: var(--radius-lg);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
+  overflow: hidden;
 }
 
-.panel--wide {
-  width: min(100%, 820px);
-}
-
-.panel__header {
+.settings__header {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   padding: var(--space-150) 56px var(--space-150) var(--space-200);
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.panel__header h2 {
+.settings__header h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
 }
 
-.panel__close {
+.settings__close {
   position: absolute;
   top: 50%;
   right: var(--space-150);
@@ -48,30 +47,7 @@
   color: var(--text-subtle);
 }
 
-.panel__close:hover {
+.settings__close:hover {
   background: var(--surface-hover);
   color: var(--text);
-}
-
-.panel__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-300);
-  padding: var(--space-200);
-}
-
-.panel__section h3 {
-  margin: 0 0 var(--space-100);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-subtle);
-}
-
-.panel__hint {
-  margin: var(--space-100) 0 0;
-  color: var(--text-subtle);
-  font-size: 12px;
-  max-width: 62ch;
 }

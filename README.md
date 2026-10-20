@@ -18,7 +18,7 @@ npm start            # build de produção e abre o app
 Outros comandos:
 
 ```bash
-npm test             # 35 testes do reducer e do motor de automacoes (runner do Node)
+npm test             # 41 testes do reducer e do motor de automacoes (runner do Node)
 npm run smoke        # smoke test ponta a ponta no app empacotado (Playwright)
 npm run typecheck    # tsc --noEmit
 npm run build        # bundle do main/preload (esbuild) + renderers (Vite)
@@ -33,26 +33,39 @@ npm run build        # bundle do main/preload (esbuild) + renderers (Vite)
 - Vários quadros na sidebar, cada um com seu próprio fundo
 - Listas com renomear no lugar, reordenação por arrastar, e exclusão
 - Cartões com arrastar e soltar entre listas e dentro da mesma lista, com linha de inserção
-- Modal de cartão: título, descrição, etiquetas, prazo, checklist com progresso e anexos
+- Modal de cartão: concluir, título, descrição, etiquetas, prazo, checklist com progresso e anexos
+- **Configurações** num só lugar, em abas: Aparência (tema branco/escuro), Fundo, Automações, Dados
 - **Fundo do quadro**: cores, oito gradientes ou uma imagem do disco
 - **Anexos e imagens**: escolher arquivos ou arrastar para o cartão; imagens ganham miniatura e
   podem virar capa do cartão; abrir com o app do sistema ou revelar na pasta
 - **Automações**: regras por quadro, no espírito do Butler do Trello
 - Filtro por título e descrição, preservando os índices reais para o drop cair no lugar certo
-- Tema escuro e claro
-- Atalhos: `Ctrl+N` novo cartão, `Ctrl+F` localizar, `Ctrl+K` filtrar, `Ctrl+,` preferências
+- Atalhos: `Ctrl+N` novo cartão, `Ctrl+F` localizar, `Ctrl+K` filtrar, `Ctrl+,` configurações
 - Tudo offline, num único JSON em `userData`, com escrita atômica
+
+### Configurações
+
+Um único botão **Configurações** na toolbar, com quatro abas: Aparência (tema branco/escuro e
+confirmação de exclusão), Fundo, Automações e Dados. A janela de Configurações (`Ctrl+,`) renderiza
+**o mesmo componente** que o modal do quadro, então as duas superfícies não podem divergir.
 
 ### Automações
 
-Uma regra é um gatilho e uma lista de ações, configurada no botão **Automações**.
+Uma regra é um gatilho e uma lista de ações.
 
 | Gatilhos | Ações |
 |---|---|
-| cartão criado em *lista* | mover para *lista* |
-| cartão movido para *lista* | adicionar / remover *etiqueta* |
-| *etiqueta* adicionada | definir prazo em *N* dias, ou remover o prazo |
-| checklist concluída | adicionar item à checklist, ou marcar tudo como concluído |
+| cartão criado em *lista* | **marcar / desmarcar o cartão como concluído** |
+| cartão movido para *lista* | mover para *lista* |
+| *etiqueta* adicionada | adicionar / remover *etiqueta* |
+| checklist concluída | definir prazo em *N* dias, ou remover o prazo |
+| | adicionar item à checklist, ou marcar a checklist como concluída |
+
+Algumas ações só fazem algo se o cartão estiver na forma certa — `marcar a checklist como
+concluída` não tem o que fazer num cartão sem itens pendentes, por exemplo. O editor de regras
+mostra essa ressalva inline, para uma regra que não pode agir não ser confundida com uma regra
+quebrada. Para concluir o cartão em si, independente de checklist ou prazo, a ação é **marcar o
+cartão como concluído**.
 
 As regras rodam dentro do reducer, logo depois da ação do usuário, e encadeiam: uma regra que move
 o cartão pode acionar a regra da lista de destino. Dois limites impedem loop — o encadeamento para
@@ -90,9 +103,10 @@ electron/
     window.ts        preload das demais janelas
 src/renderer/
   shared/            tipos, documento, reducer, automacoes, ativos, tokens, TitleBar
+  shared/settings/   abas de Configuracoes, usadas pelo modal e pela janela
   main/              o app de quadros
   newcard/           janela de cartão rápido (500×325)
-  preferences/       preferências (900×640)
+  preferences/       janela de Configuracoes (900×640)
   find_in_page/      overlay de busca
   welcome/           tela inicial (900×620)
 tests/

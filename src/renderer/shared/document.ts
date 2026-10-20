@@ -26,6 +26,7 @@ export function emptyCard(title: string): Card {
     checklist: [],
     attachments: [],
     coverAttachmentId: null,
+    done: false,
     createdAt: new Date().toISOString(),
   };
 }
@@ -95,6 +96,7 @@ export function seedDocument(): BoardDocument {
       'Ao concluir, marcar como Pronto',
       { type: 'card-moved', listId: done.id },
       [
+        { type: 'mark-card-done' },
         { type: 'add-label', labelId: 'lbl-green' },
         { type: 'mark-checklist-done' },
         { type: 'clear-due' },
@@ -206,6 +208,7 @@ export function normalize(input: unknown): BoardDocument {
             description: card.description ?? '',
             attachments,
             coverAttachmentId: cover,
+            done: card.done === true,
           };
         }),
       })),

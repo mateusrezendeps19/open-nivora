@@ -133,13 +133,49 @@ try {
     throw new Error(`cartao nao apareceu em ${storePath}`);
   });
 
-  await check('trocar o fundo do quadro persiste no documento', async () => {
-    await page.click('.toolbar__actions .btn:text-is("Fundo")');
+  await check('Configuracoes reune aparencia, fundo, automacoes e dados', async () => {
+    await page.click('.toolbar__actions .btn:has-text("Configuracoes")');
+    await page.waitForSelector('.settings__tabs');
+
+    const tabs = await page.locator('.settings__tab').allTextContents();
+    assert.deepEqual(
+      tabs.map((label) => label.replace(/\d+$/, '')),
+      ['Aparencia', 'Fundo', 'Automacoes', 'Dados'],
+    );
+
+    // Os botoes avulsos de Fundo, Automacoes e tema sairam da toolbar.
+    const toolbar = await page.locator('.toolbar__actions .btn').allTextContents();
+    for (const gone of ['Fundo', 'Automacoes', 'Claro', 'Escuro']) {
+      assert.ok(
+        !toolbar.some((label) => label.trim() === gone),
+        `"${gone}" nao deveria mais estar na toolbar: ${JSON.stringify(toolbar)}`,
+      );
+    }
+  });
+
+  await check('o tema branco escolhido em Aparencia persiste', async () => {
+    await page.click('.settings__tab:has-text("Aparencia")');
+    await page.click('.segmented button:has-text("Branco")');
+
+    const theme = await page.evaluate(() => document.documentElement.dataset.theme);
+    assert.equal(theme, 'light');
+
+    const storePath = path.join(userData, 'boards.json');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.prefs.theme === 'light';
+    }, 'o tema nao chegou ao boards.json');
+
+    // Volta para escuro, que e o estado em que o resto das verificacoes roda.
+    await page.click('.segmented button:has-text("Escuro")');
+  });
+
+  await check('trocar o fundo na aba Fundo persiste no documento', async () => {
+    await page.click('.settings__tab:has-text("Fundo")');
     await page.waitForSelector('.bg__grid');
 
     // Segundo gradiente da lista, para nao coincidir com o da semente.
     await page.click('.bg__swatch--wide >> nth=1');
-    await page.click('.panel__close');
 
     const storePath = path.join(userData, 'boards.json');
     await waitFor(async () => {
@@ -201,12 +237,38 @@ try {
     assert.equal(status, 'recusou', 'travessia de caminho deveria ser bloqueada');
   });
 
-  await check('o painel de automacoes lista a regra da semente', async () => {
-    await page.click('.toolbar__actions .btn:has-text("Automacoes")');
+  await check('a aba Automacoes lista a regra da semente', async () => {
+    await page.click('.settings__tab:has-text("Automacoes")');
     await page.waitForSelector('.auto__list');
+
     const names = await page.locator('.auto__info strong').allTextContents();
     assert.deepEqual(names, ['Ao concluir, marcar como Pronto']);
-    await page.click('.panel__close');
+
+    const described = await page.locator('.auto__info span').first().textContent();
+    assert.ok(
+      described.includes('Marcar o cartao como concluido'),
+      `a regra deveria incluir a acao de concluir o cartao: ${described}`,
+    );
+
+    await page.click('.settings__close');
+  });
+
+  await check('marcar um cartao como concluido persiste', async () => {
+    await page.click('.tile >> nth=0');
+    await page.waitForSelector('.modal__done');
+    const title = await page.locator('.modal__title').inputValue();
+
+    await page.click('.modal__done');
+    await page.waitForSelector('.modal__done--on');
+    await page.click('.modal__close');
+
+    const storePath = path.join(userData, 'boards.json');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.boards[0].lists
+        .flatMap((list) => list.cards)
+        .some((card) => card.title === title && card.done === true);
+    }, `"${title}" nao ficou marcado como concluido no boards.json`);
   });
 
   await check('a janela newcard abre com seu proprio bundle', async () => {

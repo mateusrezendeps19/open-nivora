@@ -50,7 +50,7 @@ export function CardTile({
   return (
     <button
       type="button"
-      className={`tile${dragging ? ' tile--dragging' : ''}`}
+      className={`tile${dragging ? ' tile--dragging' : ''}${card.done ? ' tile--done' : ''}`}
       draggable
       onClick={onOpen}
       onDragStart={(event) => {
@@ -77,7 +77,29 @@ export function CardTile({
         </span>
       )}
 
-      <span className="tile__title">{card.title}</span>
+      <span className="tile__title">
+        {card.done && (
+          <svg
+            className="tile__done"
+            width="13"
+            height="13"
+            viewBox="0 0 16 16"
+            aria-label="Concluido"
+            role="img"
+          >
+            <circle cx="8" cy="8" r="7" fill="currentColor" />
+            <path
+              d="M4.6 8.3 7 10.7 11.4 6"
+              fill="none"
+              stroke="var(--surface-raised)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+        {card.title}
+      </span>
 
       {(card.description ||
         card.checklist.length > 0 ||

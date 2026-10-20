@@ -6,10 +6,10 @@ import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
 import { referencedAssets } from '../shared/document';
 import { useDocument, useTheme } from '../shared/useDocument';
-import { AutomationsPanel } from './AutomationsPanel';
-import { BackgroundPanel } from './BackgroundPanel';
+import type { SettingsTab } from '../shared/settings/Settings';
 import { BoardCanvas } from './BoardCanvas';
 import { CardModal } from './CardModal';
+import { SettingsPanel } from './SettingsPanel';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
 import './App.css';
@@ -17,7 +17,7 @@ import './App.css';
 export function App() {
   const { doc, activeBoard, dispatch, loaded, persisted } = useDocument();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
-  const [panel, setPanel] = useState<'background' | 'automations' | null>(null);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [query, setQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const swept = useRef(false);
@@ -72,7 +72,7 @@ export function App() {
         document.querySelector<HTMLInputElement>('.toolbar__search input')?.focus();
       } else if (event.key === 'Escape') {
         setOpenCardId(null);
-        setPanel(null);
+        setSettingsTab(null);
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -109,16 +109,7 @@ export function App() {
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onNewCard={openNewCard}
           onFind={openFind}
-          onBackground={() => setPanel('background')}
-          onAutomations={() => setPanel('automations')}
-          automationCount={activeBoard.automations.filter((rule) => rule.enabled).length}
-          theme={doc.prefs.theme}
-          onToggleTheme={() =>
-            dispatch({
-              type: 'prefs/set',
-              patch: { theme: doc.prefs.theme === 'dark' ? 'light' : 'dark' },
-            })
-          }
+          onSettings={() => setSettingsTab('appearance')}
         />
       </TitleBar>
 
@@ -143,20 +134,12 @@ export function App() {
         />
       </div>
 
-      {panel === 'background' && (
-        <BackgroundPanel
+      {settingsTab && (
+        <SettingsPanel
+          doc={doc}
           board={activeBoard}
-          onClose={() => setPanel(null)}
-          dispatch={dispatch}
-        />
-      )}
-
-      {panel === 'automations' && (
-        <AutomationsPanel
-          board={activeBoard}
-          labels={doc.labels}
-          enabled={doc.prefs.automationsEnabled}
-          onClose={() => setPanel(null)}
+          initialTab={settingsTab}
+          onClose={() => setSettingsTab(null)}
           dispatch={dispatch}
         />
       )}
