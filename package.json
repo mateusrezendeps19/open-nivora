@@ -1,0 +1,35 @@
+{
+  "name": "open-nivora",
+  "productName": "Nivora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nivora: quadros kanban em Electron, com o shell desktop reconstruido a partir de evidencias do REA e interface de quadros propria.",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build-electron.mjs && vite build",
+    "start": "npm run build && electron .",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs",
+    "smoke": "npm run build && node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "electron": "^44.9.1",
+    "esbuild": "0.24.2",
+    "playwright": "^1.49.1",
+    "typescript": "5.7.2",
+    "vite": "6.0.7"
+  },
+  "allowScripts": [
+    "electron",
+    "esbuild"
+  ]
+}

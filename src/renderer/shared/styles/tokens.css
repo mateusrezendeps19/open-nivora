@@ -1,0 +1,88 @@
+/*
+ * Design tokens.
+ *
+ * The real app ships Atlassian's Atlaskit token bundles
+ * (@atlaskit-internal_atlassian-dark / -light / -typography / -spacing /
+ * -shape / -motion, all present in the asar). Those are Atlassian's
+ * proprietary values, so this file is an original token set with the same
+ * shape: one surface ramp, one text ramp, an accent, plus spacing, radius and
+ * motion scales, defined for dark and light.
+ */
+
+:root {
+  --surface-sunken: #1d2125;
+  --surface: #22272b;
+  --surface-raised: #282e33;
+  --surface-overlay: #2c333a;
+  --surface-hover: #323940;
+  --surface-pressed: #3b434b;
+
+  --border-subtle: #2f363d;
+  --border: #3c444c;
+  --border-strong: #58616b;
+
+  --text: #dee4ea;
+  --text-subtle: #9fadbc;
+  --text-disabled: #6b7785;
+  --text-inverse: #1d2125;
+
+  --accent: #579dff;
+  --accent-hover: #85b8ff;
+  --accent-pressed: #2b63ad;
+  --danger: #f87168;
+  --success: #4bce97;
+  --warning: #f5cd47;
+
+  --space-25: 2px;
+  --space-50: 4px;
+  --space-100: 8px;
+  --space-150: 12px;
+  --space-200: 16px;
+  --space-300: 24px;
+  --space-400: 32px;
+
+  --radius-sm: 3px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  --shadow-raised: 0 1px 1px rgb(9 30 66 / 0.35), 0 0 1px rgb(9 30 66 / 0.3);
+  --shadow-overlay: 0 8px 16px -4px rgb(9 30 66 / 0.5), 0 0 1px rgb(9 30 66 / 0.4);
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --motion-fast: 100ms;
+  --motion: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --titlebar-height: 38px;
+}
+
+:root[data-theme='light'] {
+  --surface-sunken: #f1f2f4;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-hover: #e9ebee;
+  --surface-pressed: #dcdfe4;
+
+  --border-subtle: #e4e6ea;
+  --border: #d0d4da;
+  --border-strong: #8c9bab;
+
+  --text: #172b4d;
+  --text-subtle: #626f86;
+  --text-disabled: #8993a4;
+  --text-inverse: #ffffff;
+
+  --accent: #0c66e4;
+  --accent-hover: #0055cc;
+  --accent-pressed: #09326c;
+  --danger: #c9372c;
+  --success: #216e4e;
+  --warning: #946f00;
+
+  --shadow-raised: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
+  --shadow-overlay: 0 8px 12px rgb(9 30 66 / 0.15), 0 0 1px rgb(9 30 66 / 0.31);
+}

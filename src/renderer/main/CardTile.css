@@ -1,0 +1,75 @@
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-raised);
+  text-align: left;
+  transition:
+    background var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease),
+    opacity var(--motion-fast) var(--ease);
+}
+
+.tile:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.tile--dragging {
+  opacity: 0.35;
+}
+
+.tile__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tile__label {
+  width: 36px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+}
+
+.tile__title {
+  font-size: 14px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.tile__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-50);
+  color: var(--text-subtle);
+  font-size: 11px;
+}
+
+.tile__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.tile__badge--done {
+  background: color-mix(in srgb, var(--success) 22%, transparent);
+  color: var(--success);
+}
+
+.tile__badge--due-soon {
+  background: color-mix(in srgb, var(--warning) 22%, transparent);
+  color: var(--warning);
+}
+
+.tile__badge--due-late {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  color: var(--danger);
+}

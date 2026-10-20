@@ -1,0 +1,134 @@
+.sidebar {
+  flex: 0 0 248px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  padding: var(--space-150);
+  background: var(--surface);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+
+.sidebar__heading {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.sidebar__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar__item:hover {
+  background: var(--surface-hover);
+}
+
+.sidebar__item--active {
+  background: var(--surface-pressed);
+}
+
+.sidebar__swatch {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+input.sidebar__name {
+  white-space: normal;
+}
+
+.sidebar__meta {
+  flex: 0 0 auto;
+  color: var(--text-disabled);
+  font-size: 11px;
+}
+
+.sidebar__remove {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  color: var(--text-disabled);
+  font-size: 11px;
+  opacity: 0;
+}
+
+.sidebar__item:hover .sidebar__remove {
+  opacity: 1;
+}
+
+.sidebar__remove:hover {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+.sidebar__new {
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  text-align: left;
+  font-size: 13px;
+}
+
+.sidebar__new:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.sidebar__add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  padding: var(--space-100);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.sidebar__colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-50);
+}
+
+.sidebar__color {
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+}
+
+.sidebar__color--on {
+  border-color: var(--text);
+}
+
+.sidebar__add-actions {
+  display: flex;
+  gap: var(--space-50);
+}

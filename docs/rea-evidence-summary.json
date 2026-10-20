@@ -1,0 +1,556 @@
+{
+  "evidence_id": "ev_d71b02e4486e63ddd92c61dfc7137e61a757fe0e8a4eb288dd6fe54aae4d8685",
+  "provider": {
+    "id": "rea-javascript-application",
+    "name": "REA JavaScript application analyzer",
+    "version": "1"
+  },
+  "subject": {
+    "name": "app.asar",
+    "format": "asar",
+    "digest": {
+      "sha256": "dcef5984276d6630c85189b8ad719f5b09deea2e69a52c15b65046312495a565"
+    }
+  },
+  "root_artifact_sha256": "dcef5984276d6630c85189b8ad719f5b09deea2e69a52c15b65046312495a565",
+  "confidence": "derived",
+  "authority": "shipped-artifact",
+  "statistics": {
+    "relevant_files": 43,
+    "nested_asar_containers": 0,
+    "text_bytes_read": 4860936,
+    "invalid_utf8_files": 0,
+    "parsed_javascript_files": 25,
+    "skipped_javascript_files": 7,
+    "visited_ast_nodes": 360874,
+    "findings": 1676,
+    "modules": 676,
+    "parse_failures": 0
+  },
+  "summary": {
+    "browser_windows": 0,
+    "explicit_web_preferences": 0,
+    "preload_entrypoints": 0,
+    "context_bridge_apis": 9,
+    "exposed_api_members": 15,
+    "ipc": {
+      "operations": 59,
+      "literal_channels": 4,
+      "dynamic_channel_operations": 55,
+      "renderer_transmissions": 20,
+      "renderer_listeners": 19,
+      "main_handlers": 20,
+      "paired_renderer_transmissions": 0,
+      "ambiguous_renderer_transmissions": 0,
+      "unpaired_literal_renderer_transmissions": 0
+    },
+    "sender_validation_observations": 0,
+    "utility_processes": 0,
+    "resolved_utility_entrypoints": 0,
+    "native_addon_bindings": 0,
+    "resolved_native_addon_bindings": 0
+  },
+  "renderers": [
+    ".webpack/renderer/auth/index.html",
+    ".webpack/renderer/downloads/index.html",
+    ".webpack/renderer/find_in_page/index.html",
+    ".webpack/renderer/main/index.html",
+    ".webpack/renderer/manage_account/index.html",
+    ".webpack/renderer/newcard/index.html",
+    ".webpack/renderer/preferences/index.html",
+    ".webpack/renderer/prompt/index.html",
+    ".webpack/renderer/switch_account/index.html",
+    ".webpack/renderer/welcome/index.html"
+  ],
+  "asar_entries": [
+    ".webpack/main/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-custom-theme/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-dark-future/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-dark-increased-contrast/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-dark/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-light-future/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-light-increased-contrast/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-light/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-motion/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-shape/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-spacing/index.js",
+    ".webpack/renderer/@atlaskit-internal_atlassian-typography/index.js",
+    ".webpack/renderer/auth/index.html",
+    ".webpack/renderer/auth/index.js",
+    ".webpack/renderer/auth/preload.js",
+    ".webpack/renderer/downloads/index.html",
+    ".webpack/renderer/downloads/index.js",
+    ".webpack/renderer/downloads/preload.js",
+    ".webpack/renderer/find_in_page/index.html",
+    ".webpack/renderer/find_in_page/index.js",
+    ".webpack/renderer/find_in_page/preload.js",
+    ".webpack/renderer/main/index.html",
+    ".webpack/renderer/main/index.js",
+    ".webpack/renderer/main/preload.js",
+    ".webpack/renderer/manage_account/index.html",
+    ".webpack/renderer/manage_account/index.js",
+    ".webpack/renderer/manage_account/preload.js",
+    ".webpack/renderer/newcard/index.html",
+    ".webpack/renderer/newcard/index.js",
+    ".webpack/renderer/newcard/preload.js",
+    ".webpack/renderer/preferences/index.html",
+    ".webpack/renderer/preferences/index.js",
+    ".webpack/renderer/preferences/preload.js",
+    ".webpack/renderer/prompt/index.html",
+    ".webpack/renderer/prompt/index.js",
+    ".webpack/renderer/prompt/preload.js",
+    ".webpack/renderer/switch_account/index.html",
+    ".webpack/renderer/switch_account/index.js",
+    ".webpack/renderer/switch_account/preload.js",
+    ".webpack/renderer/welcome/index.html",
+    ".webpack/renderer/welcome/index.js",
+    ".webpack/renderer/welcome/preload.js",
+    "package.json"
+  ],
+  "context_bridge_apis": [
+    "electron",
+    "init_config"
+  ],
+  "storage": [
+    "analytics-web-client",
+    "awc-dev.ui.viewed.last.sent",
+    "awc-local.ui.viewed.last.sent",
+    "awc-staging.ui.viewed.last.sent",
+    "awc.ui.viewed.last.sent",
+    "local-storage"
+  ],
+  "ipc_operations": [
+    {
+      "symbol": "analytics-set-user-info",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "literal",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "analytics-track-event",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "literal",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "i.BLUR",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.BLUR",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.BLUR",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.FOCUS",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.FOCUS",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.FOCUS",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TITLE_CHANGE",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TITLE_CHANGE",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TITLE_CHANGE",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_CLOSE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MAXIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MENU",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/switch_account/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/auth/preload.js"
+    },
+    {
+      "symbol": "i.TRIGGER_MINIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/manage_account/preload.js"
+    },
+    {
+      "symbol": "r.BLUR",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.FOCUS",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TITLE_CHANGE",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_CLOSE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_CLOSE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MAXIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MAXIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MENU",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MENU",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MINIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "r.TRIGGER_MINIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "t.BLUR",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.FOCUS",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TITLE_CHANGE",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_CLOSE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_CLOSE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MAXIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MAXIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MENU",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MENU",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MINIMIZE",
+      "side": "main",
+      "operation": "on",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "t.TRIGGER_MINIMIZE",
+      "side": "renderer",
+      "operation": "send",
+      "resolution": "dynamic",
+      "source": ".webpack/renderer/preferences/preload.js"
+    },
+    {
+      "symbol": "window:enter-full-screen",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "literal",
+      "source": ".webpack/renderer/main/preload.js"
+    },
+    {
+      "symbol": "window:leave-full-screen",
+      "side": "renderer",
+      "operation": "on",
+      "resolution": "literal",
+      "source": ".webpack/renderer/main/preload.js"
+    }
+  ],
+  "limitations": [
+    ".webpack/renderer/auth/index.html has 1 inline JavaScript body starting at line 1 that was not analyzed; endpoints, storage, imports and other facts in it are absent from the evidence.",
+    ".webpack/renderer/auth/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/auth/index.js during static",
+    ".webpack/renderer/downloads/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/downloads/index.js during static",
+    ".webpack/renderer/find_in_page/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/find_in_page/index.js during static",
+    ".webpack/renderer/newcard/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/newcard/index.js during static",
+    ".webpack/renderer/preferences/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/preferences/index.js during static",
+    ".webpack/renderer/prompt/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/prompt/index.js during static",
+    ".webpack/renderer/welcome/index.js: Resource constraint during analyze_javascript_application: Owned JavaScript worker exhausted its heap while analyzing .webpack/renderer/welcome/index.js during static",
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Dynamic IPC channel expressions remain unresolved and are never paired by textual similarity.",
+    "Electron API identity follows proven lexical module aliases and structurally verified module-namespace interop. Other reassignments, dynamic selections, and visibly overwritten namespace members are unresolved; missing findings do not establish absence. Arbitrary call side effects and runtime registration are not evaluated.",
+    "Electron relationships are derived from inert syntax; runtime registration, reachability, defaults, and enforcement remain unproven.",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ]
+}

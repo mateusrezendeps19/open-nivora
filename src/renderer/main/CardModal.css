@@ -1,0 +1,216 @@
+.modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px var(--space-200);
+  background: rgb(9 30 66 / 0.54);
+  overflow-y: auto;
+}
+
+.modal {
+  position: relative;
+  width: min(100%, 720px);
+  border-radius: var(--radius-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+}
+
+.modal:focus {
+  outline: none;
+}
+
+.modal__header {
+  position: relative;
+  padding: var(--space-200) 56px var(--space-100) var(--space-200);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal__title {
+  display: block;
+  width: 100%;
+  padding: 4px 6px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  resize: none;
+  field-sizing: content;
+}
+
+.modal__title:hover {
+  background: var(--surface-hover);
+}
+
+.modal__title:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-sunken);
+}
+
+.modal__context {
+  margin: 2px 0 0 6px;
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.modal__close {
+  position: absolute;
+  top: var(--space-150);
+  right: var(--space-150);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
+  color: var(--text-subtle);
+}
+
+.modal__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-300);
+  padding: var(--space-200);
+}
+
+.modal__section h3 {
+  margin: 0 0 var(--space-100);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.modal__progress-label {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-disabled);
+}
+
+.modal__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-50);
+}
+
+.modal__label {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  color: #1d2125;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.45;
+  transition: opacity var(--motion-fast) var(--ease);
+}
+
+.modal__label:hover {
+  opacity: 0.75;
+}
+
+.modal__label--on {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px var(--text);
+}
+
+.modal__due {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+}
+
+.modal__due .field {
+  width: auto;
+}
+
+.modal__description {
+  resize: vertical;
+}
+
+.modal__progress {
+  height: 6px;
+  margin-bottom: var(--space-100);
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.modal__progress-bar {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  transition: width var(--motion) var(--ease);
+}
+
+.modal__checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 var(--space-100);
+  padding: 0;
+  list-style: none;
+}
+
+.modal__checklist li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.modal__checklist li:hover {
+  background: var(--surface-hover);
+}
+
+.modal__checklist label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  cursor: pointer;
+}
+
+.modal__check-done {
+  color: var(--text-disabled);
+  text-decoration: line-through;
+}
+
+.modal__check-remove {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  color: var(--text-disabled);
+  font-size: 11px;
+  opacity: 0;
+}
+
+.modal__checklist li:hover .modal__check-remove {
+  opacity: 1;
+}
+
+.modal__check-remove:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-100);
+  padding: var(--space-150) var(--space-200);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.modal__created {
+  color: var(--text-disabled);
+  font-size: 12px;
+}

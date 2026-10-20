@@ -1,0 +1,55 @@
+body {
+  background: transparent;
+}
+
+.find {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  height: 100%;
+  padding: 0 var(--space-100) 0 var(--space-150);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+  -webkit-app-region: drag;
+}
+
+.find__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  -webkit-app-region: no-drag;
+}
+
+.find__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.find__count {
+  flex: 0 0 auto;
+  min-width: 36px;
+  color: var(--text-subtle);
+  font-size: 11px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.find__close {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  -webkit-app-region: no-drag;
+}
+
+.find__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}

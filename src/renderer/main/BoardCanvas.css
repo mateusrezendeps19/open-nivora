@@ -1,0 +1,32 @@
+.canvas {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.canvas__filter {
+  flex: 0 0 auto;
+  margin: var(--space-100) var(--space-150) 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 0.3);
+  color: #fff;
+  font-size: 12px;
+  backdrop-filter: blur(2px);
+}
+
+:root[data-theme='light'] .canvas__filter {
+  background: rgb(255 255 255 / 0.75);
+  color: var(--text);
+}
+
+.canvas__lists {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-100);
+  padding: var(--space-150);
+  overflow-x: auto;
+  overflow-y: hidden;
+}

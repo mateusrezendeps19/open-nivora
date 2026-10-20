@@ -1,0 +1,196 @@
+# Relatório de engenharia reversa
+
+Este documento registra o que foi extraído do app do Trello instalado nesta máquina, como foi
+extraído, e exatamente qual parte deste repositório veio de evidência e qual parte é implementação
+original. O resumo completo da evidência está em [`rea-evidence-summary.json`](./rea-evidence-summary.json).
+
+## O alvo
+
+| | |
+|---|---|
+| Pacote | `45273LiamForsyth.PawsforTrello_2.16.8.0_x64__7pb5ddty8z1pa` |
+| `DisplayName` no manifesto | `Trello` |
+| `PublisherDisplayName` | `Trello, Inc.` |
+| Versão do app | 2.16.8 |
+| Runtime | Electron 43.5.0 (arquivo `app/version`) |
+| Artefato analisado | `app/resources/app.asar`, 5.753.283 bytes |
+| SHA-256 do asar | `dcef5984276d6630c85189b8ad719f5b09deea2e69a52c15b65046312495a565` |
+
+Apesar do nome do pacote da Store (`PawsforTrello`, de um publicador independente), o manifesto
+identifica o app como o cliente desktop oficial da Trello, Inc. É um app Electron: `Trello.exe`
+(238 MB), DLLs do Chromium, `resources.pak`, snapshots do V8 e um `app.asar` com o código.
+
+## A ferramenta
+
+[REA — Reverse Engineer Anything](https://github.com/morluto/rea), versão 6.7.0.
+
+```bash
+npm install --global rea-agents
+rea analyze-javascript-application /caminho/para/app.asar --json
+```
+
+| | |
+|---|---|
+| `evidence_id` | `ev_d71b02e4486e63ddd92c61dfc7137e61a757fe0e8a4eb288dd6fe54aae4d8685` |
+| Provider | `rea-javascript-application` v1 |
+| `confidence` | `derived` |
+| `authority` | `shipped-artifact` |
+| Saída bruta | 121.547.092 bytes de JSON |
+
+### Cobertura da análise
+
+| Métrica | Valor |
+|---|---|
+| Arquivos relevantes no asar | 43 |
+| Arquivos JavaScript parseados | 25 |
+| Arquivos JavaScript ignorados | 7 |
+| Falhas de parse | 0 |
+| Nós de AST visitados | 360.874 |
+| Módulos reconstruídos | 676 |
+| Findings | 1.676 |
+| Nós / arestas no grafo da aplicação | 1.062 / 2.532 |
+| Nós / relações no grafo semântico | 56.882 / 50.550 |
+
+## O que foi recuperado
+
+### Inventário de janelas (10 renderers + 1 main)
+
+Cada renderer tem `index.html`, `index.js` e `preload.js` próprios:
+
+```
+.webpack/main/index.js
+.webpack/renderer/main/          .webpack/renderer/auth/
+.webpack/renderer/preferences/   .webpack/renderer/newcard/
+.webpack/renderer/downloads/     .webpack/renderer/find_in_page/
+.webpack/renderer/prompt/        .webpack/renderer/welcome/
+.webpack/renderer/switch_account/ .webpack/renderer/manage_account/
+```
+
+### Superfície do contextBridge
+
+9 chamadas `exposeInMainWorld`, 15 membros expostos. Literalmente, do bundle:
+
+```js
+// .webpack/renderer/main/preload.js
+exposeInMainWorld("electron", { logger: ..., ipc: (ai = e.ipcRenderer, {
+  isChannelSupported, invoke, send, sendSync, on, once, removeAllListeners }) })
+
+exposeInMainWorld("init_config", { appId: "desktop", desktopVersion: "2.16.8",
+  dontDismissNotifications: !0, dontUpsell: !0, limitMemoryUsage: !0,
+  analyticsContext: { platform: process.platform } })
+```
+
+`init_config` aparece **somente** no preload da janela `main`. As outras nove expõem apenas
+`electron`. Toda operação de IPC passa por um guard de canal antes de ser encaminhada.
+
+### Canais IPC
+
+59 operações, 20 handlers no main, 19 listeners no renderer. Dessas, **4 resolvem para string
+literal e 55 são dinâmicas** — o bundle minificado referencia `r.TRIGGER_MAXIMIZE`,
+`t.TITLE_CHANGE`, `i.BLUR` etc., e o REA não adivinha o valor por semelhança textual.
+
+Canais recuperados como literal no `.webpack/main/index.js`:
+
+```
+window-control   window-controls   window-frame    window-menu    window-title
+window-focus     window-blur       window-close    window-closed  window-created
+window-all-closed  window-manager  window-listeners
+window:enter-full-screen           window:leave-full-screen
+app-ready   app-config   app-store   app-command   app-controller  app-listeners
+app-activate  app-before-quit  app-will-quit  app-will-finish-launching
+auth-complete   prefs.locale
+find-in-page-set-query   find-in-page-found   find-in-page-close
+find-in-page-focus       find-in-page-reset   find-in-page-is-shown
+analytics-track-event    analytics-set-user-info
+```
+
+Símbolos recuperados (valor literal não resolvido): `TRIGGER_CLOSE`, `TRIGGER_MINIMIZE`,
+`TRIGGER_MAXIMIZE`, `TRIGGER_MENU`, `TITLE_CHANGE`, `FOCUS`, `BLUR`.
+
+**A superfície IPC inteira é cromo de janela, autenticação, downloads, busca na página e
+analytics.** Não há um único canal de quadro, lista ou cartão.
+
+### Geometria das janelas
+
+Literais no `.webpack/main/index.js`: `frame:!1` (sem moldura), `width:500,height:325`,
+`width:900,height:620`, `width:900,height:640` (duas vezes), `minWidth:480`, `minHeight:400`,
+`minHeight:720`.
+
+### Dependências (do `package.json` dentro do asar)
+
+React 18.3.1, `@atlaskit/icon` 37.3.0, `@atlaskit/tabs`, `@atlaskit/toggle`, `@atlaskit/tokens`
+16.4.0, `@atlassiansox/analytics-web-client` 5.20.0, `@sentry/electron`, `node-persist` 4.0.3,
+`mousetrap` 1.6.5, `date-fns` 4.1.0, `lodash`, `fs-jetpack`, `jszip`, `format-message`.
+
+### Temas
+
+Bundles de token do Atlaskit embutidos: `atlassian-light`, `atlassian-dark`,
+`atlassian-light-future`, `atlassian-dark-future`, `atlassian-light-increased-contrast`,
+`atlassian-dark-increased-contrast`, `atlassian-custom-theme`, `atlassian-typography`,
+`atlassian-spacing`, `atlassian-shape`, `atlassian-motion`.
+
+### Armazenamento
+
+Chaves de `local-storage` observadas, todas do cliente de analytics:
+`analytics-web-client`, `awc.ui.viewed.last.sent`, `awc-dev.*`, `awc-staging.*`, `awc-local.*`.
+
+## O que não está no app
+
+**A interface de quadros do Trello não está no binário.** O asar contém o shell desktop; o produto
+(quadros, listas, cartões, arrastar e soltar, permissões, sincronização) é carregado de `trello.com`
+em tempo de execução dentro do `webContents`. A análise estática confirma isso por ausência: 676
+módulos, 1.676 findings, zero relacionado a domínio de quadros.
+
+Consequência prática: a engenharia reversa reproduz fielmente a **casca**, e a interface tem que ser
+implementação original. É o que foi feito aqui.
+
+## Limitações declaradas pela própria análise
+
+O REA reporta 17 limitações. As que importam para este trabalho:
+
+1. **Sete bundles de renderer não foram analisados** por esgotamento de heap do worker:
+   `auth/index.js`, `downloads/index.js`, `find_in_page/index.js`, `newcard/index.js`,
+   `preferences/index.js`, `prompt/index.js`, `welcome/index.js`. O que esses arquivos fazem
+   internamente está fora da evidência — por isso a UI dessas janelas aqui é projeto próprio, não
+   reconstrução.
+2. **Um corpo de JavaScript inline em `auth/index.html` não foi analisado.**
+3. **Expressões dinâmicas de canal permanecem sem resolução** e nunca são pareadas por semelhança
+   textual. Daí os sete símbolos sem valor literal acima.
+4. **Tudo foi lido como texto inerte.** Nada do bootstrap do bundle foi executado, então registro em
+   runtime, alcançabilidade e enforcement seguem não provados.
+5. **Cobertura do grafo é incompleta**, e o próprio relatório avisa: ausência de fato não deve ser
+   lida como fato ausente.
+
+## Mapeamento: evidência → este repositório
+
+| Evidência | Onde foi aplicada |
+|---|---|
+| 10 renderers + 1 main | `electron/windows.ts` — as dez janelas registradas |
+| Geometria (`frame:!1`, 500×325, 900×620, 900×640, minWidth/minHeight) | `electron/windows.ts` |
+| `exposeInMainWorld("electron", { logger, ipc })` com 7 membros | `electron/preload/bridge.ts` |
+| `init_config` só na janela main | `electron/preload/main.ts` vs. `electron/preload/window.ts` |
+| Guard de canal antes de encaminhar | `SUPPORTED_CHANNELS` em `electron/channels.ts` |
+| Canais literais `window-*`, `app-*`, `find-in-page-*`, `prefs.locale` | `electron/channels.ts` |
+| Símbolos `TRIGGER_*`, `TITLE_CHANGE`, `FOCUS`, `BLUR` | `electron/channels.ts`, com literal próprio e marcado como `SYMBOL` |
+| `app-store` + `node-persist` | `electron/store.ts` — um JSON em `userData`, escrita atômica |
+| Titlebar desenhada pelo renderer (porque `frame:!1`) | `src/renderer/shared/components/TitleBar.tsx` |
+| Seis canais de `find-in-page` | `electron/main.ts` + `src/renderer/find_in_page/` |
+| Estrutura dos tokens Atlaskit (light/dark/typography/spacing/shape/motion) | `src/renderer/shared/styles/tokens.css`, com valores próprios |
+| React 18.3.1 | `package.json` |
+
+**Implementação original, sem correspondência no binário:** todo o modelo de dados
+(`src/renderer/shared/types.ts`), o reducer (`reducer.ts`), arrastar e soltar, etiquetas, prazos,
+checklists, filtro, sidebar de quadros e o modal de cartão.
+
+## Nota sobre direito autoral
+
+O que foi copiado daqui: nomes de canais IPC, nomes de arquivos, dimensões de janela e a forma do
+contrato do `contextBridge` — fatos de interface, do tipo que existe para interoperabilidade.
+
+O que não foi copiado: código, assets, ícones, marca ou os valores dos tokens do Atlaskit. A
+interface de quadros é escrita do zero. Os temas têm a mesma estrutura dos pacotes Atlaskit, com
+cores próprias. O nome e a identidade visual do Trello pertencem à Atlassian; este projeto não os
+usa e não se apresenta como Trello.
+
+Reproduzir código ou assets proprietários, ou distribuir algo que se passe pelo app oficial, não é
+o que este repositório faz e não é o que a análise habilita.
