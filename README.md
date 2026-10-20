@@ -25,6 +25,10 @@ repository came from which piece of evidence — is in
 ## Features
 
 - **Boards** — several of them, each with its own background
+- **Collapsible sidebar** — the board list folds into a rail of colored tiles; the state is part of
+  the document, so the window opens the way it was left
+- **Calendar** — the cards of the board on the days they are due, monthly by default, with a week
+  view, a column of cards with no date, and drag and drop to reschedule
 - **Lists** — rename in place, reorder by dragging, delete
 - **Cards** — drag and drop between lists and within a list, with a live insertion line
 - **Card detail** — done state, description, labels, due date, checklist with progress, attachments
@@ -36,6 +40,21 @@ repository came from which piece of evidence — is in
 - **Light and dark themes**
 - **Shortcuts** — `Ctrl+N` new card, `Ctrl+F` find, `Ctrl+K` filter, `Ctrl+,` settings
 - **Local storage** — one JSON file in `userData`, written atomically
+
+### Calendar
+
+The toolbar switches the board for a **calendar** of the same cards, laid out on their due dates.
+It opens on the month, which is the view that answers what is coming up; **Semana** zooms into one
+week and adds the time and the list each card sits in. Today is outlined, overdue cards are marked,
+and the toolbar filter narrows the calendar exactly as it narrows the board.
+
+Dragging a card onto another day reschedules it, keeping its time of day. The **Sem prazo** column
+holds the cards with no date: drag one onto a day to schedule it, or drag a scheduled card back
+onto the column to clear its date. Clicking any card opens the usual card detail.
+
+Due dates are read and written in local time. A date picked as `2026-10-20` is stored as local
+midnight rather than UTC midnight, so the day shown on the card, in the calendar and in the picker
+is the same day everywhere.
 
 ### Settings
 
@@ -120,7 +139,7 @@ electron/
     main.ts          preload for the main window (also exposes init_config)
     window.ts        preload for every other window
 src/renderer/
-  shared/            types, document, reducer, automations, assets, tokens, TitleBar
+  shared/            types, document, reducer, automations, calendar, assets, tokens, TitleBar
   shared/settings/   the Settings tabs, used by both the modal and the window
   main/              the board app
   newcard/           quick-card window (500x325)
@@ -130,7 +149,9 @@ src/renderer/
 tests/
   reducer.test.ts      move maths and document normalization
   automations.test.ts  triggers, actions, chaining, termination
-  smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast
+  calendar.test.ts     month grid, week start, local-time due dates, grouping
+  smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast,
+                       sidebar rail, calendar month view and rescheduling by drag
 docs/
   REVERSE-ENGINEERING.md      the analysis report
   rea-evidence-summary.json   extract of the REA evidence

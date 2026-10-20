@@ -16,7 +16,14 @@ function fixture(): BoardDocument {
     boards: [board],
     activeBoardId: board.id,
     labels: [],
-    prefs: { theme: 'dark', locale: 'pt-BR', confirmCardDelete: true, automationsEnabled: true },
+    prefs: {
+      theme: 'dark',
+      locale: 'pt-BR',
+      confirmCardDelete: true,
+      automationsEnabled: true,
+      sidebarCollapsed: false,
+      view: 'board',
+    },
   };
 }
 

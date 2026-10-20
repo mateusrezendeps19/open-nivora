@@ -64,6 +64,7 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
 
   --titlebar-height: 38px;
+  --sidebar-width: 248px;
 }
 
 :root[data-theme='light'] {

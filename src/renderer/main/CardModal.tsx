@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Card, Label } from '../shared/types';
 import { removeAsset } from '../shared/assets';
+import { fromDateInput, toDateInput } from '../shared/calendar';
 import { Attachments } from './Attachments';
 import './CardModal.css';
 
@@ -12,13 +13,6 @@ interface CardModalProps {
   confirmDelete: boolean;
   onClose: () => void;
   dispatch: (action: Action) => void;
-}
-
-/** Turns the stored ISO timestamp into the value an <input type="date"> wants. */
-function toDateInput(iso: string | null): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }
 
 export function CardModal({
@@ -177,7 +171,7 @@ export function CardModal({
                     type: 'card/update',
                     cardId: card.id,
                     patch: {
-                      due: event.target.value ? new Date(event.target.value).toISOString() : null,
+                      due: fromDateInput(event.target.value, card.due),
                     },
                   })
                 }

@@ -109,7 +109,14 @@ export function seedDocument(): BoardDocument {
     boards: [board],
     activeBoardId: board.id,
     labels: DEFAULT_LABELS,
-    prefs: { theme: 'dark', locale: 'pt-BR', confirmCardDelete: true, automationsEnabled: true },
+    prefs: {
+      theme: 'dark',
+      locale: 'pt-BR',
+      confirmCardDelete: true,
+      automationsEnabled: true,
+      sidebarCollapsed: false,
+      view: 'board',
+    },
   };
 }
 
@@ -231,6 +238,8 @@ export function normalize(input: unknown): BoardDocument {
       locale: doc.prefs?.locale ?? 'pt-BR',
       confirmCardDelete: doc.prefs?.confirmCardDelete ?? true,
       automationsEnabled: doc.prefs?.automationsEnabled ?? true,
+      sidebarCollapsed: doc.prefs?.sidebarCollapsed === true,
+      view: doc.prefs?.view === 'calendar' ? 'calendar' : 'board',
     },
   };
 }

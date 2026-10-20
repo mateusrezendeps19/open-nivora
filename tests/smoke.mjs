@@ -349,6 +349,74 @@ try {
     }, `"${title}" nao ficou marcado como concluido no boards.json`);
   });
 
+  await check('a barra lateral recolhe para a trilha e persiste', async () => {
+    await page.click('.sidebar__head .sidebar__toggle');
+    await page.waitForSelector('.sidebar--collapsed .sidebar__tile');
+
+    const storePath = path.join(userData, 'boards.json');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.prefs.sidebarCollapsed === true;
+    }, 'sidebarCollapsed nao foi persistido');
+
+    await page.click('.sidebar--collapsed .sidebar__toggle');
+    await page.waitForSelector('.sidebar__list');
+  });
+
+  await check('o calendario abre no mes e situa o cartao no dia do prazo', async () => {
+    // A card due today, set through the modal, so the date takes the same path
+    // a user would take.
+    await page.click('.tile >> nth=0');
+    await page.waitForSelector('.modal__due input');
+    const title = await page.locator('.modal__title').inputValue();
+    const today = new Date();
+    const key = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+    await page.fill('.modal__due input', key);
+    await page.click('.modal__close');
+
+    await page.click('.toolbar__view:has-text("Calendario")');
+    await page.waitForSelector('.calendar__weeks', { timeout: 5_000 });
+
+    // Month is the default granularity.
+    assert.equal(
+      await page.locator('.calendar__mode--on').textContent(),
+      'Mes',
+      'o calendario deveria abrir na visao mensal',
+    );
+
+    const chip = page.locator('.cell--today .chip', { hasText: title });
+    await chip.waitFor({ timeout: 5_000 });
+  });
+
+  await check('arrastar um cartao no calendario reagenda o prazo', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const chip = page.locator('.cell--today .chip').first();
+    const title = (await chip.textContent()).trim();
+
+    // Any day of this month other than today, found by its number.
+    const target = new Date().getDate() === 15 ? 16 : 15;
+    const cell = page
+      .locator('.cell:not(.cell--outside)')
+      .filter({ has: page.locator(`.cell__day:text-is("${target}")`) });
+
+    await chip.dragTo(cell);
+
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards[0].lists
+        .flatMap((list) => list.cards)
+        .find((candidate) => candidate.title === title);
+      return card?.due && new Date(card.due).getDate() === target;
+    }, `${title} nao foi reagendado para o dia ${target}`);
+
+    await page.click('.toolbar__view:has-text("Quadro")');
+    await page.waitForSelector('.canvas__lists');
+  });
+
   await check('a janela newcard abre com seu proprio bundle', async () => {
     await page.evaluate(() => window.electron.ipc.send('window-open', 'newcard'));
     const newcard = await app.waitForEvent('window', { timeout: 10_000 });

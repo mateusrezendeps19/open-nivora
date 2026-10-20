@@ -1,12 +1,76 @@
 .sidebar {
-  flex: 0 0 248px;
+  flex: 0 0 var(--sidebar-width);
   display: flex;
   flex-direction: column;
   gap: var(--space-100);
   padding: var(--space-150);
   background: var(--surface);
   border-right: 1px solid var(--border-subtle);
+  overflow-x: hidden;
   overflow-y: auto;
+  transition: flex-basis var(--motion) var(--ease);
+}
+
+.sidebar--collapsed {
+  --sidebar-width: 56px;
+  align-items: center;
+  gap: var(--space-150);
+  padding: var(--space-150) var(--space-100);
+}
+
+.sidebar__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+}
+
+.sidebar__toggle {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.sidebar__head .sidebar__toggle {
+  margin-left: auto;
+}
+
+.sidebar__toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* Collapsed: one tile per board, carrying its color and initial. */
+.sidebar__rail {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-50);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__tile {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+
+.sidebar__tile--active {
+  border-color: var(--accent);
 }
 
 .sidebar__heading {

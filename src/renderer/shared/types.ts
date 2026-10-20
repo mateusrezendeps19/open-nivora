@@ -122,11 +122,17 @@ export interface Board {
   automations: Rule[];
 }
 
+/** Which surface the main window shows. */
+export type AppView = 'board' | 'calendar';
+
 export interface Prefs {
   theme: 'dark' | 'light';
   locale: string;
   confirmCardDelete: boolean;
   automationsEnabled: boolean;
+  /** The left sidebar is collapsed to its rail of board tiles. */
+  sidebarCollapsed: boolean;
+  view: AppView;
 }
 
 /** The whole persisted document, written as one JSON file in userData. */

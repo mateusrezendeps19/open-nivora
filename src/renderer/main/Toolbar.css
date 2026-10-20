@@ -6,6 +6,32 @@
   min-width: 0;
 }
 
+.toolbar__views {
+  display: flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.toolbar__view {
+  padding: 3px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toolbar__view:hover {
+  color: var(--text);
+}
+
+.toolbar__view--on {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-raised);
+}
+
 .toolbar__search {
   position: relative;
   display: flex;

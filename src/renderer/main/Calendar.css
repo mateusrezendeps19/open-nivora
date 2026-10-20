@@ -1,0 +1,423 @@
+.calendar {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--space-100);
+  padding: var(--space-150);
+}
+
+/* ------------------------------------------------------------------ *
+ * Top bar
+ * ------------------------------------------------------------------ */
+
+.calendar__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  padding: var(--space-50) var(--space-100);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.calendar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+}
+
+.calendar__step {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.calendar__step:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.calendar__nav .btn {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.calendar__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  margin-left: auto;
+}
+
+.calendar__count {
+  color: var(--text-subtle);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.calendar__modes {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.calendar__mode {
+  padding: 3px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.calendar__mode:hover {
+  color: var(--text);
+}
+
+.calendar__mode--on {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-raised);
+}
+
+/* ------------------------------------------------------------------ *
+ * Grid
+ * ------------------------------------------------------------------ */
+
+.calendar__body {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-100);
+  min-height: 0;
+}
+
+.calendar__grid {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-100);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.calendar__weekdays,
+.calendar__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-50);
+}
+
+.calendar__weekday {
+  padding: 2px 6px var(--space-50);
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The rows share the height left over, so a 5 or 6 week month still fits. */
+.calendar__weeks {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  min-height: 0;
+}
+
+.calendar__weeks .calendar__week {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.calendar__week--only {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Day cell
+ * ------------------------------------------------------------------ */
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  transition:
+    background var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease);
+}
+
+.cell--outside {
+  background: transparent;
+  opacity: 0.5;
+}
+
+.cell--today {
+  border-color: var(--accent);
+}
+
+.cell--drop {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-sunken));
+}
+
+.cell__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+  padding: 0 2px 2px;
+}
+
+.cell__day {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cell--today .cell__day {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.cell__count {
+  margin-left: auto;
+  color: var(--text-disabled);
+  font-size: 10px;
+}
+
+.cell__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cell__empty {
+  padding: var(--space-100) 2px;
+  color: var(--text-disabled);
+  font-size: 11px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Card chip
+ * ------------------------------------------------------------------ */
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.3;
+  transition:
+    background var(--motion-fast) var(--ease),
+    opacity var(--motion-fast) var(--ease);
+}
+
+.chip:hover {
+  background: var(--surface-hover);
+}
+
+.chip--dragging {
+  opacity: 0.35;
+}
+
+.chip--late {
+  border-left-color: var(--danger);
+}
+
+.chip--today {
+  border-left-color: var(--warning);
+}
+
+.chip--done {
+  border-left-color: var(--success);
+}
+
+.chip--done .chip__title {
+  color: var(--text-subtle);
+  text-decoration: line-through;
+}
+
+.chip__labels {
+  display: flex;
+  gap: 2px;
+}
+
+.chip__label {
+  width: 14px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.chip__line {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chip__time {
+  flex: 0 0 auto;
+  color: var(--text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip__list {
+  color: var(--text-disabled);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Cards with no due date
+ * ------------------------------------------------------------------ */
+
+.undated {
+  flex: 0 0 216px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  padding: var(--space-100);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.undated--drop {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+
+.undated__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+}
+
+.undated__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.undated__count {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.undated__toggle {
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.undated__toggle:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.undated__cards {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.undated__empty,
+.undated__hint {
+  margin: 0;
+  color: var(--text-disabled);
+  font-size: 11px;
+}
+
+.undated__show {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-100) 6px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+  color: var(--text-subtle);
+}
+
+.undated__show:hover {
+  color: var(--text);
+}
+
+.undated__show-label {
+  writing-mode: vertical-rl;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

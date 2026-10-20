@@ -5,9 +5,11 @@ import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
 import { referencedAssets } from '../shared/document';
+import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
 import type { SettingsTab } from '../shared/settings/Settings';
 import { BoardCanvas } from './BoardCanvas';
+import { Calendar } from './Calendar';
 import { CardModal } from './CardModal';
 import { SettingsPanel } from './SettingsPanel';
 import { Sidebar } from './Sidebar';
@@ -19,11 +21,18 @@ export function App() {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [query, setQuery] = useState('');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const swept = useRef(false);
   const { ipc } = bridge();
 
   useTheme(doc.prefs.theme);
+
+  // The sidebar and the current view live in the document, so the window opens
+  // the way it was left.
+  const { sidebarCollapsed, view } = doc.prefs;
+  const setPrefs = useCallback(
+    (patch: Partial<Prefs>) => dispatch({ type: 'prefs/set', patch }),
+    [dispatch],
+  );
 
   const openCard = useMemo(() => {
     if (!openCardId) return null;
@@ -105,8 +114,11 @@ export function App() {
       <TitleBar title={`${activeBoard.title} - Nivora`}>
         <Toolbar
           query={query}
+          view={view}
+          sidebarCollapsed={sidebarCollapsed}
           onQueryChange={setQuery}
-          onToggleSidebar={() => setSidebarOpen((open) => !open)}
+          onViewChange={(next) => setPrefs({ view: next })}
+          onToggleSidebar={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
           onNewCard={openNewCard}
           onFind={openFind}
           onSettings={() => setSettingsTab('appearance')}
@@ -114,24 +126,34 @@ export function App() {
       </TitleBar>
 
       <div className="app__body" style={backgroundStyle(activeBoard.background)}>
-        {sidebarOpen && (
-          <Sidebar
-            boards={doc.boards}
-            activeBoardId={activeBoard.id}
-            onSelect={(boardId) => dispatch({ type: 'board/select', boardId })}
-            onAdd={(title, color) => dispatch({ type: 'board/add', title, color })}
-            onRename={(boardId, title) => dispatch({ type: 'board/rename', boardId, title })}
-            onRemove={(boardId) => dispatch({ type: 'board/remove', boardId })}
+        <Sidebar
+          boards={doc.boards}
+          activeBoardId={activeBoard.id}
+          collapsed={sidebarCollapsed}
+          onToggle={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
+          onSelect={(boardId) => dispatch({ type: 'board/select', boardId })}
+          onAdd={(title, color) => dispatch({ type: 'board/add', title, color })}
+          onRename={(boardId, title) => dispatch({ type: 'board/rename', boardId, title })}
+          onRemove={(boardId) => dispatch({ type: 'board/remove', boardId })}
+        />
+
+        {view === 'calendar' ? (
+          <Calendar
+            board={activeBoard}
+            labels={doc.labels}
+            query={query}
+            dispatch={dispatch}
+            onOpenCard={setOpenCardId}
+          />
+        ) : (
+          <BoardCanvas
+            board={activeBoard}
+            labels={doc.labels}
+            query={query}
+            dispatch={dispatch}
+            onOpenCard={setOpenCardId}
           />
         )}
-
-        <BoardCanvas
-          board={activeBoard}
-          labels={doc.labels}
-          query={query}
-          dispatch={dispatch}
-          onOpenCard={setOpenCardId}
-        />
       </div>
 
       {settingsTab && (

@@ -42,7 +42,14 @@ function fixture(makeRules: (ids: ListIds) => Rule[] = () => []): BoardDocument 
     boards: [board],
     activeBoardId: board.id,
     labels: DEFAULT_LABELS,
-    prefs: { theme: 'dark', locale: 'pt-BR', confirmCardDelete: true, automationsEnabled: true },
+    prefs: {
+      theme: 'dark',
+      locale: 'pt-BR',
+      confirmCardDelete: true,
+      automationsEnabled: true,
+      sidebarCollapsed: false,
+      view: 'board',
+    },
   };
 }
 

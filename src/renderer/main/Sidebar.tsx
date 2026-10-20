@@ -6,6 +6,8 @@ import './Sidebar.css';
 interface SidebarProps {
   boards: Board[];
   activeBoardId: string;
+  collapsed: boolean;
+  onToggle: () => void;
   onSelect: (boardId: string) => void;
   onAdd: (title: string, color: string) => void;
   onRename: (boardId: string, title: string) => void;
@@ -15,6 +17,8 @@ interface SidebarProps {
 export function Sidebar({
   boards,
   activeBoardId,
+  collapsed,
+  onToggle,
   onSelect,
   onAdd,
   onRename,
@@ -32,9 +36,76 @@ export function Sidebar({
     setAdding(false);
   }
 
+  /**
+   * Collapsed, the sidebar keeps the one thing it is for - switching boards -
+   * as a rail of colored tiles, so the board can have the width back without
+   * the list disappearing entirely.
+   */
+  if (collapsed) {
+    return (
+      <aside className="sidebar sidebar--collapsed">
+        <button
+          type="button"
+          className="sidebar__toggle"
+          onClick={onToggle}
+          aria-label="Expandir a barra lateral"
+          aria-expanded={false}
+          title="Expandir"
+        >
+          &rsaquo;
+        </button>
+
+        <ul className="sidebar__rail">
+          {boards.map((board) => (
+            <li key={board.id}>
+              <button
+                type="button"
+                className={`sidebar__tile${
+                  board.id === activeBoardId ? ' sidebar__tile--active' : ''
+                }`}
+                style={{ background: board.color }}
+                onClick={() => onSelect(board.id)}
+                title={board.title}
+                aria-label={`Abrir ${board.title}`}
+                aria-current={board.id === activeBoardId}
+              >
+                {board.title.trim().charAt(0).toUpperCase() || '?'}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <button
+          type="button"
+          className="sidebar__toggle"
+          onClick={() => {
+            onToggle();
+            setAdding(true);
+          }}
+          aria-label="Criar quadro"
+          title="Criar quadro"
+        >
+          +
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className="sidebar">
-      <h2 className="sidebar__heading">Seus quadros</h2>
+      <div className="sidebar__head">
+        <h2 className="sidebar__heading">Seus quadros</h2>
+        <button
+          type="button"
+          className="sidebar__toggle"
+          onClick={onToggle}
+          aria-label="Recolher a barra lateral"
+          aria-expanded
+          title="Recolher"
+        >
+          &lsaquo;
+        </button>
+      </div>
 
       <ul className="sidebar__list">
         {boards.map((board) => (
