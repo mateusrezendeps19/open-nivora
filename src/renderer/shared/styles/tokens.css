@@ -10,6 +10,13 @@
  */
 
 :root {
+  /*
+   * Tells the engine to draw the native parts it owns - the select popup, the
+   * date picker, checkboxes, scrollbars - in the dark variant. Without it they
+   * come out light regardless of what the CSS above says.
+   */
+  color-scheme: dark;
+
   --surface-sunken: #1d2125;
   --surface: #22272b;
   --surface-raised: #282e33;
@@ -60,6 +67,8 @@
 }
 
 :root[data-theme='light'] {
+  color-scheme: light;
+
   --surface-sunken: #f1f2f4;
   --surface: #ffffff;
   --surface-raised: #ffffff;

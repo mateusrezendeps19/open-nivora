@@ -30,9 +30,28 @@ button {
 }
 
 input,
-textarea {
+textarea,
+select,
+optgroup,
+option {
   font: inherit;
   color: inherit;
+}
+
+/*
+ * The dropdown popup is drawn outside the page, so it does not pick up the
+ * ancestor background. Naming it explicitly keeps the list on palette.
+ */
+option {
+  background: var(--surface-overlay);
+}
+
+/* Checkboxes and the date picker follow the accent instead of the OS blue. */
+input[type='checkbox'],
+input[type='radio'],
+input[type='date'],
+input[type='number'] {
+  accent-color: var(--accent);
 }
 
 :focus-visible {

@@ -237,6 +237,84 @@ try {
     assert.equal(status, 'recusou', 'travessia de caminho deveria ser bloqueada');
   });
 
+  await check('nos dois temas todo campo de formulario tem contraste legivel', async () => {
+    // Regressao: `select` ficava fora da heranca de cor em base.css e caia no
+    // preto padrao do navegador sobre o fundo escuro, enquanto input e
+    // textarea herdavam o claro - dai "algumas brancas, outras pretas".
+    const measure = () =>
+      page.evaluate(() => {
+        const parse = (value) => (value.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+        const luminance = ([r, g, b]) =>
+          [r, g, b]
+            .map((channel) => channel / 255)
+            .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+            .reduce((acc, c, i) => acc + c * [0.2126, 0.7152, 0.0722][i], 0);
+
+        // Um fundo transparente herda do ancestral pintado mais proximo.
+        function backgroundOf(element) {
+          let node = element;
+          while (node) {
+            const value = getComputedStyle(node).backgroundColor;
+            const rgba = value.match(/[\d.]+/g)?.map(Number) ?? [];
+            if (rgba.length < 4 || rgba[3] > 0.5) return parse(value);
+            node = node.parentElement;
+          }
+          return [0, 0, 0];
+        }
+
+        return [...document.querySelectorAll('.field')].map((element) => {
+          const style = getComputedStyle(element);
+          const [light, dark] = [luminance(parse(style.color)), luminance(backgroundOf(element))]
+            .sort((a, b) => b - a);
+          return {
+            tag: element.tagName.toLowerCase(),
+            color: style.color,
+            ratio: (light + 0.05) / (dark + 0.05),
+          };
+        });
+      });
+
+    for (const theme of ['dark', 'light']) {
+      await page.click('.settings__tab:has-text("Aparencia")');
+      await page.click(`.segmented button:has-text("${theme === 'dark' ? 'Escuro' : 'Branco'}")`);
+
+      // O editor de regras e onde ficam os <select> do app.
+      await page.click('.settings__tab:has-text("Automacoes")');
+      await page.waitForSelector('.auto__list');
+      const newRule = page.locator('.settings__panel .btn:has-text("+ Nova regra")');
+      if (await newRule.count()) await newRule.click();
+      await page.waitForSelector('.auto__editor select');
+
+      const fields = await measure();
+      assert.ok(fields.length >= 3, `poucos campos medidos no tema ${theme}: ${fields.length}`);
+      assert.ok(
+        fields.some((field) => field.tag === 'select'),
+        `nenhum select medido no tema ${theme}`,
+      );
+
+      const unreadable = fields.filter((field) => field.ratio < 4.5);
+      assert.deepEqual(
+        unreadable.map((field) => `${field.tag} ${field.color} ratio=${field.ratio.toFixed(2)}`),
+        [],
+        `campos sem contraste no tema ${theme}`,
+      );
+
+      // O contraste acima nao alcanca as partes que o navegador desenha fora da
+      // pagina: a lista aberta do select, o calendario do input de data, a
+      // checkbox. Quem governa essas e color-scheme, entao ela e verificada
+      // diretamente - sem isso, um dos dois lados da correcao poderia voltar a
+      // regredir sem o teste notar.
+      const scheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+      assert.equal(scheme, theme, `color-scheme deveria acompanhar o tema ${theme}`);
+
+      await page.click('.auto__editor-actions .btn:has-text("Cancelar")');
+    }
+
+    // As verificacoes seguintes contam com o tema escuro.
+    await page.click('.settings__tab:has-text("Aparencia")');
+    await page.click('.segmented button:has-text("Escuro")');
+  });
+
   await check('a aba Automacoes lista a regra da semente', async () => {
     await page.click('.settings__tab:has-text("Automacoes")');
     await page.waitForSelector('.auto__list');
