@@ -1,141 +1,171 @@
 # Nivora
 
-Quadros kanban em Electron + React + TypeScript. O **shell desktop** foi reconstruído a partir da
-engenharia reversa do app oficial do Trello instalado na máquina, usando o
-[REA](https://github.com/morluto/rea); a **interface de quadros** é implementação original.
+**An offline kanban board for the desktop, whose Electron shell was rebuilt from a reverse
+engineering analysis of the official Trello desktop app.**
 
-O relatório completo da análise — o que foi recuperado, o que não estava no binário, e o que aqui
-veio de evidência — está em [`docs/REVERSE-ENGINEERING.md`](docs/REVERSE-ENGINEERING.md).
+[![License: MIT](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
+[![Electron](https://img.shields.io/badge/Electron-44-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-## Rodando
+Nivora is two things at once. The **desktop shell** — the window inventory, the IPC contract, the
+frameless title bar, the geometry — was reconstructed from evidence extracted out of the Trello
+desktop app's `app.asar` with [REA](https://github.com/morluto/rea). The **board interface** —
+cards, drag and drop, labels, attachments, automations — is original work, because Trello's own UI
+is not in the binary at all: it is loaded from `trello.com` at runtime.
 
-```bash
-npm install          # instala deps e baixa o binário do Electron
-npm run dev          # Vite + Electron com recarga do renderer
-npm start            # build de produção e abre o app
-```
+Everything runs offline. No account, no server, no network.
 
-Outros comandos:
+The full analysis — what was recovered, what was not in the binary, and which part of this
+repository came from which piece of evidence — is in
+[`docs/REVERSE-ENGINEERING.md`](docs/REVERSE-ENGINEERING.md) (written in Portuguese).
 
-```bash
-npm test             # 41 testes do reducer e do motor de automacoes (runner do Node)
-npm run smoke        # smoke test ponta a ponta no app empacotado (Playwright)
-npm run typecheck    # tsc --noEmit
-npm run build        # bundle do main/preload (esbuild) + renderers (Vite)
-```
+---
 
-> O npm 12 bloqueia scripts de instalação por padrão. O `package.json` declara
-> `allowScripts: ["electron", "esbuild"]`, porque o Electron precisa do postinstall para baixar seu
-> binário. Se ele não baixar, rode `node node_modules/electron/install.js`.
+## Features
 
-## O que o app faz
+- **Boards** — several of them, each with its own background
+- **Lists** — rename in place, reorder by dragging, delete
+- **Cards** — drag and drop between lists and within a list, with a live insertion line
+- **Card detail** — done state, description, labels, due date, checklist with progress, attachments
+- **Board background** — solid colors, eight gradients, or an image from disk
+- **Attachments and images** — pick files or drop them on a card; images get a thumbnail and can
+  become the card cover; open with the system app or reveal in the folder
+- **Automations** — per-board rules, in the spirit of Trello's Butler
+- **Filter** — by title and description, preserving real indices so a drop still lands correctly
+- **Light and dark themes**
+- **Shortcuts** — `Ctrl+N` new card, `Ctrl+F` find, `Ctrl+K` filter, `Ctrl+,` settings
+- **Local storage** — one JSON file in `userData`, written atomically
 
-- Vários quadros na sidebar, cada um com seu próprio fundo
-- Listas com renomear no lugar, reordenação por arrastar, e exclusão
-- Cartões com arrastar e soltar entre listas e dentro da mesma lista, com linha de inserção
-- Modal de cartão: concluir, título, descrição, etiquetas, prazo, checklist com progresso e anexos
-- **Configurações** num só lugar, em abas: Aparência (tema branco/escuro), Fundo, Automações, Dados
-- **Fundo do quadro**: cores, oito gradientes ou uma imagem do disco
-- **Anexos e imagens**: escolher arquivos ou arrastar para o cartão; imagens ganham miniatura e
-  podem virar capa do cartão; abrir com o app do sistema ou revelar na pasta
-- **Automações**: regras por quadro, no espírito do Butler do Trello
-- Filtro por título e descrição, preservando os índices reais para o drop cair no lugar certo
-- Atalhos: `Ctrl+N` novo cartão, `Ctrl+F` localizar, `Ctrl+K` filtrar, `Ctrl+,` configurações
-- Tudo offline, num único JSON em `userData`, com escrita atômica
+### Settings
 
-### Configurações
+A single **Settings** button on the toolbar opens four tabs: Appearance (theme and delete
+confirmation), Background, Automations, and Data. The Settings window (`Ctrl+,`) renders **the same
+component** as the in-board modal, so the two surfaces cannot drift apart.
 
-Um único botão **Configurações** na toolbar, com quatro abas: Aparência (tema branco/escuro e
-confirmação de exclusão), Fundo, Automações e Dados. A janela de Configurações (`Ctrl+,`) renderiza
-**o mesmo componente** que o modal do quadro, então as duas superfícies não podem divergir.
+### Automations
 
-### Automações
+A rule is one trigger plus a list of actions.
 
-Uma regra é um gatilho e uma lista de ações.
-
-| Gatilhos | Ações |
+| Triggers | Actions |
 |---|---|
-| cartão criado em *lista* | **marcar / desmarcar o cartão como concluído** |
-| cartão movido para *lista* | mover para *lista* |
-| *etiqueta* adicionada | adicionar / remover *etiqueta* |
-| checklist concluída | definir prazo em *N* dias, ou remover o prazo |
-| | adicionar item à checklist, ou marcar a checklist como concluída |
+| card created in *list* | mark / unmark the card as done |
+| card moved to *list* | move to *list* |
+| *label* added | add / remove *label* |
+| checklist completed | set due date in *N* days, or clear it |
+| | add a checklist item, or mark the checklist complete |
 
-Algumas ações só fazem algo se o cartão estiver na forma certa — `marcar a checklist como
-concluída` não tem o que fazer num cartão sem itens pendentes, por exemplo. O editor de regras
-mostra essa ressalva inline, para uma regra que não pode agir não ser confundida com uma regra
-quebrada. Para concluir o cartão em si, independente de checklist ou prazo, a ação é **marcar o
-cartão como concluído**.
+Rules run inside the reducer, right after the user's action, and they chain: a rule that moves a
+card can trigger the rule on the destination list. Two guards prevent loops — chaining stops after
+the third pass, and **a rule fires at most once per card per dispatch**. The second one is what
+guarantees termination: the (rule, card) pairs only ever grow, so a cycle runs out of fresh pairs
+and stops. Loading a document from disk never fires a rule.
 
-As regras rodam dentro do reducer, logo depois da ação do usuário, e encadeiam: uma regra que move
-o cartão pode acionar a regra da lista de destino. Dois limites impedem loop — o encadeamento para
-na terceira passada, e **cada regra roda no máximo uma vez por cartão por dispatch**. O segundo é o
-que garante o término: os pares (regra, cartão) só crescem, então um ciclo esgota os pares novos e
-para. Carregar um documento do disco não dispara regra alguma.
+Some actions quietly do nothing unless the card is in the right shape — *mark the checklist
+complete* has nothing to do on a card with no pending items, for instance. The rule editor shows
+that caveat inline, so a rule that cannot act is not mistaken for a broken one. To complete the
+card itself, regardless of checklist or due date, the action is **mark the card as done**.
 
-### Fundo e anexos
+### Background and attachments
 
-Arquivos escolhidos são copiados para `userData/assets`, nomeados pelo hash do conteúdo (o mesmo
-arquivo não é guardado duas vezes), com limite de 25 MB. O renderer os lê por um esquema próprio,
-`nivora://assets/<nome>`, registrado como privilegiado no processo main — não por `file://`. Assim a
-página mantém a CSP fechada e nunca recebe um caminho para o resto do disco; o handler recusa
-qualquer caminho que escape da pasta de ativos.
+Files are copied into `userData/assets`, named by their content hash (so the same file is never
+stored twice), capped at 25 MB. The renderer reads them through a dedicated privileged scheme,
+`nivora://assets/<name>`, registered in the main process — not through `file://`. That keeps the
+page's CSP tight and never hands it a path into the rest of the disk; the handler rejects anything
+that tries to escape the asset folder.
 
-Remover um anexo, trocar a imagem de fundo ou excluir um cartão apaga o arquivo na hora. Na
-inicialização há ainda uma varredura de órfãos, que só roda quando um documento foi realmente lido
-do disco — um documento semente não referencia nada, e a varredura acharia que tudo é órfão.
+Removing an attachment, replacing the background image, or deleting a card drops the file right
+away. There is also an orphan sweep at startup, which only runs when a document was genuinely read
+from disk — a seeded document references nothing, and the sweep would think everything is an orphan.
 
-O Trello oferece fotos do Unsplash, o que exige rede e chave de API. O Nivora é offline, então o
-equivalente aqui é escolher um arquivo local.
+Trello offers Unsplash photos, which needs the network and an API key. Nivora is offline, so the
+equivalent here is picking a local file.
 
-## Arquitetura
+---
+
+## Running it
+
+```bash
+npm install          # installs dependencies and downloads the Electron binary
+npm run dev          # Vite + Electron with renderer reload
+npm start            # production build, then launch
+```
+
+Other commands:
+
+```bash
+npm test             # 41 reducer and automation-engine tests (Node's test runner)
+npm run smoke        # 13 end-to-end checks against the packaged app (Playwright)
+npm run typecheck    # tsc --noEmit
+npm run build        # main/preload bundle (esbuild) + renderers (Vite)
+```
+
+> npm 12 blocks install scripts by default. `package.json` declares
+> `allowScripts: ["electron", "esbuild"]`, because Electron needs its postinstall to download the
+> platform binary. If it does not download, run `node node_modules/electron/install.js`.
+
+---
+
+## Architecture
 
 ```
 electron/
-  channels.ts        contrato IPC; marca o que é literal da evidência e o que é símbolo
-  windows.ts         as 10 janelas do app original, com a geometria recuperada
-  main.ts            handlers IPC, menu, find-in-page, ciclo de vida, trava de navegação
-  store.ts           persistência em JSON no userData, escrita atômica via rename
-  assets.ts          loja de ativos, protocolo nivora:// e varredura de órfãos
+  channels.ts        IPC contract; marks what is a literal from the evidence and what is a symbol
+  windows.ts         the 10 windows of the original app, with the recovered geometry
+  main.ts            IPC handlers, menu, find-in-page, lifecycle, navigation lock
+  store.ts           JSON persistence in userData, atomic write via rename
+  assets.ts          asset store, nivora:// protocol, orphan sweep
   preload/
-    bridge.ts        contextBridge: electron.{logger, ipc} com allowlist de canais
-    main.ts          preload da janela main (expõe também init_config)
-    window.ts        preload das demais janelas
+    bridge.ts        contextBridge: electron.{logger, ipc} with a channel allowlist
+    main.ts          preload for the main window (also exposes init_config)
+    window.ts        preload for every other window
 src/renderer/
-  shared/            tipos, documento, reducer, automacoes, ativos, tokens, TitleBar
-  shared/settings/   abas de Configuracoes, usadas pelo modal e pela janela
-  main/              o app de quadros
-  newcard/           janela de cartão rápido (500×325)
-  preferences/       janela de Configuracoes (900×640)
-  find_in_page/      overlay de busca
-  welcome/           tela inicial (900×620)
+  shared/            types, document, reducer, automations, assets, tokens, TitleBar
+  shared/settings/   the Settings tabs, used by both the modal and the window
+  main/              the board app
+  newcard/           quick-card window (500x325)
+  preferences/       Settings window (900x640)
+  find_in_page/      search overlay
+  welcome/           intro screen (900x620)
 tests/
-  reducer.test.ts     lógica de movimentação e normalização do documento
-  automations.test.ts gatilhos, ações, encadeamento e término das regras
-  smoke.mjs           preload, allowlist, titlebar, persistência, fundo, anexos e janelas
+  reducer.test.ts      move maths and document normalization
+  automations.test.ts  triggers, actions, chaining, termination
+  smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast
 docs/
-  REVERSE-ENGINEERING.md      relatório da análise
-  rea-evidence-summary.json   extrato da evidência do REA
+  REVERSE-ENGINEERING.md      the analysis report
+  rea-evidence-summary.json   extract of the REA evidence
 ```
 
-### Por que o shell é assim
+### Why the shell looks like this
 
-O app original cria toda janela com `frame: false`, então minimizar, maximizar e fechar precisam
-atravessar o IPC — é o que a `TitleBar` faz. Os dez renderers, a geometria, os sete membros do
-`electron.ipc`, o `init_config` exclusivo da janela `main` e os canais `window-*` / `app-store` /
-`find-in-page-*` vieram todos da análise do `app.asar`.
+The original app creates every window with `frame: false`, so minimise, maximise and close all have
+to round-trip through IPC — which is what `TitleBar` does. The ten renderers, the geometry, the
+seven members of `electron.ipc`, the `init_config` that only the `main` window gets, and the
+`window-*` / `app-store` / `find-in-page-*` channels all came out of the `app.asar` analysis.
 
-Os renderers conversam entre si pelo documento: qualquer janela escreve via `app-store`, o processo
-main transmite a mudança, e as outras adotam o novo estado. Foi assim que a janela `newcard` ficou
-independente do app principal.
+Renderers talk to each other through the document: any window writes via `app-store`, the main
+process broadcasts the change, and the others adopt it. That is how the `newcard` window stays
+independent of the main app.
 
-### O que não veio do binário
+### What did not come from the binary
 
-A interface de quadros do Trello não está no app: ela é carregada de `trello.com` em runtime. Então
-modelo de dados, reducer, arrastar e soltar, etiquetas, prazos, checklists e o modal de cartão são
-implementação própria. Nenhum código, asset, ícone ou valor de token do Atlaskit foi copiado.
+Trello's board interface is not in the app — it is loaded from `trello.com` at runtime. So the data
+model, the reducer, drag and drop, labels, due dates, checklists, the card modal, attachments, the
+background picker and the automation engine are all original. No proprietary code, assets, icons or
+Atlaskit token values were copied.
 
-## Licença e marcas
+---
 
-Projeto de estudo. "Trello" e a identidade visual associada pertencem à Atlassian; o Nivora não usa
-a marca, não reutiliza código ou assets proprietários e não se apresenta como o produto oficial.
+## License
+
+[MIT](LICENSE) © 2026 Mateus Rezende
+
+"Trello" and its visual identity belong to Atlassian. Nivora does not use the trademark, does not
+reuse proprietary code or assets, and does not present itself as the official product. The reverse
+engineering covered interface facts — IPC channel names, file names, window dimensions, the shape
+of the `contextBridge` contract — the kind of fact that exists for interoperability.
+
+## Author
+
+**Mateus Rezende** — [LinkedIn](https://www.linkedin.com/in/mateus-rezende-626687310) ·
+[GitHub](https://github.com/mateusrezendeps19)
