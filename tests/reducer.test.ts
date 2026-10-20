@@ -12,11 +12,11 @@ function fixture(): BoardDocument {
   left.cards = [emptyCard('a'), emptyCard('b'), emptyCard('c')];
   board.lists = [left, right];
   return {
-    version: 1,
+    version: 2,
     boards: [board],
     activeBoardId: board.id,
     labels: [],
-    prefs: { theme: 'dark', locale: 'pt-BR', confirmCardDelete: true },
+    prefs: { theme: 'dark', locale: 'pt-BR', confirmCardDelete: true, automationsEnabled: true },
   };
 }
 
@@ -131,15 +131,21 @@ test('normalize aceita documento parcial e preenche os defaults', () => {
   const partial = { boards: [{ title: 'Solto', lists: [{ cards: [{ title: 'x' }] }] }] };
   const doc = normalize(partial);
 
-  assert.equal(doc.version, 1);
+  assert.equal(doc.version, 2);
   assert.equal(doc.boards.length, 1);
   assert.equal(doc.boards[0].title, 'Solto');
   assert.equal(doc.activeBoardId, doc.boards[0].id);
   assert.ok(doc.boards[0].lists[0].id);
   assert.equal(doc.boards[0].lists[0].cards[0].title, 'x');
   assert.deepEqual(doc.boards[0].lists[0].cards[0].labelIds, []);
+  assert.deepEqual(doc.boards[0].lists[0].cards[0].attachments, []);
+  assert.equal(doc.boards[0].lists[0].cards[0].coverAttachmentId, null);
+  assert.deepEqual(doc.boards[0].automations, []);
+  // Sem background gravado, o fallback e a cor do quadro.
+  assert.deepEqual(doc.boards[0].background, { kind: 'color', value: '#0079bf' });
   assert.ok(doc.labels.length > 0);
   assert.equal(doc.prefs.theme, 'dark');
+  assert.equal(doc.prefs.automationsEnabled, true);
 });
 
 test('normalize substitui entradas invalidas pelo documento semente', () => {

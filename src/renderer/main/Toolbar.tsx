@@ -7,6 +7,10 @@ interface ToolbarProps {
   onToggleSidebar: () => void;
   onNewCard: () => void;
   onFind: () => void;
+  onBackground: () => void;
+  onAutomations: () => void;
+  /** Enabled rules on the active board, shown as a badge. */
+  automationCount: number;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
 }
@@ -17,6 +21,9 @@ export function Toolbar({
   onToggleSidebar,
   onNewCard,
   onFind,
+  onBackground,
+  onAutomations,
+  automationCount,
   theme,
   onToggleTheme,
 }: ToolbarProps) {
@@ -53,6 +60,13 @@ export function Toolbar({
       </label>
 
       <div className="toolbar__actions">
+        <button type="button" className="btn btn--subtle" onClick={onBackground}>
+          Fundo
+        </button>
+        <button type="button" className="btn btn--subtle" onClick={onAutomations}>
+          Automacoes
+          {automationCount > 0 && <span className="toolbar__badge">{automationCount}</span>}
+        </button>
         {hasShell() && (
           <>
             <button type="button" className="btn btn--subtle" onClick={onNewCard}>

@@ -182,6 +182,23 @@ O REA reporta 17 limitações. As que importam para este trabalho:
 (`src/renderer/shared/types.ts`), o reducer (`reducer.ts`), arrastar e soltar, etiquetas, prazos,
 checklists, filtro, sidebar de quadros e o modal de cartão.
 
+### Funcionalidades que a evidência não cobre
+
+Fundo do quadro, anexos, imagens e automações foram pedidos depois, inspirados no Trello, e **nada
+neles veio desta análise** — a UI do Trello não está no binário, e os sete bundles de renderer que
+poderiam conter pistas são justamente os que o REA não conseguiu parsear (limitação 1). São projeto
+próprio:
+
+| Funcionalidade | Onde | Observação |
+|---|---|---|
+| Fundo do quadro | `shared/background.ts`, `main/BackgroundPanel.tsx` | Cores, gradientes próprios e imagem local. O Trello usa fotos do Unsplash, que exigem rede e chave de API; o Nivora é offline. |
+| Anexos e imagens | `electron/assets.ts`, `main/Attachments.tsx` | Loja de ativos em `userData/assets` e protocolo `nivora://`. Os canais `assets-*` são invenção do Nivora, marcados como tal em `electron/channels.ts`. |
+| Automações | `shared/automations.ts`, `main/AutomationsPanel.tsx` | Inspirado no Butler do Trello, mas o motor, os gatilhos, as ações e as travas contra loop são desenho próprio. |
+
+Os temas Atlaskit embutidos no asar provam que o app original usa um sistema de tokens, e
+`tokens.css` segue essa mesma estrutura — mas com cores e escalas próprias, nunca os valores da
+Atlassian.
+
 ## Nota sobre direito autoral
 
 O que foi copiado daqui: nomes de canais IPC, nomes de arquivos, dimensões de janela e a forma do

@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { sweepAssets } from '../shared/assets';
+import { backgroundStyle } from '../shared/background';
 import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
+import { referencedAssets } from '../shared/document';
 import { useDocument, useTheme } from '../shared/useDocument';
+import { AutomationsPanel } from './AutomationsPanel';
+import { BackgroundPanel } from './BackgroundPanel';
 import { BoardCanvas } from './BoardCanvas';
 import { CardModal } from './CardModal';
 import { Sidebar } from './Sidebar';
@@ -10,10 +15,12 @@ import { Toolbar } from './Toolbar';
 import './App.css';
 
 export function App() {
-  const { doc, activeBoard, dispatch, loaded } = useDocument();
+  const { doc, activeBoard, dispatch, loaded, persisted } = useDocument();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<'background' | 'automations' | null>(null);
   const [query, setQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const swept = useRef(false);
   const { ipc } = bridge();
 
   useTheme(doc.prefs.theme);
@@ -31,6 +38,15 @@ export function App() {
   useEffect(() => {
     if (openCardId && !openCard) setOpenCardId(null);
   }, [openCard, openCardId]);
+
+  // Files left behind by cards or backgrounds removed in an earlier session.
+  // Guarded by `persisted`, since a seeded document references nothing and the
+  // sweep would then look like every file is an orphan.
+  useEffect(() => {
+    if (!loaded || !persisted || swept.current) return;
+    swept.current = true;
+    void sweepAssets(referencedAssets(doc));
+  }, [doc, loaded, persisted]);
 
   const openFind = useCallback(() => {
     if (hasShell()) ipc.send(WindowChannel.OPEN, 'find_in_page');
@@ -56,6 +72,7 @@ export function App() {
         document.querySelector<HTMLInputElement>('.toolbar__search input')?.focus();
       } else if (event.key === 'Escape') {
         setOpenCardId(null);
+        setPanel(null);
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -84,7 +101,7 @@ export function App() {
   }
 
   return (
-    <div className="app" style={{ ['--board-color' as string]: activeBoard.color }}>
+    <div className="app">
       <TitleBar title={`${activeBoard.title} - Nivora`}>
         <Toolbar
           query={query}
@@ -92,6 +109,9 @@ export function App() {
           onToggleSidebar={() => setSidebarOpen((open) => !open)}
           onNewCard={openNewCard}
           onFind={openFind}
+          onBackground={() => setPanel('background')}
+          onAutomations={() => setPanel('automations')}
+          automationCount={activeBoard.automations.filter((rule) => rule.enabled).length}
           theme={doc.prefs.theme}
           onToggleTheme={() =>
             dispatch({
@@ -102,7 +122,7 @@ export function App() {
         />
       </TitleBar>
 
-      <div className="app__body">
+      <div className="app__body" style={backgroundStyle(activeBoard.background)}>
         {sidebarOpen && (
           <Sidebar
             boards={doc.boards}
@@ -122,6 +142,24 @@ export function App() {
           onOpenCard={setOpenCardId}
         />
       </div>
+
+      {panel === 'background' && (
+        <BackgroundPanel
+          board={activeBoard}
+          onClose={() => setPanel(null)}
+          dispatch={dispatch}
+        />
+      )}
+
+      {panel === 'automations' && (
+        <AutomationsPanel
+          board={activeBoard}
+          labels={doc.labels}
+          enabled={doc.prefs.automationsEnabled}
+          onClose={() => setPanel(null)}
+          dispatch={dispatch}
+        />
+      )}
 
       {openCard && (
         <CardModal

@@ -1,6 +1,15 @@
+import { runAutomations } from './automations';
 import { emptyBoard, emptyCard, emptyList, seedDocument } from './document';
 import { id } from './id';
-import type { Board, BoardDocument, Card, Prefs } from './types';
+import type {
+  Attachment,
+  Background,
+  Board,
+  BoardDocument,
+  Card,
+  Prefs,
+  Rule,
+} from './types';
 
 export type Action =
   | { type: 'replace'; doc: BoardDocument }
@@ -8,6 +17,7 @@ export type Action =
   | { type: 'board/rename'; boardId: string; title: string }
   | { type: 'board/remove'; boardId: string }
   | { type: 'board/select'; boardId: string }
+  | { type: 'board/background'; boardId: string; background: Background }
   | { type: 'list/add'; title: string }
   | { type: 'list/rename'; listId: string; title: string }
   | { type: 'list/remove'; listId: string }
@@ -19,10 +29,17 @@ export type Action =
   | { type: 'checklist/add'; cardId: string; text: string }
   | { type: 'checklist/toggle'; cardId: string; itemId: string }
   | { type: 'checklist/remove'; cardId: string; itemId: string }
+  | { type: 'card/attach'; cardId: string; attachments: Attachment[] }
+  | { type: 'card/detach'; cardId: string; attachmentId: string }
+  | { type: 'card/cover'; cardId: string; attachmentId: string | null }
+  | { type: 'rule/add'; rule: Rule }
+  | { type: 'rule/update'; rule: Rule }
+  | { type: 'rule/remove'; ruleId: string }
+  | { type: 'rule/toggle'; ruleId: string }
   | { type: 'prefs/set'; patch: Partial<Prefs> };
 
 /** Every case returns a new document; the board tree is never mutated in place. */
-export function reducer(state: BoardDocument, action: Action): BoardDocument {
+export function baseReducer(state: BoardDocument, action: Action): BoardDocument {
   switch (action.type) {
     case 'replace':
       return action.doc;
@@ -52,6 +69,22 @@ export function reducer(state: BoardDocument, action: Action): BoardDocument {
 
     case 'board/select':
       return { ...state, activeBoardId: action.boardId };
+
+    case 'board/background':
+      return {
+        ...state,
+        boards: state.boards.map((b) =>
+          b.id === action.boardId
+            ? {
+                ...b,
+                background: action.background,
+                // Solid colors keep `color` in step, so the chrome tint and
+                // documents read by older versions stay consistent.
+                color: action.background.kind === 'color' ? action.background.value : b.color,
+              }
+            : b,
+        ),
+      };
 
     case 'list/add':
       return mapActiveBoard(state, (board) => ({
@@ -156,6 +189,59 @@ export function reducer(state: BoardDocument, action: Action): BoardDocument {
         checklist: card.checklist.filter((item) => item.id !== action.itemId),
       }));
 
+    case 'card/attach':
+      return updateCard(state, action.cardId, (card) => ({
+        ...card,
+        attachments: [...card.attachments, ...action.attachments],
+        // First image attached becomes the cover, which is what Trello does.
+        coverAttachmentId:
+          card.coverAttachmentId ?? action.attachments.find((a) => a.isImage)?.id ?? null,
+      }));
+
+    case 'card/detach':
+      return updateCard(state, action.cardId, (card) => ({
+        ...card,
+        attachments: card.attachments.filter((a) => a.id !== action.attachmentId),
+        coverAttachmentId:
+          card.coverAttachmentId === action.attachmentId ? null : card.coverAttachmentId,
+      }));
+
+    case 'card/cover':
+      return updateCard(state, action.cardId, (card) => {
+        if (action.attachmentId === null) return { ...card, coverAttachmentId: null };
+        const attachment = card.attachments.find((a) => a.id === action.attachmentId);
+        if (!attachment?.isImage) return card;
+        return { ...card, coverAttachmentId: action.attachmentId };
+      });
+
+    case 'rule/add':
+      return mapActiveBoard(state, (board) => ({
+        ...board,
+        automations: [...board.automations, action.rule],
+      }));
+
+    case 'rule/update':
+      return mapActiveBoard(state, (board) => ({
+        ...board,
+        automations: board.automations.map((rule) =>
+          rule.id === action.rule.id ? action.rule : rule,
+        ),
+      }));
+
+    case 'rule/remove':
+      return mapActiveBoard(state, (board) => ({
+        ...board,
+        automations: board.automations.filter((rule) => rule.id !== action.ruleId),
+      }));
+
+    case 'rule/toggle':
+      return mapActiveBoard(state, (board) => ({
+        ...board,
+        automations: board.automations.map((rule) =>
+          rule.id === action.ruleId ? { ...rule, enabled: !rule.enabled } : rule,
+        ),
+      }));
+
     case 'prefs/set':
       return { ...state, prefs: { ...state.prefs, ...action.patch } };
 
@@ -179,4 +265,18 @@ function updateCard(state: BoardDocument, cardId: string, fn: (card: Card) => Ca
       cards: l.cards.map((c) => (c.id === cardId ? fn(c) : c)),
     })),
   }));
+}
+
+/**
+ * The reducer the app dispatches to: applies the action, then lets the
+ * automation engine react to it.
+ *
+ * `replace` is excluded on purpose. It is how a document arrives from disk or
+ * from another window, and re-running rules over a load would fire them again
+ * on state they already produced.
+ */
+export function reducer(state: BoardDocument, action: Action): BoardDocument {
+  const next = baseReducer(state, action);
+  if (action.type === 'replace') return next;
+  return runAutomations(state, next, action, baseReducer);
 }

@@ -1,4 +1,5 @@
 import type { DragEvent } from 'react';
+import { assetUrl } from '../shared/assets';
 import type { Card, Label } from '../shared/types';
 import './CardTile.css';
 
@@ -35,6 +36,9 @@ export function CardTile({
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
   const done = card.checklist.filter((item) => item.done).length;
   const state = dueState(card.due);
+  const cover = card.coverAttachmentId
+    ? card.attachments.find((a) => a.id === card.coverAttachmentId && a.isImage)
+    : undefined;
 
   function onDragOver(event: DragEvent<HTMLButtonElement>) {
     if (!canAcceptDrag) return;
@@ -56,6 +60,10 @@ export function CardTile({
       }}
       onDragOver={onDragOver}
     >
+      {cover && (
+        <img className="tile__cover" src={assetUrl(cover.asset)} alt="" loading="lazy" />
+      )}
+
       {cardLabels.length > 0 && (
         <span className="tile__labels">
           {cardLabels.map((label) => (
@@ -71,7 +79,10 @@ export function CardTile({
 
       <span className="tile__title">{card.title}</span>
 
-      {(card.description || card.checklist.length > 0 || card.due) && (
+      {(card.description ||
+        card.checklist.length > 0 ||
+        card.due ||
+        card.attachments.length > 0) && (
         <span className="tile__badges">
           {card.description && (
             <span className="tile__badge" title="Tem descricao">
@@ -91,6 +102,20 @@ export function CardTile({
               title="Checklist"
             >
               {done}/{card.checklist.length}
+            </span>
+          )}
+          {card.attachments.length > 0 && (
+            <span className="tile__badge" title="Anexos">
+              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M10.5 5 5.8 9.7a1.9 1.9 0 0 0 2.7 2.7l5-5a3.3 3.3 0 0 0-4.7-4.7l-5.2 5.2a4.7 4.7 0 0 0 6.6 6.6l2-2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+              {card.attachments.length}
             </span>
           )}
           {card.due && (

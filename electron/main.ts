@@ -1,9 +1,28 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, type IpcMainInvokeEvent } from 'electron';
-import { AppChannel, FindInPageChannel, PrefsChannel, StoreOp, WindowChannel } from './channels';
+import {
+  AppChannel,
+  AssetChannel,
+  FindInPageChannel,
+  PrefsChannel,
+  StoreOp,
+  WindowChannel,
+} from './channels';
+import {
+  handleAssetProtocol,
+  importPaths,
+  openAsset,
+  pickAndImport,
+  registerAssetScheme,
+  removeAsset,
+  revealAsset,
+  sweepAssets,
+} from './assets';
 import { getStorePath, readStore, writeStore } from './store';
 import { closeWindow, each, find, nameOf, openWindow, WINDOWS, type WindowName } from './windows';
 
 const DEV = !!process.env.VITE_DEV_SERVER_URL;
+
+registerAssetScheme();
 
 function senderWindow(event: IpcMainInvokeEvent | Electron.IpcMainEvent): BrowserWindow | null {
   return BrowserWindow.fromWebContents(event.sender);
@@ -132,6 +151,34 @@ ipcMain.handle(FindInPageChannel.IS_SHOWN, () => !!find('find_in_page'));
 
 ipcMain.on(FindInPageChannel.FOCUS, () => find('find_in_page')?.focus());
 
+/* ------------------------------------------------------------------ *
+ * Asset store: board backgrounds and card attachments.
+ * ------------------------------------------------------------------ */
+
+ipcMain.handle(AssetChannel.PICK, (event, kind: unknown) =>
+  pickAndImport(senderWindow(event), kind),
+);
+
+ipcMain.handle(AssetChannel.IMPORT, (_event, paths: unknown) => importPaths(paths));
+
+ipcMain.handle(AssetChannel.REMOVE, (_event, asset: unknown) => removeAsset(asset));
+
+ipcMain.handle(AssetChannel.OPEN, (_event, asset: unknown) => openAsset(asset));
+
+ipcMain.on(AssetChannel.REVEAL, (_event, asset: unknown) => revealAsset(asset));
+
+/**
+ * Deletes orphaned files. Only honoured once per run, right after the main
+ * window reports the assets a genuinely loaded document still references; a
+ * seeded fallback document must never drive this.
+ */
+let sweepDone = false;
+ipcMain.handle(AssetChannel.SWEEP, async (_event, referenced: unknown) => {
+  if (sweepDone) return 0;
+  sweepDone = true;
+  return sweepAssets(referenced);
+});
+
 /* prefs */
 
 ipcMain.handle(PrefsChannel.LOCALE, () => app.getLocale());
@@ -195,6 +242,7 @@ function buildMenu(): void {
 }
 
 app.whenReady().then(() => {
+  handleAssetProtocol();
   buildMenu();
   openWindow('main');
 

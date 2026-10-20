@@ -67,6 +67,26 @@ export const StoreOp = {
 } as const;
 
 /**
+ * Nivora additions, not recovered from the Trello app: the asset store behind
+ * board backgrounds and card attachments. Named apart from the channels above
+ * so the evidence-backed contract stays recognisable.
+ */
+export const AssetChannel = {
+  PICK: 'assets-pick',
+  IMPORT: 'assets-import',
+  REMOVE: 'assets-remove',
+  SWEEP: 'assets-sweep',
+  OPEN: 'assets-open',
+  REVEAL: 'assets-reveal',
+} as const;
+
+/** Kinds of file the picker offers, which also bounds what gets imported. */
+export const AssetPickKind = {
+  IMAGE: 'image',
+  ANY: 'any',
+} as const;
+
+/**
  * The real preload exposes `isChannelSupported` and validates every channel
  * before forwarding it. We reproduce that allowlist behaviour.
  */
@@ -75,4 +95,5 @@ export const SUPPORTED_CHANNELS: readonly string[] = [
   ...Object.values(AppChannel),
   ...Object.values(FindInPageChannel),
   ...Object.values(PrefsChannel),
+  ...Object.values(AssetChannel),
 ];

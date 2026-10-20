@@ -24,6 +24,19 @@ const userData = await mkdtemp(path.join(os.tmpdir(), 'nivora-smoke-'));
 let app;
 let failures = 0;
 
+/** Repete `probe` ate dar certo; as escritas do renderer sao debounced. */
+async function waitFor(probe, message, attempts = 40) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      if (await probe()) return;
+    } catch {
+      // ainda nao
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(message);
+}
+
 function check(name, fn) {
   return Promise.resolve()
     .then(fn)
@@ -118,6 +131,82 @@ try {
       await page.waitForTimeout(100);
     }
     throw new Error(`cartao nao apareceu em ${storePath}`);
+  });
+
+  await check('trocar o fundo do quadro persiste no documento', async () => {
+    await page.click('.toolbar__actions .btn:text-is("Fundo")');
+    await page.waitForSelector('.bg__grid');
+
+    // Segundo gradiente da lista, para nao coincidir com o da semente.
+    await page.click('.bg__swatch--wide >> nth=1');
+    await page.click('.panel__close');
+
+    const storePath = path.join(userData, 'boards.json');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const background = doc.boards[0].background;
+      return background.kind === 'gradient' && background.value === 'ember';
+    }, 'o fundo gradiente nao chegou ao boards.json');
+  });
+
+  await check('importar um anexo copia o arquivo e o serve por nivora://', async () => {
+    // PNG 1x1 valido, so para ter um arquivo de verdade em disco.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const source = path.join(userData, 'smoke-anexo.png');
+    await fs.writeFile(source, png);
+
+    const records = await page.evaluate(
+      (filePath) => window.electron.ipc.invoke('assets-import', [filePath]),
+      source,
+    );
+
+    assert.equal(records.length, 1, 'o import deveria devolver um registro');
+    const [record] = records;
+    assert.equal(record.isImage, true);
+    assert.equal(record.mime, 'image/png');
+    assert.equal(record.size, png.length);
+    assert.ok(record.asset.endsWith('-smoke-anexo.png'), `nome inesperado: ${record.asset}`);
+
+    // O arquivo foi copiado para a loja de ativos, nao referenciado no lugar.
+    const stored = path.join(userData, 'assets', record.asset);
+    await fs.access(stored);
+
+    // E o renderer consegue carregar pelo esquema proprio, com a CSP ativa.
+    const loaded = await page.evaluate(
+      (asset) =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ ok: true, width: img.naturalWidth });
+          img.onerror = () => resolve({ ok: false, width: 0 });
+          img.src = `nivora://assets/${encodeURIComponent(asset)}`;
+        }),
+      record.asset,
+    );
+    assert.deepEqual(loaded, { ok: true, width: 1 }, 'nivora:// nao entregou a imagem');
+  });
+
+  await check('o protocolo recusa sair da pasta de ativos', async () => {
+    const status = await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve('carregou');
+          img.onerror = () => resolve('recusou');
+          img.src = 'nivora://assets/..%2F..%2Fboards.json';
+        }),
+    );
+    assert.equal(status, 'recusou', 'travessia de caminho deveria ser bloqueada');
+  });
+
+  await check('o painel de automacoes lista a regra da semente', async () => {
+    await page.click('.toolbar__actions .btn:has-text("Automacoes")');
+    await page.waitForSelector('.auto__list');
+    const names = await page.locator('.auto__info strong').allTextContents();
+    assert.deepEqual(names, ['Ao concluir, marcar como Pronto']);
+    await page.click('.panel__close');
   });
 
   await check('a janela newcard abre com seu proprio bundle', async () => {

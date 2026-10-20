@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { SUPPORTED_CHANNELS } from '../channels';
 
 /**
@@ -66,8 +66,21 @@ const ipc = {
   },
 };
 
+/**
+ * Dropping files on a page gives File objects whose real path Electron no
+ * longer puts on `File.path`; webUtils is the supported way to get it, and it
+ * has to be called in the preload.
+ */
+function getPathForFile(file: unknown): string | null {
+  try {
+    return webUtils.getPathForFile(file as File) || null;
+  } catch {
+    return null;
+  }
+}
+
 export function exposeElectron(): void {
-  contextBridge.exposeInMainWorld('electron', { logger, ipc });
+  contextBridge.exposeInMainWorld('electron', { logger, ipc, getPathForFile });
 }
 
 /**

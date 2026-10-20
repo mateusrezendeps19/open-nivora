@@ -8,6 +8,8 @@
 
 export interface ElectronBridge {
   logger: Record<'debug' | 'info' | 'warn' | 'error', (...args: unknown[]) => void>;
+  /** Resolves a dropped File to its path on disk; preload-only capability. */
+  getPathForFile?: (file: File) => string | null;
   ipc: {
     isChannelSupported(channel: string): boolean;
     invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T>;
@@ -50,6 +52,7 @@ const noopBridge: ElectronBridge = {
     warn: console.warn.bind(console),
     error: console.error.bind(console),
   },
+  getPathForFile: () => null,
   ipc: {
     isChannelSupported: () => false,
     invoke: async () => undefined as never,

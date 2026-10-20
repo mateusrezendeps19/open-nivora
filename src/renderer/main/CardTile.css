@@ -24,6 +24,15 @@
   opacity: 0.35;
 }
 
+.tile__cover {
+  width: calc(100% + 20px);
+  height: 128px;
+  margin: -8px -10px 2px;
+  object-fit: cover;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface-sunken);
+}
+
 .tile__labels {
   display: flex;
   flex-wrap: wrap;

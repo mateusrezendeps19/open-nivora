@@ -31,4 +31,13 @@ export const FindInPageChannel = {
   IS_SHOWN: 'find-in-page-is-shown',
 } as const;
 
+export const AssetChannel = {
+  PICK: 'assets-pick',
+  IMPORT: 'assets-import',
+  REMOVE: 'assets-remove',
+  SWEEP: 'assets-sweep',
+  OPEN: 'assets-open',
+  REVEAL: 'assets-reveal',
+} as const;
+
 export const StoreOp = { READ: 'read', WRITE: 'write', PATH: 'path' } as const;

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Card, Label } from '../shared/types';
+import { removeAsset } from '../shared/assets';
+import { Attachments } from './Attachments';
 import './CardModal.css';
 
 interface CardModalProps {
@@ -71,6 +73,8 @@ export function CardModal({
       setConfirming(true);
       return;
     }
+    // Delete the card's files too, or they would linger until the next sweep.
+    for (const attachment of card.attachments) void removeAsset(attachment.asset);
     dispatch({ type: 'card/remove', cardId: card.id });
     onClose();
   }
@@ -181,6 +185,8 @@ export function CardModal({
               onBlur={commitDescription}
             />
           </section>
+
+          <Attachments card={card} dispatch={dispatch} />
 
           <section className="modal__section">
             <h3>

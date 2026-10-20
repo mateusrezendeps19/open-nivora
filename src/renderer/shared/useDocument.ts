@@ -17,6 +17,9 @@ const SAVE_DEBOUNCE_MS = 250;
 export function useDocument() {
   const [doc, dispatch] = useReducer(reducer, null, seedDocument);
   const [loaded, setLoaded] = useState(false);
+  // False when the store had nothing to read and we fell back to the seed.
+  // The asset sweep must not run in that case.
+  const [persisted, setPersisted] = useState(false);
   const skipNextSave = useRef(true);
   const { ipc } = bridge();
 
@@ -30,6 +33,7 @@ export function useDocument() {
         : readLocal();
       if (cancelled) return;
       dispatch({ type: 'replace', doc: normalize(raw) });
+      setPersisted(!!raw);
       setLoaded(true);
     }
 
@@ -75,7 +79,7 @@ export function useDocument() {
 
   const act = useCallback((action: Action) => dispatch(action), []);
 
-  return { doc, activeBoard, dispatch: act, loaded };
+  return { doc, activeBoard, dispatch: act, loaded, persisted };
 }
 
 /** Applies the persisted theme to the document element. */

@@ -1,0 +1,68 @@
+@import '../shared/styles/panel.css';
+
+.bg__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-100);
+}
+
+.bg__grid--colors {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+.bg__swatch {
+  position: relative;
+  height: 48px;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  background-size: cover;
+  background-position: center;
+  transition: transform var(--motion-fast) var(--ease);
+}
+
+.bg__swatch:hover {
+  transform: translateY(-1px);
+}
+
+.bg__swatch--on {
+  border-color: var(--text);
+}
+
+.bg__swatch--wide {
+  display: flex;
+  align-items: flex-end;
+  padding: var(--space-50);
+  height: 64px;
+}
+
+.bg__swatch--wide span {
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 0.45);
+  color: #fff;
+  font-size: 11px;
+}
+
+.bg__image {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+}
+
+.bg__preview {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.bg__image-actions {
+  display: flex;
+  gap: var(--space-50);
+}
+
+.bg__image-actions .btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
