@@ -4,6 +4,8 @@ import type { Card, Label } from '../shared/types';
 import { removeAsset } from '../shared/assets';
 import { fromDateInput, toDateInput } from '../shared/calendar';
 import { Attachments } from './Attachments';
+import { CardActivity } from './CardActivity';
+import { LabelEditor } from './LabelEditor';
 import './CardModal.css';
 
 interface CardModalProps {
@@ -27,6 +29,7 @@ export function CardModal({
   const [description, setDescription] = useState(card.description);
   const [checkItem, setCheckItem] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [editingLabels, setEditingLabels] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Switching cards while the modal is open has to reload the drafts.
@@ -34,6 +37,7 @@ export function CardModal({
     setTitle(card.title);
     setDescription(card.description);
     setConfirming(false);
+    setEditingLabels(false);
   }, [card.id, card.description, card.title]);
 
   useEffect(() => {
@@ -138,129 +142,153 @@ export function CardModal({
         </header>
 
         <div className="modal__body">
-          <section className="modal__section">
-            <h3>Etiquetas</h3>
-            <div className="modal__labels">
-              {labels.map((label) => {
-                const on = card.labelIds.includes(label.id);
-                return (
-                  <button
-                    key={label.id}
-                    type="button"
-                    className={`modal__label${on ? ' modal__label--on' : ''}`}
-                    style={{ background: label.color }}
-                    aria-pressed={on}
-                    onClick={() => toggleLabel(label.id)}
-                  >
-                    {label.name}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="modal__section">
-            <h3>Prazo</h3>
-            <div className="modal__due">
-              <input
-                type="date"
-                className="field"
-                value={toDateInput(card.due)}
-                onChange={(event) =>
-                  dispatch({
-                    type: 'card/update',
-                    cardId: card.id,
-                    patch: {
-                      due: fromDateInput(event.target.value, card.due),
-                    },
-                  })
-                }
-              />
-              {card.due && (
+          <div className="modal__main">
+            <section className="modal__section modal__section--labels">
+              <h3>
+                Etiquetas
                 <button
                   type="button"
-                  className="btn btn--subtle"
-                  onClick={() =>
-                    dispatch({ type: 'card/update', cardId: card.id, patch: { due: null } })
-                  }
+                  className="modal__section-action"
+                  aria-expanded={editingLabels}
+                  onClick={() => setEditingLabels((open) => !open)}
                 >
-                  Remover
+                  {editingLabels ? 'Concluir' : 'Editar etiquetas'}
                 </button>
-              )}
-            </div>
-          </section>
-
-          <section className="modal__section">
-            <h3>Descricao</h3>
-            <textarea
-              className="field modal__description"
-              rows={5}
-              value={description}
-              placeholder="Adicione mais detalhes..."
-              onChange={(event) => setDescription(event.target.value)}
-              onBlur={commitDescription}
-            />
-          </section>
-
-          <Attachments card={card} dispatch={dispatch} />
-
-          <section className="modal__section">
-            <h3>
-              Checklist{' '}
-              {card.checklist.length > 0 && (
-                <span className="modal__progress-label">
-                  {done}/{card.checklist.length}
-                </span>
-              )}
-            </h3>
-
-            {card.checklist.length > 0 && (
-              <div className="modal__progress">
-                <div className="modal__progress-bar" style={{ width: `${progress}%` }} />
+              </h3>
+              <div className="modal__labels">
+                {labels.map((label) => {
+                  const on = card.labelIds.includes(label.id);
+                  return (
+                    <button
+                      key={label.id}
+                      type="button"
+                      className={`modal__label${on ? ' modal__label--on' : ''}`}
+                      style={{ background: label.color }}
+                      aria-pressed={on}
+                      onClick={() => toggleLabel(label.id)}
+                    >
+                      {label.name}
+                    </button>
+                  );
+                })}
               </div>
-            )}
 
-            <ul className="modal__checklist">
-              {card.checklist.map((item) => (
-                <li key={item.id}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={item.done}
-                      onChange={() =>
-                        dispatch({ type: 'checklist/toggle', cardId: card.id, itemId: item.id })
-                      }
-                    />
-                    <span className={item.done ? 'modal__check-done' : ''}>{item.text}</span>
-                  </label>
+              {editingLabels && (
+                <LabelEditor
+                  labels={labels}
+                  dispatch={dispatch}
+                  onClose={() => setEditingLabels(false)}
+                />
+              )}
+            </section>
+
+            <section className="modal__section">
+              <h3>Prazo</h3>
+              <div className="modal__due">
+                <input
+                  type="date"
+                  className="field"
+                  value={toDateInput(card.due)}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'card/update',
+                      cardId: card.id,
+                      patch: {
+                        due: fromDateInput(event.target.value, card.due),
+                      },
+                    })
+                  }
+                />
+                {card.due && (
                   <button
                     type="button"
-                    className="modal__check-remove"
-                    aria-label={`Remover ${item.text}`}
+                    className="btn btn--subtle"
                     onClick={() =>
-                      dispatch({ type: 'checklist/remove', cardId: card.id, itemId: item.id })
+                      dispatch({ type: 'card/update', cardId: card.id, patch: { due: null } })
                     }
                   >
-                    x
+                    Remover
                   </button>
-                </li>
-              ))}
-            </ul>
+                )}
+              </div>
+            </section>
 
-            <input
-              className="field"
-              value={checkItem}
-              placeholder="Adicionar item e pressionar Enter"
-              onChange={(event) => setCheckItem(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter') return;
-                const text = checkItem.trim();
-                if (!text) return;
-                dispatch({ type: 'checklist/add', cardId: card.id, text });
-                setCheckItem('');
-              }}
-            />
-          </section>
+            <section className="modal__section">
+              <h3>Descricao</h3>
+              <textarea
+                className="field modal__description"
+                rows={5}
+                value={description}
+                placeholder="Adicione mais detalhes..."
+                onChange={(event) => setDescription(event.target.value)}
+                onBlur={commitDescription}
+              />
+            </section>
+
+            <Attachments card={card} dispatch={dispatch} />
+
+            <section className="modal__section">
+              <h3>
+                Checklist{' '}
+                {card.checklist.length > 0 && (
+                  <span className="modal__progress-label">
+                    {done}/{card.checklist.length}
+                  </span>
+                )}
+              </h3>
+
+              {card.checklist.length > 0 && (
+                <div className="modal__progress">
+                  <div className="modal__progress-bar" style={{ width: `${progress}%` }} />
+                </div>
+              )}
+
+              <ul className="modal__checklist">
+                {card.checklist.map((item) => (
+                  <li key={item.id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={item.done}
+                        onChange={() =>
+                          dispatch({ type: 'checklist/toggle', cardId: card.id, itemId: item.id })
+                        }
+                      />
+                      <span className={item.done ? 'modal__check-done' : ''}>{item.text}</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="modal__check-remove"
+                      aria-label={`Remover ${item.text}`}
+                      onClick={() =>
+                        dispatch({ type: 'checklist/remove', cardId: card.id, itemId: item.id })
+                      }
+                    >
+                      x
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <input
+                className="field"
+                value={checkItem}
+                placeholder="Adicionar item e pressionar Enter"
+                onChange={(event) => setCheckItem(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  const text = checkItem.trim();
+                  if (!text) return;
+                  dispatch({ type: 'checklist/add', cardId: card.id, text });
+                  setCheckItem('');
+                }}
+              />
+            </section>
+          </div>
+
+          <aside className="modal__side">
+            <CardActivity card={card} dispatch={dispatch} />
+          </aside>
         </div>
 
         <footer className="modal__footer">

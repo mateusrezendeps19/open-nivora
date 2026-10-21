@@ -30,9 +30,18 @@ interface BoardCanvasProps {
   query: string;
   dispatch: (action: Action) => void;
   onOpenCard: (cardId: string) => void;
+  /** Reported up so the floating button can offer itself as a trash. */
+  onCardDragChange: (cardId: string | null) => void;
 }
 
-export function BoardCanvas({ board, labels, query, dispatch, onOpenCard }: BoardCanvasProps) {
+export function BoardCanvas({
+  board,
+  labels,
+  query,
+  dispatch,
+  onOpenCard,
+  onCardDragChange,
+}: BoardCanvasProps) {
   const [drag, setDrag] = useState<Drag>(null);
   const [cardDrop, setCardDrop] = useState<CardDrop | null>(null);
   const [listDrop, setListDrop] = useState<number | null>(null);
@@ -42,6 +51,8 @@ export function BoardCanvas({ board, labels, query, dispatch, onOpenCard }: Boar
   /**
    * Filtering keeps the original index of every card, so a drop computed
    * against a filtered view still lands in the right place in the full list.
+   * Archived cards are filtered the same way: they stay in the list, holding
+   * their index, and only stop being drawn.
    */
   const visible = useMemo(
     () =>
@@ -50,6 +61,7 @@ export function BoardCanvas({ board, labels, query, dispatch, onOpenCard }: Boar
         cards: list.cards
           .map((card, index) => ({ card, index }))
           .filter(({ card }) => {
+            if (card.archivedAt) return false;
             if (!needle) return true;
             return (
               card.title.toLowerCase().includes(needle) ||
@@ -62,10 +74,16 @@ export function BoardCanvas({ board, labels, query, dispatch, onOpenCard }: Boar
 
   const matches = visible.reduce((total, entry) => total + entry.cards.length, 0);
 
+  function beginDrag(next: Drag) {
+    setDrag(next);
+    onCardDragChange(next?.kind === 'card' ? next.cardId : null);
+  }
+
   function endDrag() {
     setDrag(null);
     setCardDrop(null);
     setListDrop(null);
+    onCardDragChange(null);
   }
 
   function commitCardDrop() {
@@ -109,7 +127,7 @@ export function BoardCanvas({ board, labels, query, dispatch, onOpenCard }: Boar
             drag={drag}
             cardDrop={cardDrop}
             listDrop={listDrop}
-            onDragStart={setDrag}
+            onDragStart={beginDrag}
             onCardHover={setCardDrop}
             onListHover={setListDrop}
             onCardDrop={commitCardDrop}

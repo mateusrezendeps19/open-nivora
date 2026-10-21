@@ -196,3 +196,29 @@ input.sidebar__name {
   display: flex;
   gap: var(--space-50);
 }
+
+/*
+ * The way back from the archive box in the corner. It is only rendered when
+ * the board has archived cards, so the sidebar stays about boards until there
+ * is something to come back to.
+ */
+.sidebar__archive {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin-top: auto;
+  padding: 7px 8px;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.sidebar__archive:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.sidebar__archive .sidebar__meta {
+  margin-left: auto;
+}

@@ -70,6 +70,8 @@ interface CalendarProps {
   query: string;
   dispatch: (action: Action) => void;
   onOpenCard: (cardId: string) => void;
+  /** Reported up so the floating button can offer itself as a trash. */
+  onCardDragChange: (cardId: string | null) => void;
 }
 
 /**
@@ -80,7 +82,14 @@ interface CalendarProps {
  * reschedules it, and the panel on the right holds the cards with no date, so
  * they can be dragged onto the grid - or back, to clear the date again.
  */
-export function Calendar({ board, labels, query, dispatch, onOpenCard }: CalendarProps) {
+export function Calendar({
+  board,
+  labels,
+  query,
+  dispatch,
+  onOpenCard,
+  onCardDragChange,
+}: CalendarProps) {
   const [granularity, setGranularity] = useState<Granularity>('month');
   const [cursor, setCursor] = useState(() => startOfDay(new Date()));
   const [dragCardId, setDragCardId] = useState<string | null>(null);
@@ -117,9 +126,15 @@ export function Calendar({ board, labels, query, dispatch, onOpenCard }: Calenda
     if (next === 'week' && sameMonth) setCursor(today);
   }
 
+  function beginDrag(cardId: string) {
+    setDragCardId(cardId);
+    onCardDragChange(cardId);
+  }
+
   function endDrag() {
     setDragCardId(null);
     setDropKey(null);
+    onCardDragChange(null);
   }
 
   function allowDrop(event: DragEvent, key: string) {
@@ -150,7 +165,7 @@ export function Calendar({ board, labels, query, dispatch, onOpenCard }: Calenda
         time={showTime ? due : null}
         dragging={dragCardId === card.id}
         onOpen={() => onOpenCard(card.id)}
-        onDragStart={() => setDragCardId(card.id)}
+        onDragStart={() => beginDrag(card.id)}
       />
     ));
   }
@@ -292,7 +307,7 @@ export function Calendar({ board, labels, query, dispatch, onOpenCard }: Calenda
                     time={null}
                     dragging={dragCardId === card.id}
                     onOpen={() => onOpenCard(card.id)}
-                    onDragStart={() => setDragCardId(card.id)}
+                    onDragStart={() => beginDrag(card.id)}
                   />
                 ))
               )}

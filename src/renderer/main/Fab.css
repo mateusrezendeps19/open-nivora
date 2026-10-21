@@ -1,0 +1,145 @@
+/*
+ * The dock over the bottom right corner of the board or the calendar. It sits
+ * above the board content but below the card modal and the settings panel
+ * (z 50 and 60), so an open overlay covers it rather than leaving a button
+ * floating over the dimmed page.
+ *
+ * The confirmation is stacked on the button by the dock instead of being
+ * positioned against the corner itself, so it follows the button's height.
+ */
+.fab-dock {
+  position: fixed;
+  right: var(--space-300);
+  bottom: var(--space-300);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-100);
+}
+
+.fab {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-overlay);
+  transition:
+    background var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
+}
+
+/*
+ * The contents must not take drag events: a dragleave fires when the pointer
+ * crosses from the button onto a child, which would disarm the target halfway
+ * over it.
+ */
+.fab svg,
+.fab-archive svg,
+.fab-archive__label {
+  pointer-events: none;
+}
+
+/* Hover belongs to the new-card mode; in trash mode the drop state leads. */
+.fab:not(.fab--trash):hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.fab:not(.fab--trash):active {
+  transform: translateY(0);
+}
+
+/*
+ * A card in flight turns the button red. It is the one destructive drop target
+ * on the board, so it has to read that way before the drop, not after it.
+ */
+.fab--trash {
+  background: var(--danger);
+  cursor: default;
+}
+
+.fab--over {
+  transform: scale(1.12);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--danger) 28%, transparent),
+    var(--shadow-overlay);
+}
+
+.fab-confirm {
+  width: 236px;
+  padding: var(--space-150);
+  border-radius: var(--radius);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-overlay);
+}
+
+.fab-confirm__text {
+  margin: 0 0 var(--space-100);
+  color: var(--text-subtle);
+}
+
+.fab-confirm__text strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.fab-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-50);
+}
+
+/*
+ * The archive box, which exists only while a card is in flight. It rises from
+ * the button instead of appearing in place, so it reads as having come out of
+ * the dock and not as something that was always there.
+ */
+.fab-archive {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  height: 46px;
+  padding: 0 var(--space-200);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-overlay);
+  color: var(--text);
+  font-weight: 500;
+  box-shadow: var(--shadow-overlay);
+  animation: fab-archive-in var(--motion) var(--ease);
+  transition:
+    background var(--motion-fast) var(--ease),
+    border-color var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
+}
+
+.fab-archive--over {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-inverse);
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent),
+    var(--shadow-overlay);
+}
+
+@keyframes fab-archive-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The drag is driven by the pointer; the animation only gets in its way. */
+@media (prefers-reduced-motion: reduce) {
+  .fab-archive {
+    animation: none;
+  }
+}

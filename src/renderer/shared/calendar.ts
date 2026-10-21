@@ -100,6 +100,32 @@ export function moveDue(iso: string | null, day: Date): string {
   return next.toISOString();
 }
 
+/**
+ * How long ago something happened, for the card history.
+ *
+ * Only the first day is counted in words; past that the date itself says more
+ * than "ha 23 dias". `now` is a parameter so the test does not depend on the
+ * clock. A timestamp in the future - a document written by a machine whose
+ * clock runs ahead - reads as "agora" rather than as a negative age.
+ */
+export function relativeTime(iso: string, now: Date = new Date()): string {
+  const date = parseDue(iso);
+  if (!date) return '';
+
+  const minutes = Math.floor((now.getTime() - date.getTime()) / 60_000);
+  if (minutes < 1) return 'agora';
+  if (minutes < 60) return `ha ${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `ha ${hours} h`;
+
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 /* ------------------------------------------------------------------ *
  * Grouping
  * ------------------------------------------------------------------ */
@@ -134,6 +160,8 @@ export function groupByDay(lists: List[], needle = ''): CalendarEntries {
 
   for (const list of lists) {
     for (const card of list.cards) {
+      // Archived cards are off the board, and a date on one is not a plan.
+      if (card.archivedAt) continue;
       if (!matches(card, needle)) continue;
       const due = parseDue(card.due);
       if (!due) {

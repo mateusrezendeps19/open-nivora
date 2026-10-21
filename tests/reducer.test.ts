@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { emptyBoard, emptyCard, emptyList, normalize, seedDocument } from '../src/renderer/shared/document';
 import { reducer, type Action } from '../src/renderer/shared/reducer';
-import type { BoardDocument } from '../src/renderer/shared/types';
+import { DEFAULT_LABELS, type BoardDocument } from '../src/renderer/shared/types';
 
 /** A board with one list of cards titled a, b, c and a second, empty list. */
 function fixture(): BoardDocument {
@@ -15,7 +15,7 @@ function fixture(): BoardDocument {
     version: 2,
     boards: [board],
     activeBoardId: board.id,
-    labels: [],
+    labels: [...DEFAULT_LABELS],
     prefs: {
       theme: 'dark',
       locale: 'pt-BR',
@@ -30,6 +30,72 @@ function fixture(): BoardDocument {
 const run = (doc: BoardDocument, ...actions: Action[]) => actions.reduce(reducer, doc);
 const titles = (doc: BoardDocument, listIndex: number) =>
   doc.boards[0].lists[listIndex].cards.map((card) => card.title);
+
+test('criar e editar etiquetas vale para o documento inteiro', () => {
+  const doc = fixture();
+  const before = doc.labels.length;
+
+  const created = run(doc, { type: 'label/add', name: 'Urgente', color: '#f87168' });
+  assert.equal(created.labels.length, before + 1);
+  const added = created.labels[created.labels.length - 1];
+  assert.equal(added.name, 'Urgente');
+  assert.equal(added.color, '#f87168');
+
+  const renamed = run(created, {
+    type: 'label/update',
+    labelId: added.id,
+    patch: { name: 'Hoje', color: '#579dff' },
+  });
+  assert.equal(renamed.labels[renamed.labels.length - 1].name, 'Hoje');
+  assert.equal(renamed.labels[renamed.labels.length - 1].color, '#579dff');
+
+  // O id nao muda, entao os cartoes que ja usavam a etiqueta continuam ligados.
+  assert.equal(renamed.labels[renamed.labels.length - 1].id, added.id);
+});
+
+test('arquivar guarda a data e mantem o cartao no lugar', () => {
+  const doc = fixture();
+  const b = doc.boards[0].lists[0].cards[1].id;
+
+  const next = run(doc, { type: 'card/archive', cardId: b });
+  const card = next.boards[0].lists[0].cards[1];
+
+  assert.equal(card.id, b, 'o cartao arquivado saiu da sua posicao');
+  assert.ok(card.archivedAt, 'archivedAt nao foi preenchido');
+  assert.deepEqual(titles(next, 0), ['a', 'b', 'c']);
+});
+
+test('arquivar duas vezes nao reescreve a data', () => {
+  const doc = fixture();
+  const b = doc.boards[0].lists[0].cards[1].id;
+
+  const once = run(doc, { type: 'card/archive', cardId: b });
+  const twice = run(once, { type: 'card/archive', cardId: b });
+
+  assert.equal(
+    twice.boards[0].lists[0].cards[1].archivedAt,
+    once.boards[0].lists[0].cards[1].archivedAt,
+  );
+});
+
+test('restaurar devolve o cartao a posicao que ele nunca deixou', () => {
+  const doc = fixture();
+  const b = doc.boards[0].lists[0].cards[1].id;
+
+  const next = run(doc, { type: 'card/archive', cardId: b }, { type: 'card/restore', cardId: b });
+
+  assert.equal(next.boards[0].lists[0].cards[1].archivedAt, null);
+  assert.deepEqual(titles(next, 0), ['a', 'b', 'c']);
+});
+
+test('um cartao arquivado continua podendo ser excluido de vez', () => {
+  const doc = fixture();
+  const b = doc.boards[0].lists[0].cards[1].id;
+
+  const next = run(doc, { type: 'card/archive', cardId: b }, { type: 'card/remove', cardId: b });
+
+  assert.deepEqual(titles(next, 0), ['a', 'c']);
+});
 
 test('mover um cartao para baixo na mesma lista compensa o indice', () => {
   const doc = fixture();

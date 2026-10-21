@@ -47,6 +47,10 @@ export function ListColumn({
 
   const draggingThisList = drag?.kind === 'list' && drag.listId === list.id;
 
+  // The badge counts what is on the board, so it is not thrown off by the
+  // query filter above it nor by the archived cards still held in the list.
+  const active = list.cards.reduce((total, card) => total + (card.archivedAt ? 0 : 1), 0);
+
   function onColumnDragOver(event: DragEvent<HTMLDivElement>) {
     if (drag?.kind !== 'list') return;
     event.preventDefault();
@@ -100,7 +104,7 @@ export function ListColumn({
           ariaLabel="Renomear lista"
           onCommit={(title) => dispatch({ type: 'list/rename', listId: list.id, title })}
         />
-        <span className="column__count">{list.cards.length}</span>
+        <span className="column__count">{active}</span>
         <button
           type="button"
           className="column__menu-btn"

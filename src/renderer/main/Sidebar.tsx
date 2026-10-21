@@ -3,11 +3,23 @@ import { BOARD_COLORS, type Board } from '../shared/types';
 import { InlineTitle } from './InlineTitle';
 import './Sidebar.css';
 
+/** Cards on the board, which is what the sidebar counts: archived ones are off it. */
+function countCards(board: Board): number {
+  let total = 0;
+  for (const list of board.lists) {
+    for (const card of list.cards) if (!card.archivedAt) total += 1;
+  }
+  return total;
+}
+
 interface SidebarProps {
   boards: Board[];
   activeBoardId: string;
   collapsed: boolean;
+  /** Archived cards on the active board; the entry is hidden when there are none. */
+  archivedCount: number;
   onToggle: () => void;
+  onOpenArchive: () => void;
   onSelect: (boardId: string) => void;
   onAdd: (title: string, color: string) => void;
   onRename: (boardId: string, title: string) => void;
@@ -18,7 +30,9 @@ export function Sidebar({
   boards,
   activeBoardId,
   collapsed,
+  archivedCount,
   onToggle,
+  onOpenArchive,
   onSelect,
   onAdd,
   onRename,
@@ -74,6 +88,27 @@ export function Sidebar({
             </li>
           ))}
         </ul>
+
+        {archivedCount > 0 && (
+          <button
+            type="button"
+            className="sidebar__toggle"
+            onClick={onOpenArchive}
+            aria-label={`Arquivados (${archivedCount})`}
+            title={`Arquivados (${archivedCount})`}
+          >
+          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M2.2 3.4h11.6v2.4H2.2zM3.2 5.8h9.6v6.1a.9.9 0 0 1-.9.9H4.1a.9.9 0 0 1-.9-.9z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+            <path d="M6.4 8.5h3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          </button>
+        )}
 
         <button
           type="button"
@@ -132,9 +167,7 @@ export function Sidebar({
                 {board.title}
               </button>
             )}
-            <span className="sidebar__meta">
-              {board.lists.reduce((total, list) => total + list.cards.length, 0)}
-            </span>
+            <span className="sidebar__meta">{countCards(board)}</span>
             {boards.length > 1 && (
               <button
                 type="button"
@@ -186,6 +219,23 @@ export function Sidebar({
       ) : (
         <button type="button" className="sidebar__new" onClick={() => setAdding(true)}>
           + Criar quadro
+        </button>
+      )}
+
+      {archivedCount > 0 && (
+        <button type="button" className="sidebar__archive" onClick={onOpenArchive}>
+          <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M2.2 3.4h11.6v2.4H2.2zM3.2 5.8h9.6v6.1a.9.9 0 0 1-.9.9H4.1a.9.9 0 0 1-.9-.9z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+            <path d="M6.4 8.5h3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          Arquivados
+          <span className="sidebar__meta">{archivedCount}</span>
         </button>
       )}
     </aside>

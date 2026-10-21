@@ -7,6 +7,7 @@ import {
   groupByDay,
   monthMatrix,
   moveDue,
+  relativeTime,
   startOfWeek,
   toDateInput,
   weekDays,
@@ -84,6 +85,40 @@ test('cartoes sao agrupados pelo dia local e ordenados por hora', () => {
     undated.map((entry) => entry.card.title),
     ['sem prazo'],
   );
+});
+
+test('o tempo decorrido e contado em palavras so no primeiro dia', () => {
+  const now = local(2026, 10, 20, 12, 0);
+  const ago = (minutes: number) =>
+    relativeTime(new Date(now.getTime() - minutes * 60_000).toISOString(), now);
+
+  assert.equal(ago(0), 'agora');
+  assert.equal(ago(1), 'ha 1 min');
+  assert.equal(ago(59), 'ha 59 min');
+  assert.equal(ago(60), 'ha 1 h');
+  assert.equal(ago(23 * 60), 'ha 23 h');
+  // Passando de um dia, a data diz mais do que a contagem.
+  assert.match(ago(24 * 60), /2026/);
+  // Relogio adiantado: uma data no futuro nao vira idade negativa.
+  assert.equal(ago(-5), 'agora');
+});
+
+test('cartao arquivado sai do calendario', () => {
+  const list = emptyList('A');
+  const due = local(2026, 10, 20, 9, 0).toISOString();
+  list.cards = [
+    { ...emptyCard('ativo'), due },
+    { ...emptyCard('arquivado'), due, archivedAt: local(2026, 10, 19).toISOString() },
+    { ...emptyCard('arquivado sem prazo'), archivedAt: local(2026, 10, 19).toISOString() },
+  ];
+
+  const { byDay, undated, dated } = groupByDay([list as List]);
+  assert.equal(dated, 1);
+  assert.deepEqual(
+    byDay.get('2026-10-20')!.map((entry) => entry.card.title),
+    ['ativo'],
+  );
+  assert.equal(undated.length, 0);
 });
 
 test('o filtro da busca vale para o calendario', () => {

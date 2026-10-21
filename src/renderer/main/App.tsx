@@ -9,8 +9,10 @@ import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
 import type { SettingsTab } from '../shared/settings/Settings';
 import { BoardCanvas } from './BoardCanvas';
+import { ArchivePanel, archivedCards } from './ArchivePanel';
 import { Calendar } from './Calendar';
 import { CardModal } from './CardModal';
+import { Fab } from './Fab';
 import { SettingsPanel } from './SettingsPanel';
 import { Sidebar } from './Sidebar';
 import { Toolbar } from './Toolbar';
@@ -21,6 +23,10 @@ export function App() {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
   const [query, setQuery] = useState('');
+  // Lifted out of the board and the calendar so the floating button, which is
+  // outside both, can turn into a trash while a card is in flight.
+  const [dragCardId, setDragCardId] = useState<string | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const swept = useRef(false);
   const { ipc } = bridge();
 
@@ -33,6 +39,8 @@ export function App() {
     (patch: Partial<Prefs>) => dispatch({ type: 'prefs/set', patch }),
     [dispatch],
   );
+
+  const archived = useMemo(() => archivedCards(activeBoard), [activeBoard]);
 
   const openCard = useMemo(() => {
     if (!openCardId) return null;
@@ -82,6 +90,7 @@ export function App() {
       } else if (event.key === 'Escape') {
         setOpenCardId(null);
         setSettingsTab(null);
+        setArchiveOpen(false);
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -115,10 +124,8 @@ export function App() {
         <Toolbar
           query={query}
           view={view}
-          sidebarCollapsed={sidebarCollapsed}
           onQueryChange={setQuery}
           onViewChange={(next) => setPrefs({ view: next })}
-          onToggleSidebar={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
           onFind={openFind}
           onSettings={() => setSettingsTab('appearance')}
         />
@@ -129,7 +136,9 @@ export function App() {
           boards={doc.boards}
           activeBoardId={activeBoard.id}
           collapsed={sidebarCollapsed}
+          archivedCount={archived.length}
           onToggle={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
+          onOpenArchive={() => setArchiveOpen(true)}
           onSelect={(boardId) => dispatch({ type: 'board/select', boardId })}
           onAdd={(title, color) => dispatch({ type: 'board/add', title, color })}
           onRename={(boardId, title) => dispatch({ type: 'board/rename', boardId, title })}
@@ -143,6 +152,7 @@ export function App() {
             query={query}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
+            onCardDragChange={setDragCardId}
           />
         ) : (
           <BoardCanvas
@@ -151,22 +161,28 @@ export function App() {
             query={query}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
+            onCardDragChange={setDragCardId}
           />
         )}
       </div>
 
       {hasShell() && (
-        <button
-          type="button"
-          className="fab"
-          onClick={openNewCard}
-          aria-label="Novo cartao"
-          title="Novo cartao (Ctrl+N)"
-        >
-          <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
+        <Fab
+          board={activeBoard}
+          dragCardId={dragCardId}
+          confirmDelete={doc.prefs.confirmCardDelete}
+          onNew={openNewCard}
+          dispatch={dispatch}
+        />
+      )}
+
+      {archiveOpen && (
+        <ArchivePanel
+          board={activeBoard}
+          confirmDelete={doc.prefs.confirmCardDelete}
+          onClose={() => setArchiveOpen(false)}
+          dispatch={dispatch}
+        />
       )}
 
       {settingsTab && (

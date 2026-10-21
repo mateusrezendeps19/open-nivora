@@ -1,0 +1,91 @@
+.activity__compose {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-100);
+}
+
+.activity__compose textarea {
+  resize: vertical;
+}
+
+.activity__empty {
+  margin: var(--space-150) 0 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  margin: var(--space-150) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-100);
+}
+
+/*
+ * A comment is something somebody wrote and gets a surface of its own; an
+ * event is a line of record and stays flat against the page.
+ */
+.activity__item--comment {
+  display: block;
+  padding: var(--space-100) var(--space-150);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-raised);
+}
+
+.activity__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.activity__dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  margin-left: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+
+.activity__event {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.activity__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  margin-top: var(--space-50);
+}
+
+.activity__when {
+  color: var(--text-disabled);
+  font-size: 12px;
+}
+
+.activity__link {
+  padding: 0;
+  color: var(--text-subtle);
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.activity__link:hover {
+  color: var(--text);
+}
+
+.activity__link--danger:hover {
+  color: var(--danger);
+}

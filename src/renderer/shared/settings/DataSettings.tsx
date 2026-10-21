@@ -38,11 +38,16 @@ export function DataSettings({ doc }: DataSettingsProps) {
       acc.rules += board.automations.length;
       for (const list of board.lists) {
         acc.cards += list.cards.length;
-        for (const card of list.cards) acc.attachments += card.attachments.length;
+        for (const card of list.cards) {
+          acc.attachments += card.attachments.length;
+          // Counted apart, not subtracted: this tab is about what the file
+          // holds, and an archived card is still in it.
+          if (card.archivedAt) acc.archived += 1;
+        }
       }
       return acc;
     },
-    { boards: 0, lists: 0, cards: 0, rules: 0, attachments: 0 },
+    { boards: 0, lists: 0, cards: 0, archived: 0, rules: 0, attachments: 0 },
   );
 
   return (
@@ -56,6 +61,8 @@ export function DataSettings({ doc }: DataSettingsProps) {
           <dd>{totals.lists}</dd>
           <dt>Cartoes</dt>
           <dd>{totals.cards}</dd>
+          <dt>Arquivados</dt>
+          <dd>{totals.archived}</dd>
           <dt>Anexos</dt>
           <dd>{totals.attachments}</dd>
           <dt>Regras</dt>

@@ -31,7 +31,15 @@ repository came from which piece of evidence — is in
   view, a column of cards with no date, and drag and drop to reschedule
 - **Lists** — rename in place, reorder by dragging, delete
 - **Cards** — drag and drop between lists and within a list, with a live insertion line
-- **Card detail** — done state, description, labels, due date, checklist with progress, attachments
+- **Card detail** — opens at the same fixed size every time and scrolls inside, with done state,
+  description, labels, due date, checklist with progress and attachments
+- **Comments and activity** — a column to the right of the card, as on a Trello card back: one
+  feed with what you wrote, editable and deletable, mixed with what the reducer logged (created,
+  moved, label, due date, checklist completed, archived), newest first. Changes made by an
+  automation are logged like any other. The column goes back under the card on a narrow window
+- **Labels** — a popover over the card creates new ones and renames or recolors the existing ones,
+  on a palette of ten colors; the list scrolls inside the popover, and labels belong to the
+  document, so an edit reaches every board
 - **Board background** — solid colors, eight gradients, or an image from disk
 - **Attachments and images** — pick files or drop them on a card; images get a thumbnail and can
   become the card cover; open with the system app or reveal in the folder
@@ -39,6 +47,11 @@ repository came from which piece of evidence — is in
 - **Filter** — by title and description, preserving real indices so a drop still lands correctly
 - **Light and dark themes**
 - **Quick card** — a floating button in the bottom right corner opens the quick-card window
+- **Drag to archive or delete** — dragging a card turns that button into a trash and raises an
+  archive box above it. The trash asks first while *confirm card delete* is on; the archive box
+  does not, because an archived card keeps its place in its list
+- **Archive** — archived cards leave the board, the calendar and the counts but stay in the
+  document; the entry at the foot of the sidebar lists them, to restore or to delete for good
 - **Shortcuts** — `Ctrl+N` new card, `Ctrl+F` find, `Ctrl+K` filter, `Ctrl+,` settings
 - **Local storage** — one JSON file in `userData`, written atomically
 
@@ -140,7 +153,7 @@ electron/
     main.ts          preload for the main window (also exposes init_config)
     window.ts        preload for every other window
 src/renderer/
-  shared/            types, document, reducer, automations, calendar, assets, tokens, TitleBar
+  shared/            types, document, reducer, activity, automations, calendar, assets, tokens
   shared/settings/   the Settings tabs, used by both the modal and the window
   main/              the board app
   newcard/           quick-card window (500x325)
@@ -148,11 +161,13 @@ src/renderer/
   find_in_page/      search overlay
   welcome/           intro screen (900x620)
 tests/
-  reducer.test.ts      move maths and document normalization
+  reducer.test.ts      move maths, archiving, labels and document normalization
   automations.test.ts  triggers, actions, chaining, termination
-  calendar.test.ts     month grid, week start, local-time due dates, grouping
+  activity.test.ts     which actions become history, and who may rewrite it
+  calendar.test.ts     month grid, week start, local-time due dates, grouping, elapsed time
   smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast,
-                       sidebar rail, calendar month view and rescheduling by drag
+                       sidebar rail, calendar month view, rescheduling by drag, dragging a card
+                       onto the trash or the archive box, comments and label creation
 docs/
   REVERSE-ENGINEERING.md      the analysis report
   rea-evidence-summary.json   extract of the REA evidence

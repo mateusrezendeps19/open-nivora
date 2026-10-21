@@ -1,0 +1,99 @@
+/* Same layer as the card modal: one dialog over the board at a time. */
+.archive__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 64px var(--space-200);
+  background: rgb(9 30 66 / 0.54);
+  overflow-y: auto;
+}
+
+.archive {
+  width: min(100%, 560px);
+  border-radius: var(--radius-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+}
+
+.archive__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-150) var(--space-200);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.archive__header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.archive__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.archive__close {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+}
+
+.archive__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.archive__list {
+  margin: 0;
+  padding: var(--space-100);
+  list-style: none;
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+
+.archive__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  padding: var(--space-100);
+  border-radius: var(--radius);
+}
+
+.archive__item:hover {
+  background: var(--surface-hover);
+}
+
+.archive__card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.archive__title {
+  overflow-wrap: anywhere;
+}
+
+.archive__meta {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+/* The row's buttons must not wrap under a long title. */
+.archive__item .btn {
+  flex: 0 0 auto;
+}

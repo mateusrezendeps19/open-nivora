@@ -24,6 +24,23 @@ export interface Attachment {
   isImage: boolean;
 }
 
+/**
+ * One line of the card's history: a comment the user wrote, or an event the
+ * reducer logged.
+ *
+ * `text` is composed when it happens and then never recomputed, so renaming a
+ * list later does not rewrite what the history says - and an entry about a
+ * list that has since been deleted still reads correctly.
+ */
+export interface Activity {
+  id: string;
+  kind: 'comment' | 'event';
+  text: string;
+  at: string;
+  /** Comments only; events are never edited. */
+  editedAt: string | null;
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -40,6 +57,14 @@ export interface Card {
    * "mover para Concluido e marcar como concluido" asks for.
    */
   done: boolean;
+  /** Comments and logged events, oldest first. */
+  activity: Activity[];
+  /**
+   * When the card was archived, or null while it is on the board. Archived
+   * cards stay in their list, at their place, so restoring one puts it back
+   * where it was instead of at the end.
+   */
+  archivedAt: string | null;
   createdAt: string;
 }
 
@@ -210,6 +235,20 @@ export const GRADIENTS: Gradient[] = [
     tone: 'dark',
   },
 ];
+
+/** The palette the label editor offers. Our own values, in the Nivora ramp. */
+export const LABEL_COLORS = [
+  '#4bce97',
+  '#f5cd47',
+  '#fea362',
+  '#f87168',
+  '#9f8fef',
+  '#579dff',
+  '#6cc3e0',
+  '#94c748',
+  '#e774bb',
+  '#8590a2',
+] as const;
 
 export const DEFAULT_LABELS: Label[] = [
   { id: 'lbl-green', name: 'Pronto', color: '#4bce97' },

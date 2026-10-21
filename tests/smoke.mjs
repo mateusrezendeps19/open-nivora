@@ -469,6 +469,202 @@ try {
     // board window changed just before, which here is the view it was left on.
     assert.equal(doc.prefs.view, 'board', 'a janela newcard reverteu a visao do quadro');
   });
+
+  await check('arrastar um cartao ate o botao flutuante o exclui', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const title = `Cartao da lixeira ${Date.now()}`;
+
+    const column = page.locator('.column').first();
+    await column.locator('.composer__open').click();
+    await column.locator('.composer__input').fill(title);
+    await column.locator('.composer__input').press('Enter');
+    // Enter mantem o compositor aberto; fecha-lo devolve a coluna ao estado em
+    // que a verificacao a encontrou, para quem rodar depois.
+    await column.locator('.composer__input').press('Escape');
+    await page.waitForSelector(`.tile__title:text-is("${title}")`, { timeout: 5_000 });
+
+    await page.locator('.tile').filter({ hasText: title }).dragTo(page.locator('.fab'));
+
+    // confirmCardDelete vem ligado do documento semente, entao o drop pergunta
+    // antes de excluir, e a pergunta tem de nomear o cartao que foi solto.
+    await page.waitForSelector('.fab-confirm', { timeout: 5_000 });
+    const asked = await page.locator('.fab-confirm__text').textContent();
+    assert.ok(asked.includes(title), `a confirmacao nao nomeia "${title}": ${asked}`);
+    await page.locator('.fab-confirm button:text-is("Excluir")').click();
+
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return !doc.boards.some((board) =>
+        board.lists.some((entry) => entry.cards.some((card) => card.title === title)),
+      );
+    }, `"${title}" continuou no boards.json depois da lixeira`);
+
+    // O arraste tem de terminar junto: o botao volta a ser o de novo cartao e
+    // o quadro nao fica com a linha de drop acesa.
+    assert.equal(await page.locator('.fab').getAttribute('aria-label'), 'Novo cartao');
+    assert.equal(await page.locator('.column__drop-line').count(), 0, 'sobrou linha de drop');
+  });
+
+  await check('arrastar um cartao ate a caixa de arquivo o tira do quadro', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const title = `Cartao arquivado ${Date.now()}`;
+
+    const column = page.locator('.column').first();
+    await column.locator('.composer__open').click();
+    await column.locator('.composer__input').fill(title);
+    await column.locator('.composer__input').press('Enter');
+    await column.locator('.composer__input').press('Escape');
+    await page.waitForSelector(`.tile__title:text-is("${title}")`, { timeout: 5_000 });
+    const before = await page.locator('.tile').count();
+
+    // A caixa de arquivo so existe durante o arraste, entao o alvo tem de ser
+    // resolvido com o cartao ja no ar: dragTo nao serve aqui.
+    const tile = page.locator('.tile').filter({ hasText: title });
+    const from = await tile.boundingBox();
+    const dock = await page.locator('.fab').boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2 + 20, {
+      steps: 5,
+    });
+    const box = await page.locator('.fab-archive').boundingBox();
+    assert.ok(box, 'a caixa de arquivo nao apareceu durante o arraste');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 10 });
+    await page.mouse.move(box.x + box.width / 2 + 1, box.y + box.height / 2, { steps: 2 });
+    await page.mouse.up();
+
+    // Fora do quadro, mas ainda no documento: arquivar nao e excluir.
+    await waitFor(async () => (await page.locator('.tile').count()) === before - 1, `"${title}" continuou no quadro`);
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards
+        .flatMap((board) => board.lists)
+        .flatMap((list) => list.cards)
+        .find((entry) => entry.title === title);
+      return typeof card?.archivedAt === 'string';
+    }, `"${title}" nao ficou com archivedAt no boards.json`);
+
+    // E volta pelo painel da barra lateral, na mesma lista de onde saiu.
+    await page.click('.sidebar__archive');
+    const row = page.locator('.archive__item', { hasText: title });
+    await row.waitFor({ state: 'visible', timeout: 5_000 });
+    await row.locator('button:text-is("Restaurar")').click();
+    await page.waitForSelector(`.tile__title:text-is("${title}")`, { timeout: 5_000 });
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards
+        .flatMap((board) => board.lists)
+        .flatMap((list) => list.cards)
+        .find((entry) => entry.title === title);
+      return card?.archivedAt === null;
+    }, `"${title}" nao foi restaurado no boards.json`);
+
+    // Sem arquivados, nem o painel nem a entrada na barra lateral continuam.
+    assert.equal(await page.locator('.archive').count(), 0, 'o painel ficou aberto e vazio');
+    assert.equal(await page.locator('.sidebar__archive').count(), 0);
+  });
+
+  await check('o cartao guarda comentario, atividade e uma etiqueta nova', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const title = `Cartao com historia ${Date.now()}`;
+    const comment = 'Primeiro comentario deste cartao';
+    const label = `Etiqueta ${Date.now()}`;
+
+    const column = page.locator('.column').first();
+    await column.locator('.composer__open').click();
+    await column.locator('.composer__input').fill(title);
+    await column.locator('.composer__input').press('Enter');
+    await column.locator('.composer__input').press('Escape');
+    await page.locator('.tile').filter({ hasText: title }).click();
+    await page.waitForSelector('.modal__due input');
+
+    // Criar o cartao ja e a primeira linha da historia.
+    await page.waitForSelector('.activity__event', { timeout: 5_000 });
+    const created = await page.locator('.activity__event').last().textContent();
+    assert.match(created, /Adicionou este cartao/, `a atividade comeca com: ${created}`);
+
+    // A historia fica na coluna da direita, ao lado do cartao.
+    const main = await page.locator('.modal__main').boundingBox();
+    const side = await page.locator('.modal__side').boundingBox();
+    assert.ok(
+      side.x >= main.x + main.width - 1,
+      `a coluna da atividade nao esta a direita (main ate ${main.x + main.width}, side em ${side.x})`,
+    );
+    assert.ok(
+      (await page.locator('.modal__side .activity__compose').count()) === 1,
+      'o compositor de comentario nao esta na coluna da direita',
+    );
+
+    // O cartao abre com um tamanho fixo: enche-lo de conteudo nao o estica, a
+    // rolagem acontece dentro dele e o fundo atras fica parado.
+    const opened = await page.locator('.modal').boundingBox();
+    const checkField = page.locator('.modal__section:has-text("CHECKLIST") .field');
+    for (let item = 1; item <= 12; item += 1) {
+      await checkField.fill(`Item ${item} da checklist`);
+      await checkField.press('Enter');
+    }
+    const filled = await page.locator('.modal').boundingBox();
+    assert.equal(
+      Math.round(filled.height),
+      Math.round(opened.height),
+      `o cartao cresceu com o conteudo: ${opened.height} -> ${filled.height}`,
+    );
+    const inside = await page
+      .locator('.modal__body')
+      .evaluate((el) => el.scrollHeight > el.clientHeight);
+    assert.ok(inside, 'o corpo do cartao deveria rolar por dentro');
+    const outside = await page
+      .locator('.modal__backdrop')
+      .evaluate((el) => el.scrollHeight > el.clientHeight);
+    assert.equal(outside, false, 'o fundo atras do cartao nao deveria rolar');
+
+    await page.locator('.activity__compose textarea').fill(comment);
+    await page.locator('.activity__compose button:text-is("Comentar")').click();
+    await page.waitForSelector(`.activity__text:text-is("${comment}")`, { timeout: 5_000 });
+
+    // Marcar como concluido pelo modal escreve a proxima linha.
+    await page.locator('.modal__done').click();
+    await page.waitForSelector('.activity__event:has-text("Marcou como concluido")', {
+      timeout: 5_000,
+    });
+
+    // O editor de etiquetas e um popover: abre sobre o cartao, sem empurrar o
+    // que vem depois dele.
+    await page.locator('.modal__body').evaluate((el) => el.scrollTo(0, 0));
+    const dueBefore = await page.locator('.modal__section:has-text("PRAZO")').boundingBox();
+    await page.locator('.modal__section-action').click();
+    await page.waitForSelector('.labels');
+    const dueAfter = await page.locator('.modal__section:has-text("PRAZO")').boundingBox();
+    assert.equal(
+      Math.round(dueAfter.y),
+      Math.round(dueBefore.y),
+      'abrir o editor de etiquetas empurrou o cartao para baixo',
+    );
+
+    // Uma etiqueta criada aqui vale para o documento, nao so para este cartao.
+    await page.locator('.labels__new').click();
+    await page.locator('.labels__row--new .field').fill(label);
+    await page.locator('.labels__row--new button:text-is("Criar")').click();
+    await page.waitForSelector(`.modal__label:text-is("${label}")`, { timeout: 5_000 });
+
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards
+        .flatMap((board) => board.lists)
+        .flatMap((list) => list.cards)
+        .find((entry) => entry.title === title);
+      if (!card) return false;
+      const kinds = card.activity.map((entry) => entry.kind);
+      return (
+        doc.labels.some((entry) => entry.name === label) &&
+        card.activity.some((entry) => entry.kind === 'comment' && entry.text === comment) &&
+        card.activity.some((entry) => entry.text === 'Marcou como concluido') &&
+        kinds.filter((kind) => kind === 'event').length >= 2
+      );
+    }, `o comentario, a atividade ou a etiqueta "${label}" nao chegaram ao boards.json`);
+
+    await page.locator('.modal__close').click();
+  });
 } finally {
   await app?.close().catch(() => undefined);
   await rm(userData, { recursive: true, force: true }).catch(() => undefined);

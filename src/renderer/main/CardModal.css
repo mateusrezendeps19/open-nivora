@@ -1,3 +1,9 @@
+/*
+ * The card opens at the same size every time and never grows past it: the
+ * backdrop itself does not scroll, the body inside the card does. A card with
+ * a long description, twenty checklist items and a month of history is the
+ * same window as an empty one - only its content scrolls.
+ */
 .modal__backdrop {
   position: fixed;
   inset: 0;
@@ -7,12 +13,20 @@
   justify-content: center;
   padding: 48px var(--space-200);
   background: rgb(9 30 66 / 0.54);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .modal {
   position: relative;
-  width: min(100%, 720px);
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 960px);
+  /*
+   * 100% is the backdrop minus its padding. The main window's recovered
+   * minHeight is 720, so on the shortest window the card takes what is there
+   * instead of running off the bottom.
+   */
+  height: min(720px, 100%);
   border-radius: var(--radius-lg);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
@@ -24,6 +38,7 @@
 
 .modal__header {
   position: relative;
+  flex: 0 0 auto;
   padding: var(--space-200) 56px var(--space-100) var(--space-200);
   border-bottom: 1px solid var(--border-subtle);
 }
@@ -100,11 +115,50 @@
   color: var(--text);
 }
 
+/*
+ * Two columns, as on a Trello card back: the card itself on the left, its
+ * history on the right. The split is ours - the board interface is not in the
+ * asar, so there was nothing to recover here.
+ */
 .modal__body {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-300);
+  padding: var(--space-200);
+  /* The one scrolling surface of the card, as the mouse wheel expects. */
+  overflow-y: auto;
+}
+
+.modal__main {
   display: flex;
   flex-direction: column;
   gap: var(--space-300);
-  padding: var(--space-200);
+  min-width: 0;
+}
+
+.modal__side {
+  min-width: 0;
+  padding-left: var(--space-200);
+  border-left: 1px solid var(--border);
+}
+
+/*
+ * The main window may be as narrow as 760px - the minWidth recovered from the
+ * asar - and a 320px column against the description is cramped well before
+ * that. Under this width the history goes back below the card.
+ */
+@media (max-width: 880px) {
+  .modal__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modal__side {
+    padding-left: 0;
+    padding-top: var(--space-200);
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
 }
 
 .modal__section h3 {
@@ -114,6 +168,26 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-subtle);
+}
+
+/* The anchor for the label popover, which is positioned against this section. */
+.modal__section--labels {
+  position: relative;
+}
+
+/* The "Editar etiquetas" toggle, aligned to the right of the section title. */
+.modal__section-action {
+  float: right;
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+.modal__section-action:hover {
+  color: var(--text);
 }
 
 .modal__progress-label {
@@ -157,7 +231,16 @@
   width: auto;
 }
 
+/*
+ * The description grows with its text instead of scrolling inside a box of
+ * five rows. With the card at a fixed height, a scroller inside the scroller
+ * swallows the wheel: Chromium latches the gesture to whatever is under the
+ * pointer, so the card would sit still while the user scrolled a textarea.
+ * `field-sizing` is what the title already uses.
+ */
 .modal__description {
+  field-sizing: content;
+  min-height: 96px;
   resize: vertical;
 }
 
@@ -229,6 +312,7 @@
 }
 
 .modal__footer {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;

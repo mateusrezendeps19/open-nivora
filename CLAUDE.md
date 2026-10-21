@@ -90,6 +90,51 @@ caps passes, so rules that trigger each other terminate.
 Card-level actions act on the **active board** (`mapActiveBoard`). Adding a card to a different
 board therefore needs a `board/select` first — which is why `newcard` sends both actions in order.
 
+### Archived cards
+
+`card/archive` sets `archivedAt` rather than moving the card: it stays in its list at its own
+index, so `card/restore` puts it back where it was without having to remember a target. The cost
+is that **everything which draws or counts cards has to filter it out** - `BoardCanvas`, the
+column badge, the sidebar count, `groupByDay`. A new surface that lists cards has to filter it
+too, or archived cards quietly come back. The exception is the Dados tab, which reports what the
+file holds and so counts them, on a line of their own. The only way back for the user is the panel reached from
+the foot of the sidebar; the entry is hidden when the board has none.
+
+### Card history
+
+`reducer()` wraps `baseReducer` in `applyAndLog` (`shared/activity.ts`), which appends a line to
+`card.activity` for the changes worth remembering, and hands that same wrapper to
+`runAutomations` - so what a rule does to a card is logged like what the user does.
+
+The feed is the right-hand column of the card modal (`.modal__body` is a two-column grid,
+`modal__main` + `modal__side`), and stacks back under the card below 880px, because the main
+window's recovered `minWidth` is 760. The layout is ours: the board interface is not in the asar.
+
+The card is a fixed shell - `height: min(720px, 100%)`, header and footer pinned, `.modal__body`
+the one scrolling surface, backdrop `overflow: hidden`. **Nothing inside the body may be a second
+scroller**: Chromium latches a wheel gesture to whatever is under the pointer, so a textarea with
+its own scrollbar leaves the card sitting still while the user scrolls. That is why the
+description uses `field-sizing: content` and grows instead. The label editor is a popover
+positioned against `.modal__section--labels` (z 5, the list menu's layer) so that opening it
+overlays the card rather than pushing what is under the pointer out of the way; it closes on
+Escape, on its own x, and on a mousedown outside - which skips `.modal__section-action`, or the
+click that closes it would reopen it.
+
+Two rules hold the feed together:
+
+- The line's **text is composed when it happens** and never recomputed. A list renamed or deleted
+  later must not rewrite what the history says.
+- `comment/update` and `comment/remove` **guard on `kind === 'comment'`**. Events are the record
+  of what happened; only what the user wrote is the user's to change.
+
+`replace` is excluded, like it is from automations: a document arriving from disk or from another
+window would otherwise log its whole history a second time.
+
+Labels live on the **document**, not on a board (`label/add` and `label/update` do not go through
+`mapActiveBoard`), so an edit from one card reaches every board. There is deliberately no
+`label/remove`: cards and automation rules point at label ids, and deleting one would have to
+decide what becomes of the rules that trigger on it.
+
 ### Due dates
 
 Due dates are stored as ISO strings but belong to the day on the user's own clock. Everything goes
@@ -117,7 +162,8 @@ of the `preferences` window) so the two cannot drift.
   the shape — not what the line does.
 - Styling is plain CSS per component with the tokens in `shared/styles/tokens.css`. There is no CSS
   framework. Both themes must work: dark is the default, light is `:root[data-theme='light']`.
-  z-index layers in use: list menu 5, floating button 20, card modal 50, settings panel 60.
+  z-index layers in use: list menu 5, floating dock 20, card modal and archive panel 50, settings
+  panel 60.
 - Commits follow Conventional Commits with a Portuguese body (also unaccented) that explains the
   reasoning, not just the change. When a fix is subtle, the history records that the test was
   validated against the bug by reverting the fix and watching it fail.

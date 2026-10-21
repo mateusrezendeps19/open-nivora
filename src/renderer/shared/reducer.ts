@@ -1,3 +1,4 @@
+import { logActivity } from './activity';
 import { runAutomations } from './automations';
 import { emptyBoard, emptyCard, emptyList, seedDocument } from './document';
 import { id } from './id';
@@ -7,6 +8,7 @@ import type {
   Board,
   BoardDocument,
   Card,
+  Label,
   Prefs,
   Rule,
 } from './types';
@@ -25,6 +27,8 @@ export type Action =
   | { type: 'card/add'; listId: string; title: string; atTop?: boolean }
   | { type: 'card/update'; cardId: string; patch: Partial<Card> }
   | { type: 'card/remove'; cardId: string }
+  | { type: 'card/archive'; cardId: string }
+  | { type: 'card/restore'; cardId: string }
   | { type: 'card/move'; cardId: string; toListId: string; toIndex: number }
   | { type: 'checklist/add'; cardId: string; text: string }
   | { type: 'checklist/toggle'; cardId: string; itemId: string }
@@ -32,6 +36,11 @@ export type Action =
   | { type: 'card/attach'; cardId: string; attachments: Attachment[] }
   | { type: 'card/detach'; cardId: string; attachmentId: string }
   | { type: 'card/cover'; cardId: string; attachmentId: string | null }
+  | { type: 'comment/add'; cardId: string; text: string }
+  | { type: 'comment/update'; cardId: string; activityId: string; text: string }
+  | { type: 'comment/remove'; cardId: string; activityId: string }
+  | { type: 'label/add'; name: string; color: string }
+  | { type: 'label/update'; labelId: string; patch: Partial<Omit<Label, 'id'>> }
   | { type: 'rule/add'; rule: Rule }
   | { type: 'rule/update'; rule: Rule }
   | { type: 'rule/remove'; ruleId: string }
@@ -143,6 +152,21 @@ export function baseReducer(state: BoardDocument, action: Action): BoardDocument
         })),
       }));
 
+    /*
+     * Archiving is a flag, not a move: the card stays in its list at its own
+     * index, so restoring it puts it back where it was. Every view that shows
+     * cards filters `archivedAt` out.
+     */
+    case 'card/archive':
+      return updateCard(state, action.cardId, (card) =>
+        card.archivedAt ? card : { ...card, archivedAt: new Date().toISOString() },
+      );
+
+    case 'card/restore':
+      return updateCard(state, action.cardId, (card) =>
+        card.archivedAt ? { ...card, archivedAt: null } : card,
+      );
+
     case 'card/move':
       return mapActiveBoard(state, (board) => {
         const source = board.lists.find((l) => l.cards.some((c) => c.id === action.cardId));
@@ -214,6 +238,59 @@ export function baseReducer(state: BoardDocument, action: Action): BoardDocument
         return { ...card, coverAttachmentId: action.attachmentId };
       });
 
+    case 'comment/add':
+      return updateCard(state, action.cardId, (card) => ({
+        ...card,
+        activity: [
+          ...card.activity,
+          {
+            id: id('cmt'),
+            kind: 'comment',
+            text: action.text,
+            at: new Date().toISOString(),
+            editedAt: null,
+          },
+        ],
+      }));
+
+    /*
+     * Comments and events share one feed, so both edits guard on the kind: an
+     * event is the record of what happened and is not the user's to rewrite.
+     */
+    case 'comment/update':
+      return updateCard(state, action.cardId, (card) => ({
+        ...card,
+        activity: card.activity.map((entry) =>
+          entry.id === action.activityId && entry.kind === 'comment'
+            ? { ...entry, text: action.text, editedAt: new Date().toISOString() }
+            : entry,
+        ),
+      }));
+
+    case 'comment/remove':
+      return updateCard(state, action.cardId, (card) => ({
+        ...card,
+        activity: card.activity.filter(
+          (entry) => !(entry.id === action.activityId && entry.kind === 'comment'),
+        ),
+      }));
+
+    // Labels belong to the document, not to a board: every board picks from
+    // the same set, so these two cases do not go through mapActiveBoard.
+    case 'label/add':
+      return {
+        ...state,
+        labels: [...state.labels, { id: id('lbl'), name: action.name, color: action.color }],
+      };
+
+    case 'label/update':
+      return {
+        ...state,
+        labels: state.labels.map((label) =>
+          label.id === action.labelId ? { ...label, ...action.patch } : label,
+        ),
+      };
+
     case 'rule/add':
       return mapActiveBoard(state, (board) => ({
         ...board,
@@ -268,15 +345,26 @@ function updateCard(state: BoardDocument, cardId: string, fn: (card: Card) => Ca
 }
 
 /**
- * The reducer the app dispatches to: applies the action, then lets the
- * automation engine react to it.
+ * Applies an action and writes the card history line it deserves.
  *
- * `replace` is excluded on purpose. It is how a document arrives from disk or
- * from another window, and re-running rules over a load would fire them again
- * on state they already produced.
+ * The automation engine gets this one, not the plain reducer, so a card moved
+ * or labelled by a rule is logged like any other change.
+ */
+function applyAndLog(state: BoardDocument, action: Action): BoardDocument {
+  return logActivity(state, baseReducer(state, action), action);
+}
+
+/**
+ * The reducer the app dispatches to: applies the action, logs it, then lets
+ * the automation engine react to it.
+ *
+ * `replace` is excluded from both on purpose. It is how a document arrives
+ * from disk or from another window, and re-running rules over a load would
+ * fire them again on state they already produced - and logging it would write
+ * the whole history a second time.
  */
 export function reducer(state: BoardDocument, action: Action): BoardDocument {
-  const next = baseReducer(state, action);
-  if (action.type === 'replace') return next;
-  return runAutomations(state, next, action, baseReducer);
+  if (action.type === 'replace') return baseReducer(state, action);
+  const next = applyAndLog(state, action);
+  return runAutomations(state, next, action, applyAndLog);
 }

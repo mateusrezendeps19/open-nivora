@@ -10,36 +10,27 @@ const VIEWS: { id: AppView; label: string }[] = [
 interface ToolbarProps {
   query: string;
   view: AppView;
-  sidebarCollapsed: boolean;
   onQueryChange: (value: string) => void;
   onViewChange: (view: AppView) => void;
-  onToggleSidebar: () => void;
   onFind: () => void;
   onSettings: () => void;
 }
 
+/*
+ * No control for the sidebar here: the sidebar collapses and expands from its
+ * own chevron, and keeps a rail of board tiles when collapsed, so a second
+ * toggle in the title bar only duplicated it.
+ */
 export function Toolbar({
   query,
   view,
-  sidebarCollapsed,
   onQueryChange,
   onViewChange,
-  onToggleSidebar,
   onFind,
   onSettings,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
-      <button
-        type="button"
-        className="btn btn--subtle"
-        onClick={onToggleSidebar}
-        aria-pressed={!sidebarCollapsed}
-        title={sidebarCollapsed ? 'Mostrar os quadros' : 'Recolher os quadros'}
-      >
-        Quadros
-      </button>
-
       <div className="toolbar__views" role="group" aria-label="Visao">
         {VIEWS.map((entry) => (
           <button

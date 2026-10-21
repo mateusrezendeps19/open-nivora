@@ -1,0 +1,157 @@
+/*
+ * Popover under the label chips, in the card's own stacking context (the card
+ * modal is z 50; 5 is the same layer the list menu uses on the board).
+ *
+ * It is the size of a panel, not of its contents: the list scrolls inside, so
+ * the card behind it never moves when the editor opens.
+ */
+.labels {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + var(--space-50));
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: 304px;
+  max-height: 340px;
+  padding: var(--space-150);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+}
+
+.labels__head {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.labels__close {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+}
+
+.labels__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.labels__hint {
+  flex: 0 0 auto;
+  margin: var(--space-25) 0 var(--space-100);
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+/* The only part that scrolls; the header and the create row stay put. */
+.labels__list {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.labels__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-50);
+  min-height: 32px;
+}
+
+.labels__edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+  width: 100%;
+}
+
+.labels__foot {
+  flex: 0 0 auto;
+  margin-top: var(--space-100);
+  padding-top: var(--space-100);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.labels__row--new {
+  flex-wrap: wrap;
+}
+
+.labels__row .field {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.labels__chip {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  /* The palette is light in both themes, so the text on it is always dark. */
+  color: #1d2125;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.labels__pencil {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+}
+
+.labels__pencil:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.labels__palette {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.labels__swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  transition: transform var(--motion-fast) var(--ease);
+}
+
+.labels__swatch:hover {
+  transform: scale(1.15);
+}
+
+.labels__swatch--on {
+  box-shadow:
+    inset 0 0 0 2px var(--surface-overlay),
+    0 0 0 2px var(--text);
+}
+
+.labels__new {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.labels__new:hover {
+  background: var(--surface-pressed);
+  color: var(--text);
+}

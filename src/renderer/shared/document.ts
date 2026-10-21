@@ -3,6 +3,7 @@ import {
   DEFAULT_LABELS,
   GRADIENTS,
   IMAGE_MIME,
+  type Activity,
   type Attachment,
   type Background,
   type Board,
@@ -27,6 +28,8 @@ export function emptyCard(title: string): Card {
     attachments: [],
     coverAttachmentId: null,
     done: false,
+    activity: [],
+    archivedAt: null,
     createdAt: new Date().toISOString(),
   };
 }
@@ -154,6 +157,19 @@ function normalizeAttachment(input: unknown): Attachment | null {
   };
 }
 
+/** Drops anything that is not a readable line of history. */
+function normalizeActivity(input: unknown): Activity | null {
+  const entry = input as Partial<Activity> | undefined;
+  if (!entry || typeof entry.text !== 'string' || !entry.text) return null;
+  return {
+    id: entry.id ?? id('act'),
+    kind: entry.kind === 'comment' ? 'comment' : 'event',
+    text: entry.text,
+    at: typeof entry.at === 'string' ? entry.at : new Date().toISOString(),
+    editedAt: typeof entry.editedAt === 'string' ? entry.editedAt : null,
+  };
+}
+
 function normalizeRule(input: unknown): Rule | null {
   const r = input as Partial<Rule> | undefined;
   const triggerType = r?.trigger?.type;
@@ -216,6 +232,10 @@ export function normalize(input: unknown): BoardDocument {
             attachments,
             coverAttachmentId: cover,
             done: card.done === true,
+            activity: (card.activity ?? [])
+              .map(normalizeActivity)
+              .filter((entry): entry is Activity => entry !== null),
+            archivedAt: typeof card.archivedAt === 'string' ? card.archivedAt : null,
           };
         }),
       })),
