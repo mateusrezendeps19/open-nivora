@@ -227,6 +227,28 @@ Escape. `list/copy` gives the copy fresh ids all the way down, leaves archived c
 starts each card's history over with one line saying where it came from. `list/transfer` takes a
 list to another board; to the active board it is plain `list/move`.
 
+### Filtering the board
+
+The Filtros popover is Trello's (`FilterPanel`); the semantics are in `shared/filter.ts` and
+unit-tested: options in one group add up, groups narrow each other, a group with nothing ticked
+does not filter. The filter is state in `App` and is **not saved** - a filter still on the next
+morning reads as cards gone missing. The keyword is one field of it, and the same field is the
+search box, `Ctrl+K` and the Localizar window, so they can never disagree.
+
+- A surface that lists cards goes through `isShown` (archived out, then the filter), like the
+  board does; the calendar uses `matchesFilter` on top of its own archived check.
+- A hidden card is still in its list, so **the drop slot counts visible cards and the reducer
+  counts all of them**. `slotToIndex` converts, after `toActionIndex`'s own off-by-one. Without
+  it, a drop after the last visible card landed before it.
+- Clearing is in two places, the banner over the board and the popover. There is deliberately no
+  third beside the Filtros button: it came and went with the filter, changed the width of the
+  centred group and made the search box jump.
+
+The title bar is a three-column grid - views, search + Filtros, actions - whose side columns
+share the leftover space, so the middle stays centred. At the window's minimum width (760) the
+controls only fit because the window title gives way (ellipsis, down to nothing) and the search
+box shrinks to 100px; the smoke test checks that nothing overlaps there with a filter on.
+
 ### Archived cards
 
 `card/archive` sets `archivedAt` rather than moving the card: it stays in its list at its own
@@ -299,7 +321,7 @@ of the `preferences` window) so the two cannot drift.
   the shape — not what the line does.
 - Styling is plain CSS per component with the tokens in `shared/styles/tokens.css`. There is no CSS
   framework. Both themes must work: dark is the default, light is `:root[data-theme='light']`.
-  z-index layers in use: list menu 5, floating dock 20, the dragged card 30, card modal and
+  z-index layers in use: list menu 5, floating dock 20, the dragged card 30, filter popover 40, card modal and
   archive panel 50, settings panel 60. The dragged card is above the dock so it passes over the
   trash rather than under it.
 - Commits follow Conventional Commits and are written **entirely in English** - subject and body.

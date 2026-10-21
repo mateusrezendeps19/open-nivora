@@ -1,14 +1,33 @@
+/*
+ * Three columns: views, the search and Filtros group, actions. The two sides
+ * share the leftover space equally, which is what keeps the middle centred
+ * whatever the sides hold; when the window narrows, the search box is what
+ * gives way, not the views or the buttons.
+ */
 .toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   align-items: center;
   gap: var(--space-100);
   width: 100%;
   min-width: 0;
 }
 
+/*
+ * A grid and not a flex row: Chromium sizes a flex row's min- and max-content
+ * without the search box's flex-basis, so the column came out narrower than its
+ * own contents and Filtros spilled over Localizar. A track states both ends.
+ */
+.toolbar__center {
+  display: grid;
+  grid-template-columns: minmax(100px, 320px) auto;
+  align-items: center;
+  gap: var(--space-100);
+}
+
 .toolbar__views {
   display: flex;
-  flex: 0 0 auto;
+  justify-self: start;
   padding: 2px;
   border-radius: var(--radius-sm);
   background: var(--surface-sunken);
@@ -36,8 +55,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  flex: 0 1 320px;
-  min-width: 140px;
 }
 
 .toolbar__search-icon {
@@ -86,8 +103,8 @@
 .toolbar__actions {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: var(--space-50);
-  margin-left: auto;
 }
 
 .toolbar__actions .btn,
@@ -157,17 +174,4 @@
   font-weight: 700;
   line-height: 18px;
   text-align: center;
-}
-
-.toolbar__filter-clear {
-  height: 28px;
-  padding: 0 8px;
-  border-radius: var(--radius-sm);
-  color: var(--text-subtle);
-  font-size: 12px;
-}
-
-.toolbar__filter-clear:hover {
-  background: var(--surface-hover);
-  color: var(--text);
 }

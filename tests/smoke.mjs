@@ -954,6 +954,89 @@ try {
       return board?.lists.some((list) => list.title === name);
     }, `"${name}" nao chegou ao quadro "${destination}" no boards.json`);
   });
+
+  await check('a busca e os Filtros ficam no centro e cada Limpar zera o filtro', async () => {
+    const toolbar = await page.locator('.toolbar').boundingBox();
+    const center = await page.locator('.toolbar__center').boundingBox();
+    const offset = Math.abs(center.x + center.width / 2 - (toolbar.x + toolbar.width / 2));
+    assert.ok(offset < 2, `o grupo da busca esta ${offset}px fora do centro da barra`);
+
+    const tiles = await page.locator('.tile').count();
+    assert.ok(tiles > 0, 'o quadro nao tem cartoes para filtrar');
+    const option = (text) => page.locator('.filter__option', { hasText: text }).locator('input');
+
+    // Fecha pelo proprio botao: Escape num campo type=search tambem apaga o texto.
+    async function apply() {
+      await page.click('.toolbar__filter-btn');
+      await page.fill('#filter-keyword', 'zzz-sem-resultado');
+      await option('Sem prazo').check();
+      await option('Nao marcado como concluido').check();
+      assert.equal(await page.locator('.toolbar__filter-count').textContent(), '3');
+      assert.equal(await page.locator('.tile').count(), 0, 'o filtro nao escondeu os cartoes');
+      assert.equal(await page.locator('.canvas__filter').count(), 1, 'sem a faixa do filtro');
+    }
+
+    async function cleared(how) {
+      assert.equal(await page.locator('.toolbar__filter-count').count(), 0, `${how}: sobrou a contagem`);
+      assert.equal(await page.locator('.canvas__filter').count(), 0, `${how}: sobrou a faixa`);
+      assert.equal(await page.locator('.tile').count(), tiles, `${how}: faltam cartoes`);
+      assert.equal(await page.locator('.toolbar__search input').inputValue(), '');
+      if ((await page.locator('.filter').count()) === 0) await page.click('.toolbar__filter-btn');
+      assert.equal(await page.locator('#filter-keyword').inputValue(), '', `${how}: sobrou a palavra`);
+      const ticked = await page.locator('.filter input[type=checkbox]:checked').count();
+      assert.equal(ticked, 0, `${how}: ${ticked} caixa(s) continuaram marcadas`);
+      await page.click('.toolbar__filter-btn');
+      assert.equal(await page.locator('.filter').count(), 0);
+    }
+
+    // Tres voltas: a falha vista uma vez a mao nao se repetiu, entao insiste.
+    for (let round = 1; round <= 3; round += 1) {
+      await apply();
+      await page.click('.filter__clear');
+      await cleared(`volta ${round}, Limpar filtros do painel`);
+
+      await apply();
+      await page.click('.toolbar__filter-btn');
+      await page.click('.canvas__filter-clear');
+      await cleared(`volta ${round}, Limpar filtros da faixa`);
+    }
+
+    // Na largura minima, com filtro ligado, nada passa por cima de nada: antes
+    // o Filtros cobria Configuracoes e o Fechar da janela saia da tela.
+    // A janela pode estar maximizada pelo teste da titlebar, e setSize nao age nela.
+    const before = await app.evaluate(({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      const state = { maximized: win.isMaximized(), size: win.getSize() };
+      win.unmaximize();
+      win.setSize(760, 600);
+      return state;
+    });
+    try {
+      await page.fill('.toolbar__search input', 'x');
+      await waitFor(
+        // A escala de DPI do Windows arredonda: 760 vira 762.
+        async () => (await page.evaluate(() => window.innerWidth)) <= 765,
+        'a janela nao encolheu para 760',
+      );
+      const box = (selector) => page.locator(selector).boundingBox();
+      const views = await box('.toolbar__views');
+      const middle = await box('.toolbar__center');
+      const actions = await box('.toolbar__actions');
+      const close = await box('.titlebar__btn--close');
+      const width = await page.evaluate(() => window.innerWidth);
+      assert.ok(views.x + views.width <= middle.x, 'a busca cobre as visoes');
+      assert.ok(middle.x + middle.width <= actions.x, 'Filtros cobre Localizar');
+      assert.ok(actions.x + actions.width <= close.x - 2 * close.width, 'as acoes cobrem os botoes da janela');
+      assert.ok(close.x + close.width <= width + 1, 'o Fechar da janela saiu da tela');
+    } finally {
+      await page.fill('.toolbar__search input', '');
+      await app.evaluate(({ BrowserWindow }, { maximized, size }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        win.setSize(size[0], size[1]);
+        if (maximized) win.maximize();
+      }, before);
+    }
+  });
 } finally {
   await app?.close().catch(() => undefined);
   await rm(userData, { recursive: true, force: true }).catch(() => undefined);

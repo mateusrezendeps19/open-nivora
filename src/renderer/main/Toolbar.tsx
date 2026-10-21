@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { hasShell } from '../shared/bridge';
-import { activeFilterCount, EMPTY_FILTER, type CardFilter } from '../shared/filter';
+import { activeFilterCount, type CardFilter } from '../shared/filter';
 import type { AppView, Label } from '../shared/types';
 import { FilterPanel } from './FilterPanel';
 import './Toolbar.css';
@@ -58,71 +58,68 @@ export function Toolbar({
         ))}
       </div>
 
-      <label className="toolbar__search">
-        <span className="toolbar__search-icon" aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 16 16">
-            <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-            <path d="M10.5 10.5 L15 15" stroke="currentColor" strokeWidth="1.6" />
-          </svg>
-        </span>
-        <input
-          type="search"
-          value={query}
-          placeholder="Filtrar cartoes  (Ctrl+K)"
-          onChange={(event) => onQueryChange(event.target.value)}
-          aria-label="Filtrar cartoes"
-        />
-        {query && (
-          <button
-            type="button"
-            className="toolbar__clear"
-            onClick={() => onQueryChange('')}
-            aria-label="Limpar filtro"
-          >
-            x
-          </button>
-        )}
-      </label>
-
       {/*
-        Trello's Filtros button. The search box beside it is the same keyword:
-        typing in either shows in both.
+        Search and Filtros are one centred group, as in Trello's header: they
+        are what the board is looked at through, so they sit over its middle.
       */}
-      <div className="toolbar__filter">
-        <button
-          ref={filterButton}
-          type="button"
-          className={`toolbar__filter-btn${active ? ' toolbar__filter-btn--on' : ''}`}
-          aria-expanded={filterOpen}
-          aria-label={active ? `Filtros, ${active} ativo(s)` : 'Filtros'}
-          onClick={() => setFilterOpen((open) => !open)}
-        >
-          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M2 3.5h12l-4.6 5.4v4.1l-2.8 1.4V8.9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          </svg>
-          Filtros
-          {active > 0 && <span className="toolbar__filter-count">{active}</span>}
-        </button>
-        {active > 0 && (
-          <button
-            type="button"
-            className="toolbar__filter-clear"
-            aria-label="Limpar filtros"
-            title="Limpar filtros"
-            onClick={() => onFilterChange(EMPTY_FILTER)}
-          >
-            Limpar
-          </button>
-        )}
-        {filterOpen && (
-          <FilterPanel
-            filter={filter}
-            labels={labels}
-            trigger={filterButton}
-            onChange={onFilterChange}
-            onClose={closeFilter}
+      <div className="toolbar__center">
+        <label className="toolbar__search">
+          <span className="toolbar__search-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 16 16">
+              <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M10.5 10.5 L15 15" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            value={query}
+            placeholder="Filtrar cartoes  (Ctrl+K)"
+            onChange={(event) => onQueryChange(event.target.value)}
+            aria-label="Filtrar cartoes"
           />
-        )}
+          {query && (
+            <button
+              type="button"
+              className="toolbar__clear"
+              onClick={() => onQueryChange('')}
+              aria-label="Limpar filtro"
+            >
+              x
+            </button>
+          )}
+        </label>
+
+        {/*
+          Trello's Filtros button. The search box beside it is the same keyword:
+          typing in either shows in both. No Limpar beside it: the banner over
+          the board and the popover both have one, and a button that comes and
+          goes here changed the group's width, so the centred search jumped.
+        */}
+        <div className="toolbar__filter">
+          <button
+            ref={filterButton}
+            type="button"
+            className={`toolbar__filter-btn${active ? ' toolbar__filter-btn--on' : ''}`}
+            aria-expanded={filterOpen}
+            aria-label={active ? `Filtros, ${active} ativo(s)` : 'Filtros'}
+            onClick={() => setFilterOpen((open) => !open)}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2 3.5h12l-4.6 5.4v4.1l-2.8 1.4V8.9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+            </svg>
+            Filtros
+            {active > 0 && <span className="toolbar__filter-count">{active}</span>}
+          </button>
+          {filterOpen && (
+            <FilterPanel
+              filter={filter}
+              labels={labels}
+              trigger={filterButton}
+              onChange={onFilterChange}
+              onClose={closeFilter}
+            />
+          )}
+        </div>
       </div>
 
       <div className="toolbar__actions">
