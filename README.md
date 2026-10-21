@@ -2,6 +2,8 @@
 
 <p align="center"><img src="resources/logo.png" alt="Taskly" width="360"></p>
 
+<p align="center"><a href="https://buymeacoffee.com/rezendematu"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="60"></a></p>
+
 **An offline kanban board for the desktop, whose Electron shell was rebuilt from a reverse
 engineering analysis of the official Trello desktop app.**
 
@@ -223,4 +225,6 @@ of the `contextBridge` contract — the kind of fact that exists for interoperab
 **Mateus Rezende** — [LinkedIn](https://www.linkedin.com/in/mateus-rezende-626687310) ·
 [GitHub](https://github.com/mateusrezendeps19)
 
-If Taskly is useful to you, you can [buy me a coffee](https://buymeacoffee.com/rezendematu).
+If Taskly is useful to you, you can buy me a coffee:
+
+<a href="https://buymeacoffee.com/rezendematu"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="60"></a>
