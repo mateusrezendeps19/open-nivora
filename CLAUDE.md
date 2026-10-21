@@ -143,6 +143,25 @@ with a transparent GIF so the board can draw the card itself (`.drag-layer`, z 3
 whether that took: on false the board leaves the native ghost alone and draws no card of its own,
 or there would be two.
 
+### The done circle on a card
+
+Hovering a tile opens a circle beside the title (`.tile__check`) and pushes the title right;
+clicking it toggles `done` with the same `card/update` the card modal sends, so history and
+automations follow. It animates `width`, not a transform, so the title rewraps instead of
+sliding over the edge - which means it changes layout, and that has two consequences:
+
+- It is **frozen open while the card is being dragged**. Letting it close at drag start reflows
+  the title inside the drag source, and a run of the smoke suite failed every drag test in the
+  one run where that could happen. Not proven to be the cause, but it is the one thing that
+  changes the drag source and it costs nothing to freeze.
+- The tile is a `<button>`, so the circle is a `span role="checkbox"` that stops the click (or
+  the card would open). It takes no focus; from the keyboard, the modal's Marcar como concluido
+  is the same action.
+
+The pop on ticking is gated on a `ticked` state set by the click, not on `card.done`, or every
+finished card would pop on each load. In tests, the first synthetic mouse move after another
+action does not always update `:hover` in Chromium: move twice and wait for the circle's width.
+
 ### Motion
 
 Durations and easing curves in `tokens.css` are **recovered LITERAL** from

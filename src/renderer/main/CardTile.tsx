@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { assetUrl } from '../shared/assets';
 import type { Card, Label } from '../shared/types';
 import type { Grab } from './BoardCanvas';
@@ -15,6 +16,8 @@ interface CardTileProps {
   /** This tile *is* the card at the pointer: visual only, takes no input. */
   preview?: boolean;
   onOpen: () => void;
+  /** The circle beside the title. Same action as the card's Marcar como concluido. */
+  onToggleDone: () => void;
   /** `source` is the element the drag started from; see BoardCanvas.beginDrag. */
   onDragStart: (grab: Grab, source: HTMLElement) => void;
 }
@@ -35,8 +38,15 @@ export function CardTile({
   dragging,
   preview = false,
   onOpen,
+  onToggleDone,
   onDragStart,
 }: CardTileProps) {
+  /**
+   * Set by the click on the circle and cleared when its animation ends. The
+   * pop belongs to the moment of ticking the card off; tied to `card.done`
+   * alone, every finished card on the board would pop each time it loaded.
+   */
+  const [ticked, setTicked] = useState(false);
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
   const done = card.checklist.filter((item) => item.done).length;
   const state = dueState(card.due);
@@ -93,28 +103,38 @@ export function CardTile({
         </span>
       )}
 
-      <span className="tile__title">
-        {card.done && (
-          <svg
-            className="tile__done"
-            width="13"
-            height="13"
-            viewBox="0 0 16 16"
-            aria-label="Concluido"
-            role="img"
-          >
-            <circle cx="8" cy="8" r="7" fill="currentColor" />
-            <path
-              d="M4.6 8.3 7 10.7 11.4 6"
-              fill="none"
-              stroke="var(--surface-raised)"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+      <span className="tile__head">
+        {/*
+          The circle opens beside the title when the pointer is on the card,
+          pushing the title right, and stays open once the card is done.
+
+          The tile itself is a button, and a button cannot hold another, so
+          this is a span with the checkbox role. It stops the click so ticking
+          the card off does not also open it. It takes no focus of its own:
+          from the keyboard the same thing is the card's Marcar como
+          concluido, one Enter away.
+        */}
+        <span
+          className={`tile__check${ticked ? ' tile__check--ticked' : ''}`}
+          role="checkbox"
+          aria-checked={card.done}
+          aria-label={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
+          title={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (preview) return;
+            setTicked(!card.done);
+            onToggleDone();
+          }}
+          onAnimationEnd={() => setTicked(false)}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <circle className="tile__check-ring" cx="8" cy="8" r="6.75" />
+            <circle className="tile__check-fill" cx="8" cy="8" r="7.5" />
+            <path className="tile__check-mark" d="M4.8 8.2 7 10.4 11.2 6.1" />
           </svg>
-        )}
-        {card.title}
+        </span>
+        <span className="tile__title">{card.title}</span>
       </span>
 
       {(card.description ||

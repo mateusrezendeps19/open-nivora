@@ -150,6 +150,9 @@ export function ListColumn({
             labels={labels}
             dragging={drag?.kind === 'card' && drag.cardId === card.id}
             onOpen={() => onOpenCard(card.id)}
+            onToggleDone={() =>
+              dispatch({ type: 'card/update', cardId: card.id, patch: { done: !card.done } })
+            }
             onDragStart={(grab, source) =>
               onDragStart({ kind: 'card', cardId: card.id, fromListId: list.id }, grab, source)
             }

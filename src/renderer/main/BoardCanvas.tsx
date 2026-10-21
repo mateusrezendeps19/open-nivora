@@ -350,6 +350,7 @@ export function BoardCanvas({
             preview
             dragging={false}
             onOpen={noop}
+            onToggleDone={noop}
             onDragStart={noop}
           />
         </div>

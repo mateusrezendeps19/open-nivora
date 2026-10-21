@@ -133,8 +133,157 @@
   color: var(--text-subtle);
 }
 
-.tile__done {
+.tile__head {
+  display: flex;
+  align-items: flex-start;
+}
+
+.tile__title {
+  min-width: 0;
+}
+
+/*
+ * The circle beside the title. Closed, it is zero wide; on hover it opens to
+ * 16px plus its gap, and because that is width and not a transform, the title
+ * is pushed right and rewraps the way it does in Trello rather than sliding
+ * over the card's edge.
+ *
+ * The two directions are timed differently, which is the recovered motion
+ * bundle's whole point: opening uses the entrance (`--duration-short`,
+ * `--ease-out-practical`), closing the quicker exit (`--duration-xshort`,
+ * `--ease-in-practical`). The rule that holds while the state holds is the
+ * one whose transition runs, so the hover rule carries the entrance and the
+ * base rule the exit.
+ */
+.tile__check {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center start;
+  width: 0;
+  height: calc(14px * 1.35);
+  margin-right: 0;
+  overflow: hidden;
+  opacity: 0;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition:
+    width var(--duration-xshort) var(--ease-in-practical),
+    margin-right var(--duration-xshort) var(--ease-in-practical),
+    opacity var(--duration-xshort) var(--ease-in-practical);
+}
+
+.tile:hover .tile__check,
+.tile:focus-visible .tile__check,
+.tile--done .tile__check {
+  width: 16px;
+  margin-right: 6px;
+  opacity: 1;
+  transition:
+    width var(--duration-short) var(--ease-out-practical),
+    margin-right var(--duration-short) var(--ease-out-practical),
+    opacity var(--duration-short) var(--ease-out-practical);
+}
+
+/*
+ * Frozen open for the length of a drag. The drag starts from a hovered card,
+ * so the circle is open or opening; closing it - or letting the hover that
+ * ends mid-drag close it - reflows the title inside the drag source, and the
+ * drag source is the one element Chromium will not have changing under a
+ * native drag (see the table in CLAUDE.md). The slot's contents are hidden
+ * anyway, so open costs nothing to look at.
+ */
+.tile--dragging .tile__check {
+  width: 16px;
+  margin-right: 6px;
+  transition: none;
+}
+
+.tile__check svg {
+  overflow: visible;
+}
+
+.tile__check-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.tile__check-fill {
+  fill: var(--success);
+  transform-origin: 8px 8px;
+  transform: scale(0);
+  transition: transform var(--duration-xshort) var(--ease-in-practical);
+}
+
+.tile__check-mark {
+  fill: none;
+  stroke: var(--surface-raised);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* Its own length, so the offset below can draw it on stroke by stroke. */
+  stroke-dasharray: 10;
+  stroke-dashoffset: 10;
+}
+
+.tile__check:hover {
   color: var(--success);
-  margin-right: 4px;
-  vertical-align: -2px;
+}
+
+/* Hovering the empty circle previews the tick, in the ring's colour. */
+.tile:not(.tile--done) .tile__check:hover .tile__check-mark {
+  stroke: currentColor;
+  stroke-dashoffset: 0;
+}
+
+.tile--done .tile__check {
+  color: var(--success);
+}
+
+.tile--done .tile__check-fill {
+  transform: scale(1);
+}
+
+.tile--done .tile__check-mark {
+  stroke-dashoffset: 0;
+}
+
+/*
+ * Ticking a card off: the disc swells in on the recovered spring - the curve
+ * the real app gives an avatar it wants to feel alive - and the tick is drawn
+ * on after it. Only when the user did it; see `ticked` in CardTile.
+ */
+.tile__check--ticked .tile__check-fill {
+  animation: tile-check-fill var(--duration-long) var(--ease-spring);
+}
+
+.tile__check--ticked .tile__check-mark {
+  animation: tile-check-mark var(--duration-medium) var(--ease-out-practical)
+    var(--duration-xshort) backwards;
+}
+
+@keyframes tile-check-fill {
+  from {
+    transform: scale(0);
+  }
+}
+
+@keyframes tile-check-mark {
+  from {
+    stroke-dashoffset: 10;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile__check,
+  .tile:hover .tile__check,
+  .tile--done .tile__check,
+  .tile__check-fill {
+    transition: none;
+  }
+
+  .tile__check--ticked .tile__check-fill,
+  .tile__check--ticked .tile__check-mark {
+    animation: none;
+  }
 }

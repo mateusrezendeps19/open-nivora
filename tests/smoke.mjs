@@ -748,6 +748,57 @@ try {
     await page.locator('.modal__close').click();
   });
 
+  await check('a bolinha do cartao abre no hover e conclui sem abrir o cartao', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const title = `Cartao para concluir ${Date.now()}`;
+
+    const column = page.locator('.column').first();
+    await column.locator('.composer__open').click();
+    await column.locator('.composer__input').fill(title);
+    await column.locator('.composer__input').press('Enter');
+    await column.locator('.composer__input').press('Escape');
+
+    const tile = page.locator('.tile').filter({ hasText: title });
+    const circle = tile.locator('.tile__check');
+    const width = () => circle.evaluate((node) => node.getBoundingClientRect().width);
+    // O cartao novo nasce onde estava o "Adicionar cartao" que acabou de ser
+    // clicado, entao debaixo do ponteiro: tira-lo de la antes de conferir.
+    await page.mouse.move(5, 5);
+    await waitFor(async () => (await width()) === 0, 'a bolinha ficou aberta sem hover');
+
+    // Dois movimentos: o primeiro evento sintetico depois de outra acao nem
+    // sempre atualiza o :hover do Chromium, e um mouse de verdade manda varios.
+    const box = await tile.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width / 2 + 2, box.y + box.height / 2);
+    await waitFor(async () => (await width()) >= 15, 'a bolinha nao abriu com o mouse em cima');
+
+    const at = await circle.boundingBox();
+    await page.mouse.click(at.x + at.width / 2, at.y + at.height / 2);
+    assert.equal(await circle.getAttribute('aria-checked'), 'true');
+    assert.equal(await page.locator('.modal').count(), 0, 'clicar na bolinha abriu o cartao');
+
+    // Mesma acao do modal: grava e entra no historico.
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards
+        .flatMap((board) => board.lists)
+        .flatMap((list) => list.cards)
+        .find((entry) => entry.title === title);
+      return card?.done === true && card.activity.some((entry) => entry.text === 'Marcou como concluido');
+    }, `"${title}" nao ficou concluido no boards.json`);
+
+    // Concluido, a bolinha fica aberta mesmo sem o mouse em cima.
+    await page.mouse.move(5, 5);
+    await waitFor(async () => (await width()) >= 15, 'a bolinha de um cartao concluido fechou');
+
+    // E clicar de novo reabre o cartao.
+    const again = await circle.boundingBox();
+    await page.mouse.move(again.x + again.width / 2, again.y + again.height / 2);
+    await page.mouse.click(again.x + again.width / 2, again.y + again.height / 2);
+    assert.equal(await circle.getAttribute('aria-checked'), 'false');
+  });
+
   await check('o cartao cai onde o arraste mostrou que ele cairia', async () => {
     const storePath = path.join(userData, 'boards.json');
     /** A ordem visivel do quadro inteiro, lista por lista. */
