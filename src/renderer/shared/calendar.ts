@@ -145,15 +145,14 @@ export interface CalendarEntries {
   dated: number;
 }
 
-function matches(card: Card, needle: string): boolean {
-  if (!needle) return true;
-  return (
-    card.title.toLowerCase().includes(needle) ||
-    card.description.toLowerCase().includes(needle)
-  );
-}
-
-export function groupByDay(lists: List[], needle = ''): CalendarEntries {
+/**
+ * `include` is the board filter (shared/filter.ts), so the calendar shows
+ * the same cards the board does - not only those matching the keyword.
+ */
+export function groupByDay(
+  lists: List[],
+  include: (card: Card) => boolean = () => true,
+): CalendarEntries {
   const byDay = new Map<string, CalendarEntry[]>();
   const undated: { card: Card; list: List }[] = [];
   let dated = 0;
@@ -162,7 +161,7 @@ export function groupByDay(lists: List[], needle = ''): CalendarEntries {
     for (const card of list.cards) {
       // Archived cards are off the board, and a date on one is not a plan.
       if (card.archivedAt) continue;
-      if (!matches(card, needle)) continue;
+      if (!include(card)) continue;
       const due = parseDue(card.due);
       if (!due) {
         undated.push({ card, list });

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { EMPTY_FILTER, matchesFilter } from '../src/renderer/shared/filter';
 import {
   addMonths,
   dateKey,
@@ -129,7 +130,9 @@ test('o filtro da busca vale para o calendario', () => {
     { ...emptyCard('sem prazo, com leite na descricao'), description: 'leite' },
   ];
 
-  const { byDay, undated, dated } = groupByDay([list as List], 'leite');
+  const { byDay, undated, dated } = groupByDay([list as List], (card) =>
+    matchesFilter(card, { ...EMPTY_FILTER, keyword: 'leite' }),
+  );
   assert.equal(dated, 1);
   assert.equal(byDay.get('2026-10-20')!.length, 1);
   assert.equal(undated.length, 1);

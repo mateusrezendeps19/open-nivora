@@ -110,3 +110,64 @@
   font-size: 10px;
   font-weight: 700;
 }
+
+/* The anchor the filter popover hangs from. */
+.toolbar__filter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.toolbar__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
+}
+
+.toolbar__filter-btn:hover,
+.toolbar__filter-btn[aria-expanded='true'] {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* A filter left on hides cards; the button says so before anyone wonders where they went. */
+.toolbar__filter-btn--on {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+}
+
+.toolbar__filter-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.toolbar__filter-clear {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.toolbar__filter-clear:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}

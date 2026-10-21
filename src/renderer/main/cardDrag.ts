@@ -81,6 +81,37 @@ export function freezeLists(root: HTMLElement, dragCardId: string): Map<string, 
   return frozen;
 }
 
+/**
+ * The slot the pointer picked among the cards on screen, as an index into the
+ * whole list - which also holds archived cards and cards the filter hides.
+ *
+ * `slotAt` counts only what is drawn, because that is what the user aims at.
+ * Used as it is, a drop after the last visible card in a list holding a hidden
+ * one landed before that visible card: `[a, (hidden), b]`, "after b" is slot 2,
+ * and index 2 of the whole list is between the hidden card and b.
+ *
+ * A slot before a visible card is that card's index. A slot after the last one
+ * is right after it - so hidden cards further down stay below. A list with
+ * nothing visible gets the card at its end.
+ */
+export function slotToIndex(
+  cards: Card[],
+  dragCardId: string,
+  shown: (card: Card) => boolean,
+  slot: number,
+): number {
+  const rest = cards.filter((card) => card.id !== dragCardId);
+  let seen = 0;
+  let last = -1;
+  for (let index = 0; index < rest.length; index += 1) {
+    if (!shown(rest[index])) continue;
+    if (seen === slot) return index;
+    seen += 1;
+    last = index;
+  }
+  return last === -1 ? rest.length : last + 1;
+}
+
 /** How many of those midpoints the pointer is already past. */
 export function slotAt(midpoints: number[], y: number): number {
   let index = 0;

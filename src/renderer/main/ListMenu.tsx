@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Board, List } from '../shared/types';
+import { useDismiss } from './useDismiss';
 import './ListMenu.css';
 
 interface ListMenuProps {
@@ -39,24 +40,7 @@ export function ListMenu({
   const [targetId, setTargetId] = useState(board.id);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    function onMouseDown(event: MouseEvent) {
-      const target = event.target as Node;
-      if (menuRef.current?.contains(target) || trigger.current?.contains(target)) return;
-      onClose();
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
-    }
-    // Capture, so a handler below that stops the event - a card starting a
-    // drag, say - cannot keep the menu open.
-    document.addEventListener('mousedown', onMouseDown, true);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onMouseDown, true);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [onClose, trigger]);
+  useDismiss(menuRef, trigger, onClose);
 
   // The board picked in Mover lista can be deleted from another window while
   // the panel is open; fall back rather than hold an id that matches nothing.

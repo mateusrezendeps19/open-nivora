@@ -1,0 +1,167 @@
+/*
+ * Hangs from the Filtros button in the title bar, over the board. z 40: above
+ * the floating dock (20) and the card in flight (30), below the card modal and
+ * the settings panel (50 and 60), which take the whole window when open.
+ *
+ * It is the one popover allowed to scroll. It is taller than the shortest
+ * window the app allows, and unlike the card it is not a fixed shell: there is
+ * no outer scroller here for a wheel gesture to be fought over.
+ */
+.filter {
+  position: absolute;
+  top: calc(100% + var(--space-100));
+  right: 0;
+  z-index: 40;
+  width: 320px;
+  max-height: calc(100vh - var(--titlebar-height) - var(--space-300));
+  overflow-y: auto;
+  padding: var(--space-100) var(--space-200) var(--space-200);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+  color: var(--text);
+  text-align: left;
+  user-select: text;
+  animation: var(--enter-popup);
+}
+
+.filter__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  margin-bottom: var(--space-50);
+}
+
+.filter__head h3 {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filter__close {
+  position: absolute;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+}
+
+.filter__close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.filter__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-100) 0;
+}
+
+.filter__group + .filter__group {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.filter__title {
+  margin: 0 0 var(--space-50);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter__hint {
+  margin: var(--space-50) 0 0;
+  color: var(--text-subtle);
+  font-size: 11px;
+}
+
+.filter__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-100);
+  min-height: 30px;
+  padding: 2px var(--space-50);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.filter__option:hover {
+  background: var(--surface-hover);
+}
+
+.filter__option input {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.filter__due {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+}
+
+.filter__due--none {
+  background: var(--surface-hover);
+  color: var(--text-subtle);
+}
+
+.filter__due--late {
+  background: var(--danger);
+  color: var(--text-inverse);
+}
+
+.filter__due--soon {
+  background: var(--warning);
+  color: var(--text-inverse);
+}
+
+.filter__due--later {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.filter__chip {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter__chip--none {
+  flex: 0 0 auto;
+  width: 24px;
+  padding: 0;
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+}
+
+.filter__match {
+  margin-top: var(--space-50);
+  font-size: 12px;
+}
+
+.filter__clear {
+  width: 100%;
+  margin-top: var(--space-100);
+}

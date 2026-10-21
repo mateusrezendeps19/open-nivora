@@ -6,6 +6,10 @@
 }
 
 .canvas__filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-100);
   flex: 0 0 auto;
   margin: var(--space-100) var(--space-150) 0;
   padding: 6px 10px;
@@ -19,6 +23,20 @@
 :root[data-theme='light'] .canvas__filter {
   background: rgb(255 255 255 / 0.75);
   color: var(--text);
+}
+
+.canvas__filter-clear {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.canvas__filter-clear:hover {
+  background: rgb(255 255 255 / 0.15);
 }
 
 .canvas__lists {

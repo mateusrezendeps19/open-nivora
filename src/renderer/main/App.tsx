@@ -5,6 +5,7 @@ import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
 import { referencedAssets, releasedAssets } from '../shared/document';
+import { EMPTY_FILTER, type CardFilter } from '../shared/filter';
 import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
 import type { SettingsTab } from '../shared/settings/Settings';
@@ -22,7 +23,18 @@ export function App() {
   const { doc, activeBoard, dispatch, loaded, persisted } = useDocument();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
-  const [query, setQuery] = useState('');
+  /**
+   * The board filter. Not saved: like Trello's, it is a way of looking at the
+   * board right now, and a filter silently still applied the next morning
+   * would read as cards having gone missing.
+   */
+  const [filter, setFilter] = useState<CardFilter>(EMPTY_FILTER);
+  // The keyword is one field of the filter, but it is also the search box,
+  // Ctrl+K and the Localizar window, which only ever deal in words.
+  const setQuery = useCallback(
+    (keyword: string) => setFilter((current) => ({ ...current, keyword })),
+    [],
+  );
   // Lifted out of the board and the calendar so the floating button, which is
   // outside both, can turn into a trash while a card is in flight.
   const [dragCardId, setDragCardId] = useState<string | null>(null);
@@ -141,9 +153,11 @@ export function App() {
     <div className="app">
       <TitleBar title={`${activeBoard.title} - Nivora`}>
         <Toolbar
-          query={query}
+          filter={filter}
+          labels={doc.labels}
           view={view}
           onQueryChange={setQuery}
+          onFilterChange={setFilter}
           onViewChange={(next) => setPrefs({ view: next })}
           onFind={openFind}
           onSettings={() => setSettingsTab('appearance')}
@@ -168,7 +182,7 @@ export function App() {
           <Calendar
             board={activeBoard}
             labels={doc.labels}
-            query={query}
+            filter={filter}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
             onCardDragChange={setDragCardId}
@@ -178,7 +192,8 @@ export function App() {
             board={activeBoard}
             boards={doc.boards}
             labels={doc.labels}
-            query={query}
+            filter={filter}
+            onClearFilter={() => setFilter(EMPTY_FILTER)}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
             onCardDragChange={setDragCardId}

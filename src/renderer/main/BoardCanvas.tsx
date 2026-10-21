@@ -1,7 +1,15 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import type { Action } from '../shared/reducer';
-import type { Board, Label } from '../shared/types';
-import { freezeLists, previewMove, slotAt, toActionIndex, type CardDrop } from './cardDrag';
+import type { Board, Card, Label } from '../shared/types';
+import { activeFilterCount, isFiltering, isShown, type CardFilter } from '../shared/filter';
+import {
+  freezeLists,
+  previewMove,
+  slotAt,
+  slotToIndex,
+  toActionIndex,
+  type CardDrop,
+} from './cardDrag';
 import { CardTile } from './CardTile';
 import { ListColumn } from './ListColumn';
 import { ListComposer } from './ListComposer';
@@ -46,6 +54,21 @@ export interface Lift {
 /** What a tile can measure about itself when the drag starts. */
 export type Grab = Omit<Lift, 'cardId'>;
 
+/**
+ * The line over the board while a filter is on. A keyword alone reads as the
+ * search it is; anything more is counted, because a list of every ticked box
+ * would not fit on one line.
+ */
+function filterSummary(matches: number, filter: CardFilter): string {
+  const keyword = filter.keyword.trim();
+  const others = activeFilterCount(filter) - (keyword ? 1 : 0);
+  const count = activeFilterCount(filter);
+  const subject =
+    keyword && others === 0 ? `a "${keyword}"` : count === 1 ? 'ao filtro' : `aos ${count} filtros`;
+  if (matches === 0) return `Nenhum cartao corresponde ${subject}`;
+  return `${matches} cartao(oes) correspondem ${subject}`;
+}
+
 /** The preview is drawn, not operated. */
 const noop = () => {};
 
@@ -54,7 +77,8 @@ interface BoardCanvasProps {
   /** Every board, for the lists' Mover lista. */
   boards: Board[];
   labels: Label[];
-  query: string;
+  filter: CardFilter;
+  onClearFilter: () => void;
   dispatch: (action: Action) => void;
   onOpenCard: (cardId: string) => void;
   /** Reported up so the floating button can offer itself as a trash. */
@@ -65,7 +89,8 @@ export function BoardCanvas({
   board,
   boards,
   labels,
-  query,
+  filter,
+  onClearFilter,
   dispatch,
   onOpenCard,
   onCardDragChange,
@@ -87,7 +112,6 @@ export function BoardCanvas({
 
   const seedFlip = useFlip(canvasRef);
 
-  const needle = query.trim().toLowerCase();
 
   /**
    * While a card is in flight the board draws the move as though it had
@@ -102,24 +126,15 @@ export function BoardCanvas({
   }, [board.lists, drag, cardDrop]);
 
   /**
-   * Archived cards and cards the query filtered out stay in their lists and
-   * only stop being drawn: the drop is measured against where the cards are on
-   * screen, so what is not on screen simply is not a slot.
+   * Archived cards and cards the filter hides stay in their lists and only
+   * stop being drawn. The drop is measured against what is on screen and then
+   * placed in the whole list by slotToIndex.
    */
+  const shown = (card: Card) => isShown(card, filter);
+  const filtering = isFiltering(filter);
   const visible = useMemo(
-    () =>
-      lists.map((list) => ({
-        list,
-        cards: list.cards.filter((card) => {
-          if (card.archivedAt) return false;
-          if (!needle) return true;
-          return (
-            card.title.toLowerCase().includes(needle) ||
-            card.description.toLowerCase().includes(needle)
-          );
-        }),
-      })),
-    [lists, needle],
+    () => lists.map((list) => ({ list, cards: list.cards.filter((card) => isShown(card, filter)) })),
+    [lists, filter],
   );
 
   const matches = visible.reduce((total, entry) => total + entry.cards.length, 0);
@@ -161,13 +176,18 @@ export function BoardCanvas({
    * slot it points at actually changes. Otherwise every event of a still
    * pointer is a render, and every render re-measures the board for the FLIP.
    */
-  const hoverCard = useCallback((listId: string, y: number) => {
-    const index = slotAt(frozenRef.current.get(listId) ?? [], y);
+  function hoverCard(listId: string, y: number) {
+    if (drag?.kind !== 'card') return;
+    const slot = slotAt(frozenRef.current.get(listId) ?? [], y);
+    // The stored lists, not the preview: the slot is a place among the cards
+    // as they stand without this one, and the preview already moved it.
+    const cards = board.lists.find((list) => list.id === listId)?.cards ?? [];
+    const index = slotToIndex(cards, drag.cardId, shown, slot);
     setCardDrop((current) => {
       if (current && current.listId === listId && current.index === index) return current;
       return { listId, index };
     });
-  }, []);
+  }
 
   /**
    * The handlers of the latest render, for the native listeners below: they are
@@ -303,11 +323,12 @@ export function BoardCanvas({
       onDragLeave={onDragLeave}
       onDrop={(event) => event.preventDefault()}
     >
-      {needle && (
+      {filtering && (
         <div className="canvas__filter">
-          {matches === 0
-            ? `Nenhum cartao corresponde a "${query}"`
-            : `${matches} cartao(oes) correspondem a "${query}"`}
+          {filterSummary(matches, filter)}
+          <button type="button" className="canvas__filter-clear" onClick={onClearFilter}>
+            Limpar filtros
+          </button>
         </div>
       )}
 
@@ -320,7 +341,7 @@ export function BoardCanvas({
             boards={boards}
             cards={cards}
             listIndex={listIndex}
-            filtered={!!needle}
+            filtered={filtering}
             labels={labels}
             drag={drag}
             listDrop={listDrop}

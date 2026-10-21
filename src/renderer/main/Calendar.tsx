@@ -1,4 +1,5 @@
 import { useMemo, useState, type DragEvent } from 'react';
+import { isFiltering, matchesFilter, type CardFilter } from '../shared/filter';
 import {
   addDays,
   addMonths,
@@ -67,7 +68,7 @@ function weekTitle(days: Date[]): string {
 interface CalendarProps {
   board: Board;
   labels: Label[];
-  query: string;
+  filter: CardFilter;
   dispatch: (action: Action) => void;
   onOpenCard: (cardId: string) => void;
   /** Reported up so the floating button can offer itself as a trash. */
@@ -85,7 +86,7 @@ interface CalendarProps {
 export function Calendar({
   board,
   labels,
-  query,
+  filter,
   dispatch,
   onOpenCard,
   onCardDragChange,
@@ -96,10 +97,10 @@ export function Calendar({
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
 
-  const needle = query.trim().toLowerCase();
+  const filtering = isFiltering(filter);
   const { byDay, undated, dated } = useMemo(
-    () => groupByDay(board.lists, needle),
-    [board.lists, needle],
+    () => groupByDay(board.lists, (card) => matchesFilter(card, filter)),
+    [board.lists, filter],
   );
 
   const today = startOfDay(new Date());
@@ -229,7 +230,7 @@ export function Calendar({
 
         <div className="calendar__right">
           <span className="calendar__count">
-            {dated} com prazo{needle ? ' no filtro' : ''}
+            {dated} com prazo{filtering ? ' no filtro' : ''}
           </span>
           <div className="calendar__modes" role="group" aria-label="Visao do calendario">
             {MODES.map(([id, label]) => (
@@ -294,7 +295,7 @@ export function Calendar({
             <div className="undated__cards">
               {undated.length === 0 ? (
                 <p className="undated__empty">
-                  {needle ? 'Nada sem prazo no filtro.' : 'Todo cartao tem um prazo.'}
+                  {filtering ? 'Nada sem prazo no filtro.' : 'Todo cartao tem um prazo.'}
                 </p>
               ) : (
                 undated.map(({ card, list }) => (

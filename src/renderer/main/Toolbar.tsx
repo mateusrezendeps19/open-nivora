@@ -1,5 +1,8 @@
+import { useCallback, useRef, useState } from 'react';
 import { hasShell } from '../shared/bridge';
-import type { AppView } from '../shared/types';
+import { activeFilterCount, EMPTY_FILTER, type CardFilter } from '../shared/filter';
+import type { AppView, Label } from '../shared/types';
+import { FilterPanel } from './FilterPanel';
 import './Toolbar.css';
 
 const VIEWS: { id: AppView; label: string }[] = [
@@ -8,9 +11,11 @@ const VIEWS: { id: AppView; label: string }[] = [
 ];
 
 interface ToolbarProps {
-  query: string;
+  filter: CardFilter;
+  labels: Label[];
   view: AppView;
   onQueryChange: (value: string) => void;
+  onFilterChange: (filter: CardFilter) => void;
   onViewChange: (view: AppView) => void;
   onFind: () => void;
   onSettings: () => void;
@@ -22,13 +27,21 @@ interface ToolbarProps {
  * toggle in the title bar only duplicated it.
  */
 export function Toolbar({
-  query,
+  filter,
+  labels,
   view,
   onQueryChange,
+  onFilterChange,
   onViewChange,
   onFind,
   onSettings,
 }: ToolbarProps) {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterButton = useRef<HTMLButtonElement>(null);
+  const closeFilter = useCallback(() => setFilterOpen(false), []);
+  const query = filter.keyword;
+  const active = activeFilterCount(filter);
+
   return (
     <div className="toolbar">
       <div className="toolbar__views" role="group" aria-label="Visao">
@@ -70,6 +83,47 @@ export function Toolbar({
           </button>
         )}
       </label>
+
+      {/*
+        Trello's Filtros button. The search box beside it is the same keyword:
+        typing in either shows in both.
+      */}
+      <div className="toolbar__filter">
+        <button
+          ref={filterButton}
+          type="button"
+          className={`toolbar__filter-btn${active ? ' toolbar__filter-btn--on' : ''}`}
+          aria-expanded={filterOpen}
+          aria-label={active ? `Filtros, ${active} ativo(s)` : 'Filtros'}
+          onClick={() => setFilterOpen((open) => !open)}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2 3.5h12l-4.6 5.4v4.1l-2.8 1.4V8.9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          </svg>
+          Filtros
+          {active > 0 && <span className="toolbar__filter-count">{active}</span>}
+        </button>
+        {active > 0 && (
+          <button
+            type="button"
+            className="toolbar__filter-clear"
+            aria-label="Limpar filtros"
+            title="Limpar filtros"
+            onClick={() => onFilterChange(EMPTY_FILTER)}
+          >
+            Limpar
+          </button>
+        )}
+        {filterOpen && (
+          <FilterPanel
+            filter={filter}
+            labels={labels}
+            trigger={filterButton}
+            onChange={onFilterChange}
+            onClose={closeFilter}
+          />
+        )}
+      </div>
 
       <div className="toolbar__actions">
         {hasShell() && (
