@@ -27,6 +27,18 @@ repository came from which piece of evidence — is in
 
 ---
 
+## Demo
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=YW-kz7MXGpk">
+    <img src="https://img.youtube.com/vi/YW-kz7MXGpk/maxresdefault.jpg" alt="Watch the Taskly demo on YouTube" width="720">
+  </a>
+</p>
+
+<p align="center"><a href="https://www.youtube.com/watch?v=YW-kz7MXGpk">Watch the demo on YouTube</a></p>
+
+---
+
 ## Features
 
 - **Boards** — several of them, each with its own background

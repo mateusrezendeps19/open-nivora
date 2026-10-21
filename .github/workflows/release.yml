@@ -74,6 +74,8 @@ jobs:
           files: installers/*
           generate_release_notes: true
           body: |
+            [Watch the demo on YouTube](https://www.youtube.com/watch?v=YW-kz7MXGpk)
+
             ## Downloads
 
             | System | File |
