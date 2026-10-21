@@ -258,6 +258,11 @@ of the `preferences` window) so the two cannot drift.
   z-index layers in use: list menu 5, floating dock 20, the dragged card 30, card modal and
   archive panel 50, settings panel 60. The dragged card is above the dock so it passes over the
   trash rather than under it.
-- Commits follow Conventional Commits with a Portuguese body (also unaccented) that explains the
-  reasoning, not just the change. When a fix is subtle, the history records that the test was
-  validated against the bug by reverting the fix and watching it fail.
+- Commits follow Conventional Commits and are written **entirely in English** - subject and body.
+  The body explains the reasoning, not just the change. When a fix is subtle, the history records
+  that the test was validated against the bug by reverting the fix and watching it fail. Commits
+  up to `dd9e089` have Portuguese bodies; they are history and are not rewritten. UI strings
+  stay Portuguese - this rule is about the git history only.
+- **Every commit is pushed** to `origin` right after it is made. Run the gate first
+  (`npm run typecheck`, `npm test`, and `npm run smoke` when the change touches what only the
+  smoke reaches), and never force-push.
