@@ -9,6 +9,7 @@ engineering analysis of the official Trello desktop app.**
 [![Electron](https://img.shields.io/badge/Electron-44-47848f?style=flat-square&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-ffdd00?style=flat-square&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/rezendematu)
 
 Taskly is two things at once. The **desktop shell** — the window inventory, the IPC contract, the
 frameless title bar, the geometry — was reconstructed from evidence extracted out of the Trello
@@ -221,3 +222,5 @@ of the `contextBridge` contract — the kind of fact that exists for interoperab
 
 **Mateus Rezende** — [LinkedIn](https://www.linkedin.com/in/mateus-rezende-626687310) ·
 [GitHub](https://github.com/mateusrezendeps19)
+
+If Taskly is useful to you, you can [buy me a coffee](https://buymeacoffee.com/rezendematu).
