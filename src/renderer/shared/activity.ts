@@ -74,6 +74,26 @@ function append(doc: BoardDocument, cardId: string, texts: string[]): BoardDocum
   };
 }
 
+/** One line on every card of a list, on any board - `append` only sees the active one. */
+function appendToList(doc: BoardDocument, boardId: string, listId: string, text: string): BoardDocument {
+  return {
+    ...doc,
+    boards: doc.boards.map((board) => {
+      if (board.id !== boardId) return board;
+      return {
+        ...board,
+        lists: board.lists.map((list) => {
+          if (list.id !== listId) return list;
+          return {
+            ...list,
+            cards: list.cards.map((card) => ({ ...card, activity: [...card.activity, event(text)] })),
+          };
+        }),
+      };
+    }),
+  };
+}
+
 export function logActivity(
   prev: BoardDocument,
   next: BoardDocument,
@@ -157,6 +177,29 @@ export function logActivity(
       if (!after || after.checklist.length === 0 || !allDone(after)) return next;
       if (before && before.checklist.length > 0 && allDone(before)) return next;
       return append(next, action.cardId, ['Concluiu a checklist']);
+    }
+
+    case 'list/copy': {
+      const original = activeBoardLists(prev).find((list) => list.id === action.listId);
+      const known = new Set(activeBoardLists(prev).map((list) => list.id));
+      const copy = activeBoardLists(next).find((list) => !known.has(list.id));
+      if (!original || !copy) return next;
+      if (!next.activeBoardId) return next;
+      return appendToList(next, next.activeBoardId, copy.id, `Copiou este cartao da lista ${original.title}`);
+    }
+
+    case 'list/transfer': {
+      // To the same board it is a reorder of lists: nothing happened to a card.
+      if (action.toBoardId === prev.activeBoardId) return next;
+      const from = prev.boards.find((board) => board.id === prev.activeBoardId);
+      const to = next.boards.find((board) => board.id === action.toBoardId);
+      if (!from || !to?.lists.some((list) => list.id === action.listId)) return next;
+      return appendToList(
+        next,
+        to.id,
+        action.listId,
+        `Moveu a lista para o quadro ${to.title}, vinda de ${from.title}`,
+      );
     }
 
     default:

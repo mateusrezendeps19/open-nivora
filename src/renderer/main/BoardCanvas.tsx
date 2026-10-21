@@ -51,6 +51,8 @@ const noop = () => {};
 
 interface BoardCanvasProps {
   board: Board;
+  /** Every board, for the lists' Mover lista. */
+  boards: Board[];
   labels: Label[];
   query: string;
   dispatch: (action: Action) => void;
@@ -61,6 +63,7 @@ interface BoardCanvasProps {
 
 export function BoardCanvas({
   board,
+  boards,
   labels,
   query,
   dispatch,
@@ -313,6 +316,8 @@ export function BoardCanvas({
           <ListColumn
             key={list.id}
             list={list}
+            board={board}
+            boards={boards}
             cards={cards}
             listIndex={listIndex}
             filtered={!!needle}

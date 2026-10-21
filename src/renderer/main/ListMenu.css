@@ -1,0 +1,110 @@
+/*
+ * The list's popover. A child of the column and not of the column header: the
+ * header is what drags the list, and a text field inside it would start
+ * dragging the list when the user tried to select the name in it.
+ *
+ * Same layer as before (z 5), and the recovered popup entrance.
+ */
+.list-menu {
+  position: absolute;
+  top: 40px;
+  /*
+   * Exactly as wide as the column it belongs to. A fixed width wider than the
+   * column hung over its left edge - over the sidebar, for the first list.
+   */
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: var(--space-100) var(--space-150) var(--space-150);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-overlay);
+  animation: var(--enter-popup);
+}
+
+.list-menu__head {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  margin-bottom: var(--space-100);
+}
+
+.list-menu__head h4 {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.list-menu__icon,
+.list-menu__spacer {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+}
+
+.list-menu__icon:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.list-menu__items {
+  display: flex;
+  flex-direction: column;
+  margin: 0 calc(var(--space-150) * -1);
+}
+
+.list-menu__items button {
+  padding: 7px var(--space-150);
+  text-align: left;
+  font-size: 13px;
+}
+
+.list-menu__items button:hover {
+  background: var(--surface-hover);
+}
+
+.list-menu__items hr {
+  width: calc(100% - var(--space-150) * 2);
+  margin: var(--space-50) auto;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.list-menu__danger {
+  color: var(--danger);
+}
+
+.list-menu__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-50);
+}
+
+.list-menu__label {
+  margin-top: var(--space-50);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.list-menu__name {
+  resize: none;
+}
+
+.list-menu__hint {
+  margin: 0 0 var(--space-100);
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.list-menu__form .btn {
+  align-self: flex-start;
+  margin-top: var(--space-50);
+}

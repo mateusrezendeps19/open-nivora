@@ -168,10 +168,12 @@ tests/
   carddrag.test.ts     the drag the board draws and the move it commits land in the same place
   markdown.test.ts     the Markdown subset descriptions and comments are drawn from, and unsafe links
   textedit.test.ts     every toolbar button, list continuation and list nesting
+  lists.test.ts        copying and moving lists, and when a stored file may be deleted
   smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast,
                        sidebar rail, calendar month view, rescheduling by drag, dragging a card
                        onto the trash or the archive box, reordering by drag, comments and
-                       label creation, formatting by toolbar and shortcut
+                       label creation, formatting by toolbar and shortcut,
+                       the card's done circle, the list menu, copying and moving lists
 docs/
   REVERSE-ENGINEERING.md      the analysis report
   rea-evidence-summary.json   extract of the REA evidence

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Card, Label } from '../shared/types';
-import { removeAsset } from '../shared/assets';
 import { fromDateInput, toDateInput } from '../shared/calendar';
 import { Attachments } from './Attachments';
 import { CardActivity } from './CardActivity';
@@ -90,8 +89,7 @@ export function CardModal({
       setConfirming(true);
       return;
     }
-    // Delete the card's files too, or they would linger until the next sweep.
-    for (const attachment of card.attachments) void removeAsset(attachment.asset);
+    // Its files go once nothing else points at them; App decides that.
     dispatch({ type: 'card/remove', cardId: card.id });
     onClose();
   }

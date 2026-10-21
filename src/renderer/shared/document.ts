@@ -278,6 +278,21 @@ export function referencedAssets(doc: BoardDocument): string[] {
   return [...assets];
 }
 
+/**
+ * Stored files `before` pointed at and `after` no longer does anywhere - on
+ * no card of any board, archived or not, nor as any board's background.
+ *
+ * This is the only thing that decides a file can go. Deleting it from the
+ * place that dropped it is wrong as soon as a file is shared, and files are
+ * shared: the store names them by content hash, so the same picture attached
+ * to two cards is one file, and a copied list's cards point at the files of
+ * the original.
+ */
+export function releasedAssets(before: BoardDocument, after: BoardDocument): string[] {
+  const kept = new Set(referencedAssets(after));
+  return referencedAssets(before).filter((asset) => !kept.has(asset));
+}
+
 export function readLocal(): unknown {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);

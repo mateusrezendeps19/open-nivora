@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { sweepAssets } from '../shared/assets';
+import { removeAsset, sweepAssets } from '../shared/assets';
 import { backgroundStyle } from '../shared/background';
 import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
-import { referencedAssets } from '../shared/document';
+import { referencedAssets, releasedAssets } from '../shared/document';
 import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
 import type { SettingsTab } from '../shared/settings/Settings';
@@ -64,6 +64,25 @@ export function App() {
     swept.current = true;
     void sweepAssets(referencedAssets(doc));
   }, [doc, loaded, persisted]);
+
+  /**
+   * A stored file is deleted when the document stops pointing at it, and
+   * only then - see releasedAssets for why the place that dropped it cannot
+   * decide. This window owns the document, so every change passes through
+   * here, including ones made in the preferences window.
+   *
+   * Tracking starts from the first loaded document. Before that the document
+   * is the seed, and a seed compared with the real one would be read as every
+   * file having been dropped at once.
+   */
+  const lastDoc = useRef<typeof doc | null>(null);
+  useEffect(() => {
+    if (!loaded) return;
+    const before = lastDoc.current;
+    lastDoc.current = doc;
+    if (!before || before === doc) return;
+    for (const asset of releasedAssets(before, doc)) void removeAsset(asset);
+  }, [doc, loaded]);
 
   const openFind = useCallback(() => {
     if (hasShell()) ipc.send(WindowChannel.OPEN, 'find_in_page');
@@ -157,6 +176,7 @@ export function App() {
         ) : (
           <BoardCanvas
             board={activeBoard}
+            boards={doc.boards}
             labels={doc.labels}
             query={query}
             dispatch={dispatch}

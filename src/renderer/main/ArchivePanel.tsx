@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { removeAsset } from '../shared/assets';
 import type { Action } from '../shared/reducer';
 import type { Board, Card, List } from '../shared/types';
 import './ArchivePanel.css';
@@ -47,9 +46,7 @@ export function ArchivePanel({ board, confirmDelete, onClose, dispatch }: Archiv
       setConfirmingId(card.id);
       return;
     }
-    // Delete the card's files too, as the modal does, or they would linger
-    // until the next sweep.
-    for (const attachment of card.attachments) void removeAsset(attachment.asset);
+    // Its files go once nothing else points at them; App decides that.
     dispatch({ type: 'card/remove', cardId: card.id });
     setConfirmingId(null);
   }

@@ -1,5 +1,4 @@
 import { useEffect, useState, type DragEvent } from 'react';
-import { removeAsset } from '../shared/assets';
 import type { Action } from '../shared/reducer';
 import type { Board, Card } from '../shared/types';
 import './Fab.css';
@@ -56,9 +55,7 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
   const trash = dragging || pending !== null;
 
   function remove(card: Card) {
-    // Delete the card's files too, as the modal does, or they would linger
-    // until the next sweep.
-    for (const attachment of card.attachments) void removeAsset(attachment.asset);
+    // Its files go once nothing else points at them; App decides that.
     dispatch({ type: 'card/remove', cardId: card.id });
   }
 

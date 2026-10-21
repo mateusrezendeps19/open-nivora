@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { assetsAvailable, assetUrl, pickAssets, removeAsset } from '../assets';
+import { assetsAvailable, assetUrl, pickAssets } from '../assets';
 import type { Action } from '../reducer';
 import { BOARD_COLORS, GRADIENTS, type Board } from '../types';
 import './BackgroundSettings.css';
@@ -21,13 +21,10 @@ export function BackgroundSettings({ board, dispatch }: BackgroundSettingsProps)
   const current = board.background;
 
   function set(background: Board['background']) {
-    // Replacing a custom image leaves the old file unreferenced; drop it now
-    // rather than waiting for the next startup sweep.
-    const previous = current.kind === 'image' ? current.value : null;
+    // The old image goes once nothing points at it - another board may use
+    // the same file. The main window decides that (App), even when this runs
+    // in the preferences window, because the change reaches it from here.
     dispatch({ type: 'board/background', boardId: board.id, background });
-    if (previous && previous !== (background.kind === 'image' ? background.value : null)) {
-      void removeAsset(previous);
-    }
   }
 
   async function pickImage() {

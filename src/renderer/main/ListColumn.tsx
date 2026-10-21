@@ -1,14 +1,18 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useCallback, useRef, useState, type DragEvent } from 'react';
 import type { Action } from '../shared/reducer';
-import type { Card, Label, List } from '../shared/types';
+import type { Board, Card, Label, List } from '../shared/types';
 import type { Drag, Grab } from './BoardCanvas';
 import { CardComposer } from './CardComposer';
 import { CardTile } from './CardTile';
 import { InlineTitle } from './InlineTitle';
+import { ListMenu } from './ListMenu';
 import './ListColumn.css';
 
 interface ListColumnProps {
   list: List;
+  /** The board the list is on, and every board - for Mover lista. */
+  board: Board;
+  boards: Board[];
   /** The cards this list draws: archived and filtered-out ones are not here. */
   cards: Card[];
   listIndex: number;
@@ -26,6 +30,8 @@ interface ListColumnProps {
 
 export function ListColumn({
   list,
+  board,
+  boards,
   cards,
   listIndex,
   filtered,
@@ -39,6 +45,8 @@ export function ListColumn({
   dispatch,
 }: ListColumnProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const draggingThisList = drag?.kind === 'list' && drag.listId === list.id;
@@ -106,40 +114,28 @@ export function ListColumn({
         />
         <span className="column__count">{active}</span>
         <button
+          ref={menuButtonRef}
           type="button"
-          className="column__menu-btn"
+          className={`column__menu-btn${menuOpen ? ' column__menu-btn--open' : ''}`}
           aria-label="Acoes da lista"
+          aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
         >
           ...
         </button>
-
-        {menuOpen && (
-          <div className="column__menu" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                dispatch({ type: 'card/add', listId: list.id, title: 'Novo cartao', atTop: true });
-                setMenuOpen(false);
-              }}
-            >
-              Adicionar cartao no topo
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="column__menu-danger"
-              onClick={() => {
-                dispatch({ type: 'list/remove', listId: list.id });
-                setMenuOpen(false);
-              }}
-            >
-              Excluir lista
-            </button>
-          </div>
-        )}
       </header>
+
+      {menuOpen && (
+        <ListMenu
+          list={list}
+          listIndex={listIndex}
+          board={board}
+          boards={boards}
+          trigger={menuButtonRef}
+          onClose={closeMenu}
+          dispatch={dispatch}
+        />
+      )}
 
       {/* data-cards: freezeLists measures the drag against this box. */}
       <div className="column__cards" ref={bodyRef} data-cards>

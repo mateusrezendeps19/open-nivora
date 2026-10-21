@@ -6,7 +6,6 @@ import {
   importDroppedFiles,
   openAsset,
   pickAssets,
-  removeAsset,
   revealAsset,
 } from '../shared/assets';
 import type { Action } from '../shared/reducer';
@@ -44,10 +43,10 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
     void attach(importDroppedFiles(event.dataTransfer.files));
   }
 
-  function detach(attachmentId: string, asset: string) {
+  function detach(attachmentId: string) {
+    // The file goes when nothing in the document points at it any more, which
+    // App decides; another card may well be showing the same file.
     dispatch({ type: 'card/detach', cardId: card.id, attachmentId });
-    // The document no longer points at the file, so delete it right away.
-    void removeAsset(asset);
   }
 
   if (!available) {
@@ -169,7 +168,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
                   <button
                     type="button"
                     className="btn btn--danger"
-                    onClick={() => detach(attachment.id, attachment.asset)}
+                    onClick={() => detach(attachment.id)}
                   >
                     Remover
                   </button>

@@ -9,6 +9,7 @@ import type {
   BoardDocument,
   Card,
   Label,
+  List,
   Prefs,
   Rule,
 } from './types';
@@ -24,6 +25,13 @@ export type Action =
   | { type: 'list/rename'; listId: string; title: string }
   | { type: 'list/remove'; listId: string }
   | { type: 'list/move'; listId: string; toIndex: number }
+  /** A copy of the list right after it, under `title`. See copyList. */
+  | { type: 'list/copy'; listId: string; title: string }
+  /**
+   * The list from the active board to another one, at `toIndex` there. To the
+   * active board itself it is just `list/move`.
+   */
+  | { type: 'list/transfer'; listId: string; toBoardId: string; toIndex: number }
   | { type: 'card/add'; listId: string; title: string; atTop?: boolean }
   | { type: 'card/update'; cardId: string; patch: Partial<Card> }
   | { type: 'card/remove'; cardId: string }
@@ -112,6 +120,36 @@ export function baseReducer(state: BoardDocument, action: Action): BoardDocument
         ...board,
         lists: board.lists.filter((l) => l.id !== action.listId),
       }));
+
+    case 'list/copy':
+      return mapActiveBoard(state, (board) => {
+        const at = board.lists.findIndex((l) => l.id === action.listId);
+        if (at === -1) return board;
+        const lists = [...board.lists];
+        lists.splice(at + 1, 0, copyList(board.lists[at], action.title));
+        return { ...board, lists };
+      });
+
+    case 'list/transfer': {
+      if (action.toBoardId === state.activeBoardId) {
+        return baseReducer(state, { type: 'list/move', listId: action.listId, toIndex: action.toIndex });
+      }
+      const source = state.boards.find((b) => b.id === state.activeBoardId);
+      const list = source?.lists.find((l) => l.id === action.listId);
+      if (!list || !state.boards.some((b) => b.id === action.toBoardId)) return state;
+      return {
+        ...state,
+        boards: state.boards.map((b) => {
+          if (b.id === state.activeBoardId) {
+            return { ...b, lists: b.lists.filter((l) => l.id !== action.listId) };
+          }
+          if (b.id !== action.toBoardId) return b;
+          const lists = [...b.lists];
+          lists.splice(Math.max(0, Math.min(action.toIndex, lists.length)), 0, list);
+          return { ...b, lists };
+        }),
+      };
+    }
 
     case 'list/move':
       return mapActiveBoard(state, (board) => {
@@ -325,6 +363,46 @@ export function baseReducer(state: BoardDocument, action: Action): BoardDocument
     default:
       return state;
   }
+}
+
+/**
+ * A list with fresh ids all the way down: the list, every card, every
+ * checklist item and attachment. Two cards sharing an id would make every
+ * card action hit both, or only ever the first.
+ *
+ * Archived cards are not copied. They are what was put away from the
+ * original; a new list starting with things to restore would be odd.
+ *
+ * Attachments keep pointing at the same stored file. That is safe because a
+ * file is only deleted once the document stops referencing it at all (see
+ * App), and it is how the store already works: an imported file is named by
+ * its content hash, so the same picture attached twice was always one file.
+ *
+ * The history starts over. It is composed by logActivity, which writes the
+ * one line saying where the card was copied from.
+ */
+export function copyList(list: List, title: string): List {
+  const now = new Date().toISOString();
+  return {
+    id: id('list'),
+    title,
+    cards: list.cards
+      .filter((card) => !card.archivedAt)
+      .map((card) => {
+        const attachments = card.attachments.map((attachment) => ({ ...attachment, id: id('att') }));
+        const cover = card.attachments.findIndex((a) => a.id === card.coverAttachmentId);
+        return {
+          ...card,
+          id: id('card'),
+          labelIds: [...card.labelIds],
+          checklist: card.checklist.map((item) => ({ ...item, id: id('chk') })),
+          attachments,
+          coverAttachmentId: cover === -1 ? null : attachments[cover].id,
+          activity: [],
+          createdAt: now,
+        };
+      }),
+  };
 }
 
 function mapActiveBoard(state: BoardDocument, fn: (board: Board) => Board): BoardDocument {

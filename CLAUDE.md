@@ -202,6 +202,31 @@ both on the window to close the card and to focus the search.
 The comment box's toolbar drops Titulo and Bloco de codigo (`fullOnly`): the side column is
 300px wide at the window's minimum size and the full toolbar does not fit on one row.
 
+### Stored files are shared, and only App deletes them
+
+The asset store names an imported file by its **content hash**, so the same picture attached to
+two cards - or used as two boards' background - is one file. A copied list's cards point at the
+original's files too. Deleting a file from the place that dropped it therefore deletes it for
+everyone else using it; that is what every delete path used to do.
+
+So nothing calls `removeAsset` except one effect in `App`: after each document change it deletes
+what `releasedAssets(before, after)` reports - files the old document referenced and the new one
+references nowhere, archived cards included. It starts from the first loaded document, never
+from the seed, for the same reason the startup sweep is guarded. A change made in the
+preferences window reaches it too, because it is applied by the main window. **Do not add a
+`removeAsset` call next to a dispatch**; dispatch, and let the document decide.
+
+The startup sweep still exists for files orphaned in a session that ended before the effect ran.
+
+### Lists: the menu, copy and move
+
+`ListMenu` is a child of the column, not of the column header: the header is `draggable`, and a
+text field inside it turns an attempt to select its text into a list drag. It closes on a
+capture-phase mousedown outside it (skipping the "..." button, which is its own toggle) and on
+Escape. `list/copy` gives the copy fresh ids all the way down, leaves archived cards behind and
+starts each card's history over with one line saying where it came from. `list/transfer` takes a
+list to another board; to the active board it is plain `list/move`.
+
 ### Archived cards
 
 `card/archive` sets `archivedAt` rather than moving the card: it stays in its list at its own

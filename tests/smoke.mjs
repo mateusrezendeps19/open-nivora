@@ -904,6 +904,56 @@ try {
       return doc.boards[0].lists[1].cards.some((card) => card.title === moving);
     }, `"${moving}" nao ficou gravado na outra lista`);
   });
+  await check('o menu da lista fecha ao clicar fora, copia e move a lista', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const lists = () => page.locator('.column .column__title').allTextContents();
+    const dots = () => page.locator('.column').first().locator('.column__menu-btn');
+    const menuCount = () => page.locator('.list-menu').count();
+
+    // O bug: o menu so fechava clicando de novo nos tres pontos.
+    await dots().click();
+    assert.equal(await menuCount(), 1);
+    const canvas = await page.locator('.canvas__lists').boundingBox();
+    await page.mouse.click(canvas.x + canvas.width - 20, canvas.y + canvas.height - 20);
+    assert.equal(await menuCount(), 0, 'clicar no quadro nao fechou o menu');
+    await dots().click();
+    await page.keyboard.press('Escape');
+    assert.equal(await menuCount(), 0, 'Escape nao fechou o menu');
+
+    // Copiar: a copia vem logo depois da original, com os cartoes visiveis dela.
+    const before = await lists();
+    const original = before[0];
+    const cards = await page.locator('.column').first().locator('.tile__title').allTextContents();
+    const name = `Copia ${Date.now()}`;
+    await dots().click();
+    await page.locator('.list-menu button:text-is("Copiar lista")').click();
+    await page.locator('.list-menu__name').fill(name);
+    await page.locator('.list-menu button:text-is("Criar lista")').click();
+    assert.deepEqual((await lists()).slice(0, 2), [original, name]);
+    assert.deepEqual(
+      await page.locator('.column').nth(1).locator('.tile__title').allTextContents(),
+      cards,
+    );
+
+    // Mover para outro quadro: some daqui, aparece la.
+    const destination = `Destino ${Date.now()}`;
+    await page.click('.sidebar__new');
+    await page.keyboard.type(destination);
+    await page.click('.sidebar__add-actions button:text-is("Criar")');
+    await page.locator('.sidebar').getByText('Meu primeiro quadro').click();
+    await page.waitForSelector(`.column__title:text-is("${name}")`);
+    await page.locator('.column').nth(1).locator('.column__menu-btn').click();
+    await page.locator('.list-menu button:text-is("Mover lista")').click();
+    await page.locator('.list-menu select').first().selectOption({ label: destination });
+    await page.locator('.list-menu button:text-is("Mover")').click();
+    assert.ok(!(await lists()).includes(name), 'a lista continuou no quadro de origem');
+
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const board = doc.boards.find((entry) => entry.title === destination);
+      return board?.lists.some((list) => list.title === name);
+    }, `"${name}" nao chegou ao quadro "${destination}" no boards.json`);
+  });
 } finally {
   await app?.close().catch(() => undefined);
   await rm(userData, { recursive: true, force: true }).catch(() => undefined);

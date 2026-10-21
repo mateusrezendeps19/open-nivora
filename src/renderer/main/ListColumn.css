@@ -84,40 +84,10 @@ input.column__title {
   line-height: 1;
 }
 
-.column__menu-btn:hover {
+.column__menu-btn:hover,
+.column__menu-btn--open {
   background: var(--surface-hover);
   color: var(--text);
-}
-
-.column__menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
-  padding: var(--space-50);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-overlay);
-  box-shadow: var(--shadow-overlay);
-  animation: var(--enter-popup);
-}
-
-.column__menu button {
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  text-align: left;
-  font-size: 13px;
-}
-
-.column__menu button:hover {
-  background: var(--surface-hover);
-}
-
-.column__menu-danger {
-  color: var(--danger);
 }
 
 .column__cards {
