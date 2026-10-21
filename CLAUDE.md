@@ -131,6 +131,13 @@ Two more consequences, both already paid for:
   board, and that is the whole reason a release on the dock archives or deletes the card instead
   of also moving it.
 
+- **`drag` and `dragend` are native listeners on the source element, not React props.** Moving
+  the card into another list in the preview means another `ListColumn` renders it, so React
+  unmounts the tile the drag started on. Chromium keeps dispatching to that detached element,
+  where React's root-delegated listeners never hear it: the card under the pointer froze at the
+  list boundary and the drag never ended. `beginDrag` attaches both on the element itself and
+  reaches the current handlers through a ref.
+
 `dragPreview.ts` replaces Chromium's drag image, which is a flat snapshot that cannot be tilted,
 with a transparent GIF so the board can draw the card itself (`.drag-layer`, z 30). It reports
 whether that took: on false the board leaves the native ghost alone and draws no card of its own,

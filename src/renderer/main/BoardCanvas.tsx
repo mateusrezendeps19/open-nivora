@@ -166,7 +166,43 @@ export function BoardCanvas({
     });
   }, []);
 
-  function beginDrag(next: Drag, grab: Grab | null) {
+  /**
+   * The handlers of the latest render, for the native listeners below: they are
+   * registered once per drag and would otherwise call a stale closure, one that
+   * still sees the drop as it was when the drag began.
+   */
+  const latest = useRef({ placeLift, endAndCommit });
+  useLayoutEffect(() => {
+    latest.current = { placeLift, endAndCommit };
+  });
+
+  /**
+   * `drag` and `dragend` are listened for natively on the element the drag
+   * started from, not through React. The board draws the drag by moving the
+   * card into its target list, and moving a card to another list is a
+   * different ListColumn rendering it: React unmounts the tile the drag began
+   * on and mounts a new one. Chromium keeps sending the drag's events to the
+   * original element, now outside the document, where React's listeners at the
+   * root never hear them - the card under the pointer froze where the list
+   * changed, and the drag never ended. A listener on the element itself still
+   * fires once it is detached.
+   */
+  function beginDrag(next: Drag, grab: Grab | null, source: HTMLElement) {
+    const onDrag = (event: MouseEvent) => {
+      // Chromium reports 0,0 for the last drag event of a gesture, which would
+      // throw the card into the top left corner right before it is dropped.
+      if (event.clientX !== 0 || event.clientY !== 0) {
+        latest.current.placeLift(event.clientX, event.clientY);
+      }
+    };
+    const onEnd = () => {
+      source.removeEventListener('drag', onDrag);
+      source.removeEventListener('dragend', onEnd);
+      latest.current.endAndCommit();
+    };
+    source.addEventListener('drag', onDrag);
+    source.addEventListener('dragend', onEnd);
+
     if (next?.kind === 'card' && canvasRef.current) {
       frozenRef.current = freezeLists(canvasRef.current, next.cardId);
     }
@@ -263,7 +299,6 @@ export function BoardCanvas({
       onDragOver={allowDrop}
       onDragLeave={onDragLeave}
       onDrop={(event) => event.preventDefault()}
-      onDragEnd={endAndCommit}
     >
       {needle && (
         <div className="canvas__filter">
@@ -285,7 +320,6 @@ export function BoardCanvas({
             drag={drag}
             listDrop={listDrop}
             onDragStart={beginDrag}
-            onCardMove={placeLift}
             onCardHover={hoverCard}
             onListHover={setListDrop}
             onOpenCard={onOpenCard}
@@ -317,7 +351,6 @@ export function BoardCanvas({
             dragging={false}
             onOpen={noop}
             onDragStart={noop}
-            onDragMove={noop}
           />
         </div>
       )}

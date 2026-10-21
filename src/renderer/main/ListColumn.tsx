@@ -16,8 +16,7 @@ interface ListColumnProps {
   labels: Label[];
   drag: Drag;
   listDrop: number | null;
-  onDragStart: (drag: Drag, grab: Grab | null) => void;
-  onCardMove: (x: number, y: number) => void;
+  onDragStart: (drag: Drag, grab: Grab | null, source: HTMLElement) => void;
   /** Where the pointer is inside this list's card area, in its content space. */
   onCardHover: (listId: string, y: number) => void;
   onListHover: (index: number | null) => void;
@@ -34,7 +33,6 @@ export function ListColumn({
   drag,
   listDrop,
   onDragStart,
-  onCardMove,
   onCardHover,
   onListHover,
   onOpenCard,
@@ -97,7 +95,7 @@ export function ListColumn({
           event.dataTransfer.setData('text/plain', list.id);
           // A whole column is too big to carry under the pointer, so the
           // native drag image is left in place for a list drag.
-          onDragStart({ kind: 'list', listId: list.id }, null);
+          onDragStart({ kind: 'list', listId: list.id }, null, event.currentTarget);
         }}
       >
         <InlineTitle
@@ -152,10 +150,9 @@ export function ListColumn({
             labels={labels}
             dragging={drag?.kind === 'card' && drag.cardId === card.id}
             onOpen={() => onOpenCard(card.id)}
-            onDragStart={(grab) =>
-              onDragStart({ kind: 'card', cardId: card.id, fromListId: list.id }, grab)
+            onDragStart={(grab, source) =>
+              onDragStart({ kind: 'card', cardId: card.id, fromListId: list.id }, grab, source)
             }
-            onDragMove={onCardMove}
           />
         ))}
 

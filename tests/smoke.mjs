@@ -749,6 +749,47 @@ try {
     );
     assert.equal(await page.locator('.drag-layer').count(), 0, 'a camada de arraste nao sumiu');
   });
+  await check('o cartao levado para outra lista segue o ponteiro e o arraste termina', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const source = page.locator('.column').nth(0);
+    const target = page.locator('.column').nth(1);
+    const tile = source.locator('.tile').first();
+    const moving = (await tile.locator('.tile__title').textContent()).trim();
+    const from = await tile.boundingBox();
+    const last = await target.locator('.tile').last().boundingBox();
+    const layer = () => page.locator('.drag-layer').evaluate((node) => node.style.transform);
+
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2 + 10, {
+      steps: 4,
+    });
+    await page.mouse.move(last.x + last.width / 2, last.y + last.height * 0.8, { steps: 12 });
+    await page.mouse.move(last.x + last.width / 2 + 1, last.y + last.height * 0.8, { steps: 2 });
+
+    // Mudar de lista desmonta o cartao de onde o arraste comecou e monta outro
+    // na lista de destino. Os eventos do arraste continuam indo para o
+    // elemento antigo, ja fora do documento: ouvidos pelo React, o cartao no
+    // ponteiro congelava ali e o arraste nunca terminava.
+    await waitFor(
+      async () => (await target.locator('.tile__title').allTextContents()).includes(moving),
+      `"${moving}" nao foi para a outra lista durante o arraste`,
+    );
+    const atCrossing = await layer();
+    await page.mouse.move(last.x + last.width / 2 + 40, last.y + last.height + 60, { steps: 8 });
+    assert.notEqual(await layer(), atCrossing, 'o cartao no ponteiro parou ao trocar de lista');
+
+    await page.mouse.up();
+    await waitFor(
+      async () => (await page.locator('.drag-layer').count()) === 0,
+      'o arraste nao terminou depois de soltar',
+    );
+    assert.equal(await page.locator('.tile--dragging').count(), 0, 'sobrou a vaga do arraste');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.boards[0].lists[1].cards.some((card) => card.title === moving);
+    }, `"${moving}" nao ficou gravado na outra lista`);
+  });
 } finally {
   await app?.close().catch(() => undefined);
   await rm(userData, { recursive: true, force: true }).catch(() => undefined);

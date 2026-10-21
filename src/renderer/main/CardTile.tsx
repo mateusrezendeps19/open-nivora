@@ -15,9 +15,8 @@ interface CardTileProps {
   /** This tile *is* the card at the pointer: visual only, takes no input. */
   preview?: boolean;
   onOpen: () => void;
-  onDragStart: (grab: Grab) => void;
-  /** Pointer position during the drag, for the card the board draws. */
-  onDragMove: (x: number, y: number) => void;
+  /** `source` is the element the drag started from; see BoardCanvas.beginDrag. */
+  onDragStart: (grab: Grab, source: HTMLElement) => void;
 }
 
 function dueState(due: string | null): 'none' | 'soon' | 'late' {
@@ -37,7 +36,6 @@ export function CardTile({
   preview = false,
   onOpen,
   onDragStart,
-  onDragMove,
 }: CardTileProps) {
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
   const done = card.checklist.filter((item) => item.done).length;
@@ -75,12 +73,7 @@ export function CardTile({
           x: event.clientX,
           y: event.clientY,
           drawn: hideNativeDragImage(event.dataTransfer),
-        });
-      }}
-      // Chromium reports 0,0 for the last drag event of a gesture, which would
-      // throw the card into the top left corner right before it is dropped.
-      onDrag={(event) => {
-        if (event.clientX !== 0 || event.clientY !== 0) onDragMove(event.clientX, event.clientY);
+        }, event.currentTarget);
       }}
     >
       {cover && (
