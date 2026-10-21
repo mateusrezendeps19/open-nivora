@@ -20,7 +20,19 @@ export function useDocument() {
   // False when the store had nothing to read and we fell back to the seed.
   // The asset sweep must not run in that case.
   const [persisted, setPersisted] = useState(false);
-  const skipNextSave = useRef(true);
+  /**
+   * The last document that came from the store, kept by identity so the save
+   * effect can tell it apart from one this window produced.
+   *
+   * This used to be a "skip the next save" boolean, which loses writes: React
+   * batches, so two store updates arriving together collapse into a single
+   * render that consumes one skip and leaves the flag raised, and the next
+   * real edit in this window was then dropped instead of saved. Comparing
+   * references has no such state to get out of step.
+   */
+  const fromStore = useRef<BoardDocument | null>(null);
+  /** A change waiting out the save debounce, so it can be flushed early. */
+  const pending = useRef<{ doc: BoardDocument; timer: ReturnType<typeof setTimeout> } | null>(null);
   const { ipc } = bridge();
 
   // Initial load.
@@ -32,7 +44,9 @@ export function useDocument() {
         ? await ipc.invoke<unknown>(AppChannel.STORE, StoreOp.READ).catch(() => null)
         : readLocal();
       if (cancelled) return;
-      dispatch({ type: 'replace', doc: normalize(raw) });
+      const loadedDoc = normalize(raw);
+      fromStore.current = loadedDoc;
+      dispatch({ type: 'replace', doc: loadedDoc });
       setPersisted(!!raw);
       setLoaded(true);
     }
@@ -43,32 +57,77 @@ export function useDocument() {
     };
   }, [ipc]);
 
-  // Debounced persist. The first pass after load must not write straight back.
-  useEffect(() => {
-    if (!loaded) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-    const timer = setTimeout(() => {
+  const persist = useCallback(
+    (value: BoardDocument) => {
       if (hasShell()) {
-        void ipc.invoke(AppChannel.STORE, StoreOp.WRITE, doc).catch((error) => {
+        void ipc.invoke(AppChannel.STORE, StoreOp.WRITE, value).catch((error) => {
           bridge().logger.error('falha ao salvar o documento', error);
         });
       } else {
-        writeLocal(doc);
+        writeLocal(value);
       }
+    },
+    [ipc],
+  );
+
+  // Debounced persist. A document that came from the store is not echoed back.
+  useEffect(() => {
+    if (!loaded) return;
+    if (doc === fromStore.current) return;
+    const timer = setTimeout(() => {
+      pending.current = null;
+      persist(doc);
     }, SAVE_DEBOUNCE_MS);
+    pending.current = { doc, timer };
     return () => clearTimeout(timer);
-  }, [doc, ipc, loaded]);
+  }, [doc, loaded, persist]);
+
+  /**
+   * Writes a pending change at once when this window stops being the active
+   * one, instead of leaving it in the debounce.
+   *
+   * A satellite window reads the store as it opens, to offer the boards and
+   * lists to choose from. An edit still waiting out its debounce here is not
+   * in what it reads, so writing it on the way out keeps the two in step.
+   */
+  useEffect(() => {
+    if (!loaded) return;
+
+    function flush() {
+      const entry = pending.current;
+      if (!entry) return;
+      pending.current = null;
+      clearTimeout(entry.timer);
+      persist(entry.doc);
+    }
+
+    function onVisibility() {
+      if (document.hidden) flush();
+    }
+
+    window.addEventListener('blur', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('blur', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loaded, persist]);
 
   // Another window (newcard, preferences) wrote the document: adopt it.
   useEffect(() => {
     if (!hasShell()) return;
     return ipc.on(AppChannel.STORE, (op, payload) => {
+      // A satellite window asking this one, as the owner of the document, to
+      // apply an action. It goes through the reducer like any local edit, so
+      // automations run and the usual save path persists it.
+      if (op === StoreOp.APPLY) {
+        dispatch(payload as Action);
+        return;
+      }
       if (op !== StoreOp.WRITE) return;
-      skipNextSave.current = true;
-      dispatch({ type: 'replace', doc: normalize(payload) });
+      const incoming = normalize(payload);
+      fromStore.current = incoming;
+      dispatch({ type: 'replace', doc: incoming });
     });
   }, [ipc]);
 
@@ -80,6 +139,31 @@ export function useDocument() {
   const act = useCallback((action: Action) => dispatch(action), []);
 
   return { doc, activeBoard, dispatch: act, loaded, persisted };
+}
+
+/**
+ * Commits one action from a satellite window, such as `newcard`.
+ *
+ * The action is handed to the window that owns the document rather than
+ * written here. Two windows each reading the document, changing it and writing
+ * it back lose updates: the second write drops the first one's change, which
+ * is how a card added in `newcard` could vanish moments after the window said
+ * it had been added. Only the owner writes, so there is nothing to overwrite.
+ */
+export async function commitToStore(action: Action): Promise<void> {
+  if (!hasShell()) {
+    writeLocal(reducer(normalize(readLocal()), action));
+    return;
+  }
+
+  const { ipc } = bridge();
+  const applied = await ipc.invoke<boolean>(AppChannel.STORE, StoreOp.APPLY, action);
+  if (applied) return;
+
+  // No board window to own the change. Nothing else is writing either, so
+  // reading, applying and writing back is safe here.
+  const raw = await ipc.invoke<unknown>(AppChannel.STORE, StoreOp.READ).catch(() => null);
+  await ipc.invoke(AppChannel.STORE, StoreOp.WRITE, reducer(normalize(raw), action));
 }
 
 /** Applies the persisted theme to the document element. */

@@ -428,6 +428,46 @@ try {
     }));
     assert.equal(shape.hasElectron, true);
     assert.equal(shape.hasInitConfig, false, 'init_config nao deveria existir fora da janela main');
+
+    // The window opening is not the point: the card has to land on the board.
+    // Two faults used to swallow it. The list was picked from the seed
+    // document rendered before the real one arrived, leaving an id that
+    // matched no list; and both windows read, changed and wrote the whole
+    // document, so whichever wrote second dropped the other's change.
+    const title = `Cartao do newcard ${Date.now()}`;
+    await newcard.fill('.newcard__body textarea', title);
+
+    // Enabled only once the document is in and the selected list exists, so
+    // waiting on it is waiting for the window to be genuinely ready.
+    const add = newcard.locator('.btn--primary:has-text("Adicionar")');
+    await add.waitFor({ state: 'visible' });
+    await waitFor(async () => !(await add.isDisabled()), 'o botao Adicionar ficou desabilitado');
+
+    const list = await newcard.locator('.newcard__field select >> nth=1').inputValue();
+    assert.ok(list, 'a janela newcard deveria ter uma lista selecionada');
+    await add.click();
+
+    const storePath = path.join(userData, 'boards.json');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.boards.some((board) =>
+        board.lists.some((entry) => entry.cards.some((card) => card.title === title)),
+      );
+    }, `"${title}" nao chegou ao boards.json`);
+
+    // And the main window must pick it up from the store broadcast.
+    await page.waitForSelector(`.tile__title:text-is("${title}")`, { timeout: 5_000 });
+
+    // It goes into the list the window had selected, not just any list.
+    const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+    const holder = doc.boards
+      .flatMap((board) => board.lists)
+      .find((entry) => entry.cards.some((card) => card.title === title));
+    assert.equal(holder.id, list, 'o cartao foi para uma lista diferente da selecionada');
+
+    // The other half of the lost update: adding a card must not undo what the
+    // board window changed just before, which here is the view it was left on.
+    assert.equal(doc.prefs.view, 'board', 'a janela newcard reverteu a visao do quadro');
   });
 } finally {
   await app?.close().catch(() => undefined);

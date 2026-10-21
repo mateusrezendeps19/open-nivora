@@ -40,4 +40,10 @@ export const AssetChannel = {
   REVEAL: 'assets-reveal',
 } as const;
 
-export const StoreOp = { READ: 'read', WRITE: 'write', PATH: 'path' } as const;
+export const StoreOp = {
+  READ: 'read',
+  WRITE: 'write',
+  PATH: 'path',
+  /** Hands an action to the window that owns the document. */
+  APPLY: 'apply',
+} as const;

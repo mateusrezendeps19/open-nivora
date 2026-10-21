@@ -56,6 +56,13 @@ function webPreferences(kind: 'main' | 'window'): BrowserWindowConstructorOption
     nodeIntegration: false,
     sandbox: false,
     spellcheck: true,
+    /*
+     * The main window owns the document and saves it on a debounce. Chromium
+     * throttles timers in a window that is not the active one, so with a
+     * satellite in front its saves would sit unwritten - including the cards
+     * that satellite has just handed it.
+     */
+    backgroundThrottling: false,
   };
 }
 

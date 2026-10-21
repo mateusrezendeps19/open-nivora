@@ -87,6 +87,23 @@ ipcMain.handle(AppChannel.STORE, async (event, op: string, payload: unknown) => 
       await writeStore(payload);
       broadcastStoreChange(payload, event.sender.id);
       return true;
+    /*
+     * Hands the action to the main window, which owns the document, and tells
+     * the caller whether that worked.
+     *
+     * Two windows each reading the document, changing it and writing it back
+     * is a lost update waiting to happen: whichever write lands second drops
+     * the other's change. That is what made a card added in `newcard`
+     * disappear - the board window wrote its own copy, from before the card,
+     * moments later. With the action applied where the document is owned
+     * there is a single writer and nothing to overwrite.
+     */
+    case StoreOp.APPLY: {
+      const owner = find('main');
+      if (!owner || owner.isDestroyed() || owner.webContents.id === event.sender.id) return false;
+      owner.webContents.send(AppChannel.STORE, StoreOp.APPLY, payload);
+      return true;
+    }
     case StoreOp.PATH:
       return getStorePath();
     default:

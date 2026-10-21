@@ -64,6 +64,12 @@ export const StoreOp = {
   READ: 'read',
   WRITE: 'write',
   PATH: 'path',
+  /**
+   * Nivora addition. A satellite window hands an action to the window that
+   * owns the document instead of writing the whole document itself, so there
+   * is only ever one writer. See the note on the handler in main.ts.
+   */
+  APPLY: 'apply',
 } as const;
 
 /**
