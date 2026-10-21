@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { bridge, hasShell } from '../bridge';
 import { AppChannel, StoreOp } from '../channels';
+import { useI18n } from '../i18n/context';
 import type { BoardDocument } from '../types';
 import './DataSettings.css';
 
@@ -20,6 +21,7 @@ interface DataSettingsProps {
 export function DataSettings({ doc }: DataSettingsProps) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [storePath, setStorePath] = useState('');
+  const { m } = useI18n();
   const { ipc } = bridge();
 
   useEffect(() => {
@@ -53,44 +55,40 @@ export function DataSettings({ doc }: DataSettingsProps) {
   return (
     <>
       <section className="settings__section">
-        <h3>Conteudo</h3>
+        <h3>{m.data.content}</h3>
         <dl className="facts">
-          <dt>Quadros</dt>
+          <dt>{m.data.boards}</dt>
           <dd>{totals.boards}</dd>
-          <dt>Listas</dt>
+          <dt>{m.data.lists}</dt>
           <dd>{totals.lists}</dd>
-          <dt>Cartoes</dt>
+          <dt>{m.data.cards}</dt>
           <dd>{totals.cards}</dd>
-          <dt>Arquivados</dt>
+          <dt>{m.data.archived}</dt>
           <dd>{totals.archived}</dd>
-          <dt>Anexos</dt>
+          <dt>{m.data.attachments}</dt>
           <dd>{totals.attachments}</dd>
-          <dt>Regras</dt>
+          <dt>{m.data.rules}</dt>
           <dd>{totals.rules}</dd>
-          <dt>Arquivo</dt>
-          <dd className="facts__path">{storePath || 'localStorage do navegador'}</dd>
+          <dt>{m.data.file}</dt>
+          <dd className="facts__path">{storePath || m.data.browserStorage}</dd>
         </dl>
       </section>
 
       <section className="settings__section">
-        <h3>Sobre</h3>
+        <h3>{m.data.about}</h3>
         <dl className="facts">
-          <dt>Versao</dt>
+          <dt>{m.data.version}</dt>
           <dd>{config?.desktopVersion ?? '-'}</dd>
           <dt>appId</dt>
           <dd>{config?.appId ?? '-'}</dd>
-          <dt>Plataforma</dt>
+          <dt>{m.data.platform}</dt>
           <dd>{config?.platform ?? '-'}</dd>
-          <dt>Locale</dt>
+          <dt>{m.data.locale}</dt>
           <dd>{config?.locale ?? doc.prefs.locale}</dd>
-          <dt>Documento</dt>
-          <dd>versao {doc.version}</dd>
+          <dt>{m.data.document}</dt>
+          <dd>{m.data.documentVersion(doc.version)}</dd>
         </dl>
-        <p className="settings__note">
-          O shell desta janela foi reconstruido a partir da analise do app.asar do Trello feita pelo
-          REA: inventario de janelas, contrato IPC e titlebar sem moldura. A interface de quadros,
-          os anexos, o fundo e as automacoes sao implementacao original.
-        </p>
+        <p className="settings__note">{m.data.note}</p>
       </section>
     </>
   );

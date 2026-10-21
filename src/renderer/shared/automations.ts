@@ -257,33 +257,3 @@ function cardById(board: Board | undefined, cardId: string): Card | undefined {
 function allDone(card: Card): boolean {
   return card.checklist.every((item) => item.done);
 }
-
-export const TRIGGER_LABELS: Record<TriggerType, string> = {
-  'card-added': 'Quando um cartao e criado em',
-  'card-moved': 'Quando um cartao e movido para',
-  'label-added': 'Quando a etiqueta e adicionada',
-  'checklist-completed': 'Quando a checklist e concluida',
-};
-
-export const ACTION_LABELS: Record<RuleAction['type'], string> = {
-  'move-to-list': 'Mover para a lista',
-  'add-label': 'Adicionar etiqueta',
-  'remove-label': 'Remover etiqueta',
-  'set-due': 'Definir prazo em',
-  'clear-due': 'Remover o prazo',
-  'add-checklist-item': 'Adicionar item a checklist',
-  'mark-checklist-done': 'Marcar a checklist como concluida',
-  'mark-card-done': 'Marcar o cartao como concluido',
-  'mark-card-undone': 'Desmarcar o cartao',
-};
-
-/**
- * Actions that quietly do nothing unless the card is in the right shape. The
- * panel shows this so a rule that cannot act is not mistaken for a broken one.
- */
-export const ACTION_CAVEATS: Partial<Record<RuleAction['type'], string>> = {
-  'mark-checklist-done':
-    'So afeta cartoes que tenham itens pendentes na checklist. Para marcar o cartao em si, use "Marcar o cartao como concluido".',
-  'clear-due': 'So afeta cartoes que tenham prazo.',
-  'remove-label': 'So afeta cartoes que tenham essa etiqueta.',
-};

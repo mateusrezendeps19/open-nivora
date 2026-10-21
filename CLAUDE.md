@@ -332,6 +332,30 @@ is the previous day west of Greenwich, and that put cards on the wrong calendar 
 date one day off on the card badge. Use `toDateInput`/`fromDateInput` for the date picker and
 `moveDue` when rescheduling.
 
+### Languages
+
+The interface speaks Portuguese, English and Spanish, picked in Aparencia and stored as
+`prefs.locale` - a BCP 47 tag (`pt-BR`, `en-US`, `es-ES`), the same one handed to `Intl`, so dates
+are always in the language of the words around them.
+
+- `shared/i18n/pt.ts` is the source: `Messages` is its type, and `en.ts`/`es.ts` are typed
+  against it, so a missing string fails the typecheck. A message that puts something of the
+  user's mid-sentence is a function, so each language can place it where its grammar does.
+  `tests/i18n.test.ts` also compares the shapes at runtime, which catches what a cast hides.
+- Components read the strings with `useI18n()`; each window renders an `I18nProvider` at its root
+  from `doc.prefs.locale` (welcome and find_in_page load the document only for that). Code
+  outside React - the reducer's history lines, `normalize()`'s defaults, `relativeTime` - takes
+  the locale from the document or a parameter, via `messages(locale)`.
+- `toLocale()` maps any tag by language and falls back to Portuguese. A document with no locale
+  predates the choice and was Portuguese, so nothing is migrated.
+- Only a first run follows the system language (`systemLocale()`): the seed is written in it.
+  The smoke test therefore launches with `--lang=pt-BR`, because every check reads Portuguese.
+- History lines are composed in the language in use when they happen and never rewritten, like
+  the titles they quote; the seed content and label names are the user's data once written.
+- The native menu is built in the main process, which cannot import renderer code, so
+  `electron/menuLabels.ts` carries its own small table; `main.ts` rebuilds the menu when a store
+  write carries a different locale. Items built from a `role` are labelled by Electron.
+
 ### Renderer windows
 
 `vite.config.ts` builds one entry per window (`main`, `newcard`, `preferences`, `find_in_page`,
@@ -345,8 +369,9 @@ of the `preferences` window) so the two cannot drift.
 
 ## Conventions
 
-- UI strings are Portuguese **without accents** ("Configuracoes", "cartoes", "Mes"). Text produced
-  at runtime by `Intl`/`toLocaleDateString` keeps its accents and is fine.
+- UI strings live in `shared/i18n/` and nowhere else - see Languages. They are written **without
+  accents** in Portuguese and Spanish alike ("Configuracoes", "cartoes", "Configuracion"). Text
+  produced at runtime by `Intl`/`toLocaleDateString` keeps its accents and is fine.
 - Comments and identifiers are English, and explain *why* — the constraint, the bug that motivated
   the shape — not what the line does.
 - Styling is plain CSS per component with the tokens in `shared/styles/tokens.css`. There is no CSS

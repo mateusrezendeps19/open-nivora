@@ -1,4 +1,6 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import type { Messages } from '../shared/i18n';
+import { useI18n } from '../shared/i18n/context';
 import {
   continueList,
   indentList,
@@ -54,12 +56,13 @@ const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeL
 /*
  * The groups follow Trello's toolbar: text style, inline marks, block kinds,
  * then insertions. The shortcuts in the labels are the ones the textarea
- * actually answers to.
+ * actually answers to. A function of the language, because the word a mark
+ * wraps when nothing is selected is in it too.
  */
-const TOOLS: Tool[][] = [
+const tools = (t: Messages['rich']): Tool[][] => [
   [
     {
-      label: 'Titulo',
+      label: t.heading,
       icon: <span className="rich__glyph rich__glyph--heading">T</span>,
       apply: (s) => toggleLinePrefix(s, 'heading'),
       fullOnly: true,
@@ -67,29 +70,29 @@ const TOOLS: Tool[][] = [
   ],
   [
     {
-      label: 'Negrito (Ctrl+B)',
+      label: t.bold,
       icon: <span className="rich__glyph rich__glyph--bold">B</span>,
-      apply: (s) => toggleWrap(s, '**', 'negrito'),
+      apply: (s) => toggleWrap(s, '**', t.boldSample),
     },
     {
-      label: 'Italico (Ctrl+I)',
+      label: t.italic,
       icon: <span className="rich__glyph rich__glyph--italic">I</span>,
-      apply: (s) => toggleWrap(s, '*', 'italico'),
+      apply: (s) => toggleWrap(s, '*', t.italicSample),
     },
     {
-      label: 'Tachado (Ctrl+Shift+X)',
+      label: t.strike,
       icon: <span className="rich__glyph rich__glyph--strike">S</span>,
-      apply: (s) => toggleWrap(s, '~~', 'tachado'),
+      apply: (s) => toggleWrap(s, '~~', t.strikeSample),
     },
     {
-      label: 'Codigo (Ctrl+E)',
+      label: t.code,
       icon: svg(<path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" {...stroke} />),
-      apply: (s) => toggleWrap(s, '`', 'codigo'),
+      apply: (s) => toggleWrap(s, '`', t.codeSample),
     },
   ],
   [
     {
-      label: 'Lista com marcadores',
+      label: t.bullet,
       icon: svg(
         <>
           <circle cx="3" cy="4" r="1.2" fill="currentColor" />
@@ -101,7 +104,7 @@ const TOOLS: Tool[][] = [
       apply: (s) => toggleLinePrefix(s, 'bullet'),
     },
     {
-      label: 'Lista numerada',
+      label: t.ordered,
       icon: svg(
         <>
           <text x="0.5" y="6" fontSize="5.5" fill="currentColor" fontFamily="sans-serif">1</text>
@@ -112,31 +115,31 @@ const TOOLS: Tool[][] = [
       apply: (s) => toggleLinePrefix(s, 'ordered'),
     },
     {
-      label: 'Citacao',
+      label: t.quote,
       icon: svg(<path d="M3 3.5v9M6.5 5H13M6.5 8H13M6.5 11H11" {...stroke} />),
       apply: (s) => toggleLinePrefix(s, 'quote'),
     },
   ],
   [
     {
-      label: 'Link (Ctrl+K)',
+      label: t.link,
       icon: svg(
         <path
           d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2.3-2.3a2.6 2.6 0 0 0-3.7-3.7l-.9.9M9.2 6.8a2.6 2.6 0 0 0-3.7 0L3.2 9.1a2.6 2.6 0 0 0 3.7 3.7l.9-.9"
           {...stroke}
         />,
       ),
-      apply: insertLink,
+      apply: (s) => insertLink(s, t.linkSample),
     },
     {
-      label: 'Bloco de codigo',
+      label: t.codeBlock,
       icon: svg(
         <>
           <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" {...stroke} />
           <path d="M6 6.5 4.5 8 6 9.5M10 6.5 11.5 8 10 9.5" {...stroke} />
         </>,
       ),
-      apply: insertCodeBlock,
+      apply: (s) => insertCodeBlock(s, t.codeSample),
       fullOnly: true,
     },
   ],
@@ -167,6 +170,9 @@ export function RichEditor({
 }: RichEditorProps) {
   const areaRef = useRef<HTMLTextAreaElement>(null);
   const [preview, setPreview] = useState(false);
+  const { m } = useI18n();
+  const t = m.rich;
+  const toolbar = useMemo(() => tools(t), [t]);
   /**
    * Once open, a compact box stays open. Folding the toolbar away on blur
    * moves everything under the box up by the toolbar's height in the middle
@@ -249,11 +255,11 @@ export function RichEditor({
       onSubmit();
       return;
     }
-    if (mod && !event.shiftKey && key === 'b') return take(toggleWrap(current(), '**', 'negrito'));
-    if (mod && !event.shiftKey && key === 'i') return take(toggleWrap(current(), '*', 'italico'));
-    if (mod && !event.shiftKey && key === 'e') return take(toggleWrap(current(), '`', 'codigo'));
-    if (mod && event.shiftKey && key === 'x') return take(toggleWrap(current(), '~~', 'tachado'));
-    if (mod && !event.shiftKey && key === 'k') return take(insertLink(current()));
+    if (mod && !event.shiftKey && key === 'b') return take(toggleWrap(current(), '**', t.boldSample));
+    if (mod && !event.shiftKey && key === 'i') return take(toggleWrap(current(), '*', t.italicSample));
+    if (mod && !event.shiftKey && key === 'e') return take(toggleWrap(current(), '`', t.codeSample));
+    if (mod && event.shiftKey && key === 'x') return take(toggleWrap(current(), '~~', t.strikeSample));
+    if (mod && !event.shiftKey && key === 'k') return take(insertLink(current(), t.linkSample));
 
     if (key === 'escape' && onCancel) {
       take(null);
@@ -282,8 +288,8 @@ export function RichEditor({
         .join(' ')}
       onFocus={() => setOpened(true)}
     >
-      <div className="rich__toolbar" role="toolbar" aria-label="Formatacao">
-        {TOOLS.map((all) => all.filter((tool) => !compact || !tool.fullOnly))
+      <div className="rich__toolbar" role="toolbar" aria-label={t.toolbar}>
+        {toolbar.map((all) => all.filter((tool) => !compact || !tool.fullOnly))
           .filter((group) => group.length > 0)
           .map((group, index) => (
           <div key={index} className="rich__group">
@@ -312,8 +318,8 @@ export function RichEditor({
           // An icon and not the word: the comment box sits in the narrow side
           // column, where "Visualizar" in letters pushed the toolbar onto a
           // second row.
-          title={preview ? 'Voltar a editar' : 'Visualizar'}
-          aria-label={preview ? 'Voltar a editar' : 'Visualizar'}
+          title={preview ? t.backToEdit : t.preview}
+          aria-label={preview ? t.backToEdit : t.preview}
           onMouseDown={(event) => event.preventDefault()}
           onClick={(event) => {
             // The textarea is about to unmount with the focus in it. Moving
@@ -339,7 +345,7 @@ export function RichEditor({
           {value.trim() ? (
             <RichText source={value} />
           ) : (
-            <p className="rich__empty">Nada para visualizar ainda.</p>
+            <p className="rich__empty">{t.previewEmpty}</p>
           )}
         </div>
       ) : (

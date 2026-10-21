@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../shared/i18n/context';
 import './Composer.css';
 
 interface CardComposerProps {
@@ -10,6 +11,7 @@ export function CardComposer({ onAdd }: CardComposerProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const { m } = useI18n();
 
   useEffect(() => {
     if (open) areaRef.current?.focus();
@@ -26,7 +28,7 @@ export function CardComposer({ onAdd }: CardComposerProps) {
   if (!open) {
     return (
       <button type="button" className="composer__open" onClick={() => setOpen(true)}>
-        + Adicionar cartao
+        {m.composer.addCard}
       </button>
     );
   }
@@ -38,7 +40,7 @@ export function CardComposer({ onAdd }: CardComposerProps) {
         className="composer__input field"
         rows={2}
         value={title}
-        placeholder="Titulo do cartao"
+        placeholder={m.composer.cardTitle}
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
@@ -53,7 +55,7 @@ export function CardComposer({ onAdd }: CardComposerProps) {
       />
       <div className="composer__actions">
         <button type="button" className="btn btn--primary" onClick={submit}>
-          Adicionar
+          {m.composer.add}
         </button>
         <button
           type="button"
@@ -63,7 +65,7 @@ export function CardComposer({ onAdd }: CardComposerProps) {
             setOpen(false);
           }}
         >
-          Cancelar
+          {m.common.cancel}
         </button>
       </div>
     </div>

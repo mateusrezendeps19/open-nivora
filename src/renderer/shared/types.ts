@@ -1,3 +1,5 @@
+import type { Locale } from './i18n';
+
 export interface Label {
   id: string;
   name: string;
@@ -152,7 +154,8 @@ export type AppView = 'board' | 'calendar';
 
 export interface Prefs {
   theme: 'dark' | 'light';
-  locale: string;
+  /** The interface language, picked in Aparencia. */
+  locale: Locale;
   confirmCardDelete: boolean;
   automationsEnabled: boolean;
   /** The left sidebar is collapsed to its rail of board tiles. */

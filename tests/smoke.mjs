@@ -49,7 +49,9 @@ function check(name, fn) {
 
 try {
   app = await electron.launch({
-    args: ['.', `--user-data-dir=${userData}`],
+    // A new document starts in the system's language, and every check below
+    // reads Portuguese, so the system is pinned to it.
+    args: ['.', `--user-data-dir=${userData}`, '--lang=pt-BR'],
     cwd: root,
   });
 
@@ -168,6 +170,35 @@ try {
 
     // Volta para escuro, que e o estado em que o resto das verificacoes roda.
     await page.click('.segmented button:has-text("Escuro")');
+  });
+
+  await check('o idioma escolhido em Aparencia troca a interface e o menu, e persiste', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const menu = () =>
+      app.evaluate(({ Menu }) => Menu.getApplicationMenu().items.map((item) => item.label));
+    const tabs = async () =>
+      (await page.locator('.settings__tab').allTextContents()).map((label) => label.replace(/\d+$/, ''));
+
+    await page.click('.settings__tab:has-text("Aparencia")');
+    await page.click('.segmented button:has-text("English")');
+    await page.waitForSelector('.toolbar__actions .btn:has-text("Settings")');
+    assert.deepEqual(await tabs(), ['Appearance', 'Background', 'Automations', 'Data']);
+    assert.equal(await page.evaluate(() => document.documentElement.lang), 'en-US');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.prefs.locale === 'en-US';
+    }, 'o idioma nao chegou ao boards.json');
+    await waitFor(async () => (await menu()).includes('File'), 'o menu nativo nao mudou para ingles');
+
+    await page.click('.segmented button:has-text("Espanol")');
+    await page.waitForSelector('.toolbar__actions .btn:has-text("Configuracion")');
+    await waitFor(async () => (await menu()).includes('Archivo'), 'o menu nativo nao mudou para espanhol');
+
+    // De volta ao portugues, que e o idioma em que o resto das verificacoes roda.
+    await page.click('.segmented button:has-text("Portugues")');
+    await page.waitForSelector('.toolbar__actions .btn:has-text("Configuracoes")');
+    assert.deepEqual(await tabs(), ['Aparencia', 'Fundo', 'Automacoes', 'Dados']);
+    await waitFor(async () => (await menu()).includes('Arquivo'), 'o menu nativo nao voltou ao portugues');
   });
 
   await check('trocar o fundo na aba Fundo persiste no documento', async () => {

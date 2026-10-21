@@ -5,16 +5,12 @@ import { AppearanceSettings } from './AppearanceSettings';
 import { AutomationsSettings } from './AutomationsSettings';
 import { BackgroundSettings } from './BackgroundSettings';
 import { DataSettings } from './DataSettings';
+import { useI18n } from '../i18n/context';
 import './Settings.css';
 
 export type SettingsTab = 'appearance' | 'background' | 'automations' | 'data';
 
-const TABS: { id: SettingsTab; label: string }[] = [
-  { id: 'appearance', label: 'Aparencia' },
-  { id: 'background', label: 'Fundo' },
-  { id: 'automations', label: 'Automacoes' },
-  { id: 'data', label: 'Dados' },
-];
+const TABS: SettingsTab[] = ['appearance', 'background', 'automations', 'data'];
 
 interface SettingsProps {
   doc: BoardDocument;
@@ -32,21 +28,22 @@ interface SettingsProps {
  */
 export function Settings({ doc, board, dispatch, initialTab = 'appearance' }: SettingsProps) {
   const [tab, setTab] = useState<SettingsTab>(initialTab);
+  const { m } = useI18n();
 
   return (
     <div className="settings">
-      <nav className="settings__tabs" role="tablist" aria-label="Configuracoes">
-        {TABS.map((entry) => (
+      <nav className="settings__tabs" role="tablist" aria-label={m.settings.title}>
+        {TABS.map((id) => (
           <button
-            key={entry.id}
+            key={id}
             type="button"
             role="tab"
-            aria-selected={tab === entry.id}
-            className={`settings__tab${tab === entry.id ? ' settings__tab--on' : ''}`}
-            onClick={() => setTab(entry.id)}
+            aria-selected={tab === id}
+            className={`settings__tab${tab === id ? ' settings__tab--on' : ''}`}
+            onClick={() => setTab(id)}
           >
-            {entry.label}
-            {entry.id === 'automations' && board.automations.length > 0 && (
+            {m.settings[id]}
+            {id === 'automations' && board.automations.length > 0 && (
               <span className="settings__tab-badge">{board.automations.length}</span>
             )}
           </button>

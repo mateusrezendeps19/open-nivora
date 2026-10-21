@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { TitleBar } from '../shared/components/TitleBar';
+import { messages } from '../shared/i18n';
+import { I18nProvider } from '../shared/i18n/context';
 import { Settings } from '../shared/settings/Settings';
 import { useDocument, useTheme } from '../shared/useDocument';
 import '../shared/styles/tokens.css';
@@ -17,16 +19,19 @@ function Preferences() {
   const { doc, activeBoard, dispatch, loaded } = useDocument();
 
   useTheme(doc.prefs.theme);
+  const m = messages(doc.prefs.locale);
 
   return (
-    <div className="prefs">
-      <TitleBar title="Configuracoes" />
-      {loaded ? (
-        <Settings doc={doc} board={activeBoard} dispatch={dispatch} />
-      ) : (
-        <div className="prefs__loading">Carregando...</div>
-      )}
-    </div>
+    <I18nProvider locale={doc.prefs.locale}>
+      <div className="prefs">
+        <TitleBar title={m.settings.title} />
+        {loaded ? (
+          <Settings doc={doc} board={activeBoard} dispatch={dispatch} />
+        ) : (
+          <div className="prefs__loading">{m.common.loading}</div>
+        )}
+      </div>
+    </I18nProvider>
   );
 }
 

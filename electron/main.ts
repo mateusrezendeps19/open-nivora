@@ -18,6 +18,7 @@ import {
   revealAsset,
   sweepAssets,
 } from './assets';
+import { documentLocale, menuLabels } from './menuLabels';
 import { LEGACY_NAME, migrateUserData } from './migrate';
 import { getStorePath, readStore, writeStore } from './store';
 import { closeWindow, each, find, nameOf, openWindow, WINDOWS, type WindowName } from './windows';
@@ -88,6 +89,7 @@ ipcMain.handle(AppChannel.STORE, async (event, op: string, payload: unknown) => 
     case StoreOp.WRITE:
       await writeStore(payload);
       broadcastStoreChange(payload, event.sender.id);
+      syncMenu(payload);
       return true;
     /*
      * Hands the action to the main window, which owns the document, and tells
@@ -216,20 +218,37 @@ ipcMain.handle(PrefsChannel.LOCALE, () => app.getLocale());
  * Application menu + lifecycle
  * ------------------------------------------------------------------ */
 
-function buildMenu(): void {
+/** The language the menu is in now, so a save that did not change it rebuilds nothing. */
+let menuLocale: unknown;
+
+/**
+ * Rebuilds the menu when the document's language changes. Every change is
+ * saved through the store, so the write that carries a new language is the
+ * moment to follow it - whichever window it was picked in.
+ */
+function syncMenu(doc: unknown): void {
+  // A document from before the choice existed is Portuguese, as in normalize().
+  const locale = documentLocale(doc) ?? 'pt-BR';
+  if (Menu.getApplicationMenu() && locale === menuLocale) return;
+  menuLocale = locale;
+  buildMenu(locale);
+}
+
+function buildMenu(locale: unknown): void {
   const isMac = process.platform === 'darwin';
+  const label = menuLabels(locale);
   const menu = Menu.buildFromTemplate([
     ...(isMac ? [{ role: 'appMenu' as const }] : []),
     {
-      label: 'Arquivo',
+      label: label.file,
       submenu: [
         {
-          label: 'Novo cartao',
+          label: label.newCard,
           accelerator: 'CmdOrCtrl+N',
           click: () => openWindow('newcard'),
         },
         {
-          label: 'Configuracoes',
+          label: label.settings,
           accelerator: 'CmdOrCtrl+,',
           click: () => openWindow('preferences'),
         },
@@ -239,10 +258,10 @@ function buildMenu(): void {
     },
     { role: 'editMenu' },
     {
-      label: 'Exibir',
+      label: label.view,
       submenu: [
         {
-          label: 'Localizar na pagina',
+          label: label.find,
           accelerator: 'CmdOrCtrl+F',
           click: () => openWindow('find_in_page'),
         },
@@ -258,10 +277,10 @@ function buildMenu(): void {
       ],
     },
     {
-      label: 'Ajuda',
+      label: label.help,
       submenu: [
         {
-          label: 'Relatorio de engenharia reversa',
+          label: label.report,
           click: () => void shell.openExternal('https://github.com/morluto/rea'),
         },
       ],
@@ -286,7 +305,12 @@ app.whenReady().then(() => {
   }
 
   handleAssetProtocol();
-  buildMenu();
+  // In the system's language until the document is read, which is also the
+  // language a first run starts the document in.
+  buildMenu(app.getLocale());
+  void readStore<unknown>(null).then((doc) => {
+    if (doc) syncMenu(doc);
+  });
   openWindow('main');
 
   each((win) => win.webContents.send(AppChannel.READY));

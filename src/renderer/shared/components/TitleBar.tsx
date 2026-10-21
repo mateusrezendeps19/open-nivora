@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { bridge, hasShell } from '../bridge';
 import { WindowChannel } from '../channels';
+import { useI18n } from '../i18n/context';
 import icon from '../../../../resources/icon.png';
 import './TitleBar.css';
 
@@ -20,6 +21,7 @@ interface TitleBarProps {
 export function TitleBar({ title, children }: TitleBarProps) {
   const [maximized, setMaximized] = useState(false);
   const [focused, setFocused] = useState(true);
+  const { m } = useI18n();
   const { ipc } = bridge();
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function TitleBar({ title, children }: TitleBarProps) {
         <button
           type="button"
           className="titlebar__btn"
-          aria-label="Minimizar"
+          aria-label={m.titleBar.minimize}
           onClick={() => ipc.send(WindowChannel.TRIGGER_MINIMIZE)}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
@@ -78,7 +80,7 @@ export function TitleBar({ title, children }: TitleBarProps) {
         <button
           type="button"
           className="titlebar__btn"
-          aria-label={maximized ? 'Restaurar' : 'Maximizar'}
+          aria-label={maximized ? m.titleBar.restore : m.titleBar.maximize}
           onClick={() => ipc.send(WindowChannel.TRIGGER_MAXIMIZE)}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
@@ -96,7 +98,7 @@ export function TitleBar({ title, children }: TitleBarProps) {
         <button
           type="button"
           className="titlebar__btn titlebar__btn--close"
-          aria-label="Fechar"
+          aria-label={m.common.close}
           onClick={() => ipc.send(WindowChannel.TRIGGER_CLOSE)}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">

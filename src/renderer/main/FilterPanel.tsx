@@ -6,7 +6,9 @@ import {
   type CardFilter,
   type DueWindow,
 } from '../shared/filter';
+import type { Messages } from '../shared/i18n';
 import type { Label } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import { useDismiss } from './useDismiss';
 import './FilterPanel.css';
 
@@ -18,24 +20,26 @@ interface FilterPanelProps {
   onClose: () => void;
 }
 
-const DUE: { id: DueWindow; label: string; tone: string }[] = [
-  { id: 'none', label: 'Sem prazo', tone: 'none' },
-  { id: 'overdue', label: 'Atrasado', tone: 'late' },
-  { id: 'day', label: 'Vence no proximo dia', tone: 'soon' },
-  { id: 'week', label: 'Vence na proxima semana', tone: 'later' },
-  { id: 'month', label: 'Vence no proximo mes', tone: 'later' },
+type FilterMessages = Messages['filter'];
+
+const DUE: { id: DueWindow; label: keyof FilterMessages; tone: string }[] = [
+  { id: 'none', label: 'dueNone', tone: 'none' },
+  { id: 'overdue', label: 'dueOverdue', tone: 'late' },
+  { id: 'day', label: 'dueDay', tone: 'soon' },
+  { id: 'week', label: 'dueWeek', tone: 'later' },
+  { id: 'month', label: 'dueMonth', tone: 'later' },
 ];
 
-const ACTIVITY: { id: ActivityWindow; label: string }[] = [
-  { id: 'week', label: 'Ativo na ultima semana' },
-  { id: 'twoWeeks', label: 'Ativo nas ultimas duas semanas' },
-  { id: 'fourWeeks', label: 'Ativo nas ultimas quatro semanas' },
-  { id: 'stale', label: 'Sem atividade nas ultimas quatro semanas' },
+const ACTIVITY: { id: ActivityWindow; label: keyof FilterMessages }[] = [
+  { id: 'week', label: 'activityWeek' },
+  { id: 'twoWeeks', label: 'activityTwoWeeks' },
+  { id: 'fourWeeks', label: 'activityFourWeeks' },
+  { id: 'stale', label: 'activityStale' },
 ];
 
-const MATCH: { id: CardFilter['labelMatch']; label: string }[] = [
-  { id: 'any', label: 'qualquer uma' },
-  { id: 'all', label: 'todas' },
+const MATCH: { id: CardFilter['labelMatch']; label: keyof FilterMessages }[] = [
+  { id: 'any', label: 'matchAny' },
+  { id: 'all', label: 'matchAll' },
 ];
 
 function toggle<T>(values: T[], value: T): T[] {
@@ -54,6 +58,8 @@ function toggle<T>(values: T[], value: T): T[] {
 export function FilterPanel({ filter, labels, trigger, onChange, onClose }: FilterPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   useDismiss(panelRef, trigger, onClose);
+  const { m } = useI18n();
+  const t = m.filter;
 
   const set = (patch: Partial<CardFilter>) => onChange({ ...filter, ...patch });
 
@@ -65,10 +71,10 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
   );
 
   return (
-    <div className="filter" ref={panelRef} role="dialog" aria-label="Filtros">
+    <div className="filter" ref={panelRef} role="dialog" aria-label={m.toolbar.filters}>
       <header className="filter__head">
-        <h3>Filtro</h3>
-        <button type="button" className="filter__close" aria-label="Fechar" onClick={onClose}>
+        <h3>{t.heading}</h3>
+        <button type="button" className="filter__close" aria-label={m.common.close} onClick={onClose}>
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
@@ -78,7 +84,7 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
       <div className="filter__body">
         <section className="filter__group">
           <label className="filter__title" htmlFor="filter-keyword">
-            Palavra-chave
+            {t.keyword}
           </label>
           <input
             id="filter-keyword"
@@ -86,20 +92,20 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
             type="search"
             value={filter.keyword}
             autoFocus
-            placeholder="Digite uma palavra-chave..."
+            placeholder={t.keywordPlaceholder}
             onChange={(event) => set({ keyword: event.target.value })}
           />
-          <p className="filter__hint">Procura no titulo e na descricao dos cartoes.</p>
+          <p className="filter__hint">{t.keywordHint}</p>
         </section>
 
         <section className="filter__group">
-          <h4 className="filter__title">Status do cartao</h4>
-          {option('done', filter.done, () => set({ done: !filter.done }), 'Marcado como concluido')}
-          {option('open', filter.open, () => set({ open: !filter.open }), 'Nao marcado como concluido')}
+          <h4 className="filter__title">{t.status}</h4>
+          {option('done', filter.done, () => set({ done: !filter.done }), t.done)}
+          {option('open', filter.open, () => set({ open: !filter.open }), t.open)}
         </section>
 
         <section className="filter__group">
-          <h4 className="filter__title">Data de entrega</h4>
+          <h4 className="filter__title">{t.due}</h4>
           {DUE.map((entry) =>
             option(
               entry.id,
@@ -112,21 +118,21 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
                     <path d="M8 4.8V8l2.2 1.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </span>
-                {entry.label}
+                {t[entry.label]}
               </>,
             ),
           )}
         </section>
 
         <section className="filter__group">
-          <h4 className="filter__title">Etiquetas</h4>
+          <h4 className="filter__title">{t.labels}</h4>
           {option(
             'no-labels',
             filter.noLabels,
             () => set({ noLabels: !filter.noLabels }),
             <>
               <span className="filter__chip filter__chip--none" aria-hidden="true" />
-              Sem etiquetas
+              {t.noLabels}
             </>,
           )}
           {labels.map((label) =>
@@ -145,8 +151,8 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
             were ticked, and read as a dropdown that would not open. Both
             choices are always there, and the one in force is lit.
           */}
-          <div className="filter__match" role="radiogroup" aria-label="Como combinar as etiquetas">
-            <span className="filter__match-label">Cartoes com</span>
+          <div className="filter__match" role="radiogroup" aria-label={t.matchGroup}>
+            <span className="filter__match-label">{t.matchLead}</span>
             {MATCH.map((entry) => (
               <button
                 key={entry.id}
@@ -156,21 +162,21 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
                 className={`filter__match-btn${filter.labelMatch === entry.id ? ' filter__match-btn--on' : ''}`}
                 onClick={() => set({ labelMatch: entry.id })}
               >
-                {entry.label}
+                {t[entry.label]}
               </button>
             ))}
           </div>
         </section>
 
         <section className="filter__group">
-          <h4 className="filter__title">Atividade</h4>
+          <h4 className="filter__title">{t.activity}</h4>
           {ACTIVITY.map((entry) =>
             option(
               entry.id,
               filter.activity === entry.id,
               // One at a time: the windows overlap, so two ticked would mean the wider.
               () => set({ activity: filter.activity === entry.id ? null : entry.id }),
-              entry.label,
+              t[entry.label],
             ),
           )}
         </section>
@@ -189,7 +195,7 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
           disabled={!isFiltering(filter)}
           onClick={() => onChange(EMPTY_FILTER)}
         >
-          Limpar filtros
+          {m.common.clearFilters}
         </button>
       </footer>
     </div>

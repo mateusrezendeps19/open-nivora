@@ -2,6 +2,8 @@ import { useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'reac
 import type { Action } from '../shared/reducer';
 import type { Board, Card, Label } from '../shared/types';
 import { activeFilterCount, isFiltering, isShown, type CardFilter } from '../shared/filter';
+import type { Messages } from '../shared/i18n';
+import { useI18n } from '../shared/i18n/context';
 import {
   freezeLists,
   previewMove,
@@ -59,14 +61,11 @@ export type Grab = Omit<Lift, 'cardId'>;
  * search it is; anything more is counted, because a list of every ticked box
  * would not fit on one line.
  */
-function filterSummary(matches: number, filter: CardFilter): string {
+function filterSummary(matches: number, filter: CardFilter, m: Messages): string {
   const keyword = filter.keyword.trim();
-  const others = activeFilterCount(filter) - (keyword ? 1 : 0);
   const count = activeFilterCount(filter);
-  const subject =
-    keyword && others === 0 ? `a "${keyword}"` : count === 1 ? 'ao filtro' : `aos ${count} filtros`;
-  if (matches === 0) return `Nenhum cartao corresponde ${subject}`;
-  return `${matches} cartao(oes) correspondem ${subject}`;
+  const others = count - (keyword ? 1 : 0);
+  return m.board.filterSummary(matches, keyword && others === 0 ? keyword : null, count);
 }
 
 /** The preview is drawn, not operated. */
@@ -96,6 +95,7 @@ export function BoardCanvas({
   onCardDragChange,
 }: BoardCanvasProps) {
   const [drag, setDrag] = useState<Drag>(null);
+  const { m } = useI18n();
   const [cardDrop, setCardDrop] = useState<CardDrop | null>(null);
   const [listDrop, setListDrop] = useState<number | null>(null);
   const [lift, setLift] = useState<Lift | null>(null);
@@ -325,9 +325,9 @@ export function BoardCanvas({
     >
       {filtering && (
         <div className="canvas__filter">
-          {filterSummary(matches, filter)}
+          {filterSummary(matches, filter, m)}
           <button type="button" className="canvas__filter-clear" onClick={onClearFilter}>
-            Limpar filtros
+            {m.common.clearFilters}
           </button>
         </div>
       )}

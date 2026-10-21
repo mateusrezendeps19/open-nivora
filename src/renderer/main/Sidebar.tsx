@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BOARD_COLORS, type Board } from '../shared/types';
 import { InlineTitle } from './InlineTitle';
+import { useI18n } from '../shared/i18n/context';
 import './Sidebar.css';
 
 /** Cards on the board, which is what the sidebar counts: archived ones are off it. */
@@ -39,6 +40,7 @@ export function Sidebar({
   onRemove,
 }: SidebarProps) {
   const [adding, setAdding] = useState(false);
+  const { m } = useI18n();
   const [title, setTitle] = useState('');
   const [color, setColor] = useState<string>(BOARD_COLORS[0]);
 
@@ -62,9 +64,9 @@ export function Sidebar({
           type="button"
           className="sidebar__toggle"
           onClick={onToggle}
-          aria-label="Expandir a barra lateral"
+          aria-label={m.sidebar.expand}
           aria-expanded={false}
-          title="Expandir"
+          title={m.sidebar.expandShort}
         >
           &rsaquo;
         </button>
@@ -80,7 +82,7 @@ export function Sidebar({
                 style={{ background: board.color }}
                 onClick={() => onSelect(board.id)}
                 title={board.title}
-                aria-label={`Abrir ${board.title}`}
+                aria-label={m.sidebar.open(board.title)}
                 aria-current={board.id === activeBoardId}
               >
                 {board.title.trim().charAt(0).toUpperCase() || '?'}
@@ -94,8 +96,8 @@ export function Sidebar({
             type="button"
             className="sidebar__toggle"
             onClick={onOpenArchive}
-            aria-label={`Arquivados (${archivedCount})`}
-            title={`Arquivados (${archivedCount})`}
+            aria-label={m.sidebar.archivedCount(archivedCount)}
+            title={m.sidebar.archivedCount(archivedCount)}
           >
           <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
             <path
@@ -117,8 +119,8 @@ export function Sidebar({
             onToggle();
             setAdding(true);
           }}
-          aria-label="Criar quadro"
-          title="Criar quadro"
+          aria-label={m.sidebar.createBoard}
+          title={m.sidebar.createBoard}
         >
           +
         </button>
@@ -129,14 +131,14 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar__head">
-        <h2 className="sidebar__heading">Seus quadros</h2>
+        <h2 className="sidebar__heading">{m.sidebar.heading}</h2>
         <button
           type="button"
           className="sidebar__toggle"
           onClick={onToggle}
-          aria-label="Recolher a barra lateral"
+          aria-label={m.sidebar.collapse}
           aria-expanded
-          title="Recolher"
+          title={m.sidebar.collapseShort}
         >
           &lsaquo;
         </button>
@@ -153,13 +155,13 @@ export function Sidebar({
               className="sidebar__swatch"
               style={{ background: board.color }}
               onClick={() => onSelect(board.id)}
-              aria-label={`Abrir ${board.title}`}
+              aria-label={m.sidebar.open(board.title)}
             />
             {board.id === activeBoardId ? (
               <InlineTitle
                 value={board.title}
                 className="sidebar__name"
-                ariaLabel="Renomear quadro"
+                ariaLabel={m.sidebar.renameBoard}
                 onCommit={(next) => onRename(board.id, next)}
               />
             ) : (
@@ -172,7 +174,7 @@ export function Sidebar({
               <button
                 type="button"
                 className="sidebar__remove"
-                aria-label={`Excluir ${board.title}`}
+                aria-label={m.sidebar.removeBoard(board.title)}
                 onClick={() => onRemove(board.id)}
               >
                 x
@@ -188,7 +190,7 @@ export function Sidebar({
             className="field"
             autoFocus
             value={title}
-            placeholder="Nome do quadro"
+            placeholder={m.sidebar.boardName}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') submit();
@@ -202,23 +204,23 @@ export function Sidebar({
                 type="button"
                 className={`sidebar__color${option === color ? ' sidebar__color--on' : ''}`}
                 style={{ background: option }}
-                aria-label={`Cor ${option}`}
+                aria-label={m.common.color(option)}
                 onClick={() => setColor(option)}
               />
             ))}
           </div>
           <div className="sidebar__add-actions">
             <button type="button" className="btn btn--primary" onClick={submit}>
-              Criar
+              {m.common.create}
             </button>
             <button type="button" className="btn btn--subtle" onClick={() => setAdding(false)}>
-              Cancelar
+              {m.common.cancel}
             </button>
           </div>
         </div>
       ) : (
         <button type="button" className="sidebar__new" onClick={() => setAdding(true)}>
-          + Criar quadro
+          {m.sidebar.newBoard}
         </button>
       )}
 
@@ -234,7 +236,7 @@ export function Sidebar({
             />
             <path d="M6.4 8.5h3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
-          Arquivados
+          {m.sidebar.archived}
           <span className="sidebar__meta">{archivedCount}</span>
         </button>
       )}

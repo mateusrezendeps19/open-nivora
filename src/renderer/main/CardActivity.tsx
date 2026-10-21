@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { relativeTime } from '../shared/calendar';
 import type { Action } from '../shared/reducer';
 import type { Card } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import { RichEditor } from './RichEditor';
 import { RichText } from './RichText';
 import './CardActivity.css';
@@ -29,6 +30,9 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const { m, locale } = useI18n();
+  const t = m.activity;
+  const ago = (iso: string) => relativeTime(iso, new Date(), locale);
 
   // Newest first for reading, while the document keeps them in the order they
   // happened. A copy, because reverse mutates.
@@ -54,7 +58,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
   return (
     <section className="modal__section">
       <h3>
-        Comentarios e atividade{' '}
+        {t.heading}{' '}
         {comments > 0 && <span className="modal__progress-label">{comments}</span>}
       </h3>
 
@@ -67,18 +71,18 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
         <RichEditor
           compact
           value={draft}
-          placeholder="Escreva um comentario..."
-          ariaLabel="Escreva um comentario"
+          placeholder={t.placeholder}
+          ariaLabel={t.compose}
           onChange={setDraft}
           onSubmit={submit}
         />
         <button type="button" className="btn btn--primary" disabled={!draft.trim()} onClick={submit}>
-          Comentar
+          {t.comment}
         </button>
       </div>
 
       {feed.length === 0 ? (
-        <p className="activity__empty">Nada aconteceu com este cartao ainda.</p>
+        <p className="activity__empty">{t.empty}</p>
       ) : (
         <ul className="activity">
           {feed.map((entry) =>
@@ -89,7 +93,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                     <RichEditor
                       autoFocus
                       value={editDraft}
-                      ariaLabel="Editar comentario"
+                      ariaLabel={t.editComment}
                       onChange={setEditDraft}
                       onSubmit={() => commitEdit(entry.id)}
                       // Escape cancels the edit. It used to also reach the
@@ -102,14 +106,14 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                         className="btn btn--primary"
                         onClick={() => commitEdit(entry.id)}
                       >
-                        Salvar
+                        {m.common.save}
                       </button>
                       <button
                         type="button"
                         className="btn btn--subtle"
                         onClick={() => setEditingId(null)}
                       >
-                        Cancelar
+                        {m.common.cancel}
                       </button>
                     </div>
                   </>
@@ -118,8 +122,8 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                     <RichText className="activity__text" source={entry.text} />
                     <div className="activity__actions">
                       <span className="activity__when">
-                        {relativeTime(entry.at)}
-                        {entry.editedAt && ' (editado)'}
+                        {ago(entry.at)}
+                        {entry.editedAt && t.edited}
                       </span>
                       <button
                         type="button"
@@ -130,7 +134,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                           setRemovingId(null);
                         }}
                       >
-                        Editar
+                        {m.common.edit}
                       </button>
                       <button
                         type="button"
@@ -148,7 +152,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                           setRemovingId(null);
                         }}
                       >
-                        {removingId === entry.id ? 'Confirmar' : 'Excluir'}
+                        {removingId === entry.id ? m.common.confirm : m.common.delete}
                       </button>
                     </div>
                   </>
@@ -158,7 +162,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
               <li key={entry.id} className="activity__item">
                 <span className="activity__dot" aria-hidden="true" />
                 <p className="activity__event">
-                  {entry.text} <span className="activity__when">{relativeTime(entry.at)}</span>
+                  {entry.text} <span className="activity__when">{ago(entry.at)}</span>
                 </p>
               </li>
             ),

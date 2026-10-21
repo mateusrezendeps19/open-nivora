@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ACTION_CAVEATS, ACTION_LABELS, TRIGGER_LABELS } from '../automations';
 import { emptyRule } from '../document';
+import { useI18n } from '../i18n/context';
 import { id } from '../id';
 import type { Action } from '../reducer';
 import type {
@@ -53,10 +53,12 @@ export function AutomationsSettings({
   dispatch,
 }: AutomationsSettingsProps) {
   const [draft, setDraft] = useState<Rule | null>(null);
+  const { m } = useI18n();
+  const { triggers, actions: actionLabels, caveats } = m.automations;
 
   function startNew() {
     setDraft(
-      emptyRule('Nova regra', { type: 'card-moved', listId: board.lists[0]?.id ?? null }, [
+      emptyRule(m.automations.defaultName, { type: 'card-moved', listId: board.lists[0]?.id ?? null }, [
         { type: 'mark-card-done' },
       ]),
     );
@@ -70,26 +72,26 @@ export function AutomationsSettings({
   }
 
   const listName = (listId?: string | null) =>
-    board.lists.find((list) => list.id === listId)?.title ?? 'qualquer lista';
+    board.lists.find((list) => list.id === listId)?.title ?? m.automations.anyList;
   const labelName = (labelId?: string | null) =>
-    labels.find((label) => label.id === labelId)?.name ?? 'qualquer etiqueta';
+    labels.find((label) => label.id === labelId)?.name ?? m.automations.anyLabel;
 
   function describe(rule: Rule): string {
     const trigger =
       rule.trigger.type === 'label-added'
-        ? `${TRIGGER_LABELS[rule.trigger.type]} ${labelName(rule.trigger.labelId)}`
+        ? `${triggers[rule.trigger.type]} ${labelName(rule.trigger.labelId)}`
         : rule.trigger.type === 'checklist-completed'
-          ? TRIGGER_LABELS[rule.trigger.type]
-          : `${TRIGGER_LABELS[rule.trigger.type]} ${listName(rule.trigger.listId)}`;
+          ? triggers[rule.trigger.type]
+          : `${triggers[rule.trigger.type]} ${listName(rule.trigger.listId)}`;
 
     const actions = rule.actions
       .map((action) => {
-        if (needsList(action.type)) return `${ACTION_LABELS[action.type]} ${listName(action.listId)}`;
-        if (needsLabel(action.type)) return `${ACTION_LABELS[action.type]} ${labelName(action.labelId)}`;
-        if (action.type === 'set-due') return `${ACTION_LABELS[action.type]} ${action.days ?? 0} dia(s)`;
+        if (needsList(action.type)) return `${actionLabels[action.type]} ${listName(action.listId)}`;
+        if (needsLabel(action.type)) return `${actionLabels[action.type]} ${labelName(action.labelId)}`;
+        if (action.type === 'set-due') return `${actionLabels[action.type]} ${m.automations.days(action.days ?? 0)}`;
         if (action.type === 'add-checklist-item')
-          return `${ACTION_LABELS[action.type]}: ${action.text ?? ''}`;
-        return ACTION_LABELS[action.type];
+          return `${actionLabels[action.type]}: ${action.text ?? ''}`;
+        return actionLabels[action.type];
       })
       .join(' - ');
 
@@ -107,21 +109,18 @@ export function AutomationsSettings({
               dispatch({ type: 'prefs/set', patch: { automationsEnabled: event.target.checked } })
             }
           />
-          <span>Executar automacoes</span>
+          <span>{m.automations.run}</span>
         </label>
-        <p className="settings__hint">
-          As regras reagem ao que acontece a partir de agora e encadeiam no maximo tres vezes. Uma
-          regra roda no maximo uma vez por cartao a cada acao, o que impede que duas regras fiquem
-          se chamando em loop.
-        </p>
+        <p className="settings__hint">{m.automations.hint}</p>
       </div>
 
       <section className="settings__section">
         <h3>
-          Regras de <strong>{board.title}</strong>
+          {m.automations.rulesOf}
+          <strong>{board.title}</strong>
         </h3>
 
-        {board.automations.length === 0 && <p className="settings__hint">Nenhuma regra ainda.</p>}
+        {board.automations.length === 0 && <p className="settings__hint">{m.automations.none}</p>}
 
         <ul className="auto__list">
           {board.automations.map((rule) => (
@@ -131,7 +130,7 @@ export function AutomationsSettings({
                   type="checkbox"
                   checked={rule.enabled}
                   onChange={() => dispatch({ type: 'rule/toggle', ruleId: rule.id })}
-                  aria-label={`Ativar ${rule.name}`}
+                  aria-label={m.automations.enable(rule.name)}
                 />
               </label>
               <div className="auto__info">
@@ -139,14 +138,14 @@ export function AutomationsSettings({
                 <span>{describe(rule)}</span>
               </div>
               <button type="button" className="btn btn--subtle" onClick={() => setDraft(rule)}>
-                Editar
+                {m.common.edit}
               </button>
               <button
                 type="button"
                 className="btn btn--danger"
                 onClick={() => dispatch({ type: 'rule/remove', ruleId: rule.id })}
               >
-                Excluir
+                {m.common.delete}
               </button>
             </li>
           ))}
@@ -154,7 +153,7 @@ export function AutomationsSettings({
 
         {!draft && (
           <button type="button" className="btn btn--primary" onClick={startNew}>
-            + Nova regra
+            {m.automations.newRule}
           </button>
         )}
       </section>
@@ -162,11 +161,12 @@ export function AutomationsSettings({
       {draft && (
         <section className="settings__section auto__editor">
           <h3>
-            {board.automations.some((rule) => rule.id === draft.id) ? 'Editar regra' : 'Nova regra'}
+            {board.automations.some((rule) => rule.id === draft.id) ? m.automations.editRule
+              : m.automations.newRuleTitle}
           </h3>
 
           <label className="auto__field">
-            <span>Nome</span>
+            <span>{m.automations.name}</span>
             <input
               className="field"
               value={draft.name}
@@ -175,7 +175,7 @@ export function AutomationsSettings({
           </label>
 
           <fieldset className="auto__fieldset">
-            <legend>Quando</legend>
+            <legend>{m.automations.when}</legend>
             <div className="auto__row">
               <select
                 className="field"
@@ -192,7 +192,7 @@ export function AutomationsSettings({
               >
                 {TRIGGER_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {TRIGGER_LABELS[type]}
+                    {triggers[type]}
                   </option>
                 ))}
               </select>
@@ -208,7 +208,7 @@ export function AutomationsSettings({
                     })
                   }
                 >
-                  <option value="">qualquer lista</option>
+                  <option value="">{m.automations.anyList}</option>
                   {board.lists.map((list) => (
                     <option key={list.id} value={list.id}>
                       {list.title}
@@ -228,7 +228,7 @@ export function AutomationsSettings({
                     })
                   }
                 >
-                  <option value="">qualquer etiqueta</option>
+                  <option value="">{m.automations.anyLabel}</option>
                   {labels.map((label) => (
                     <option key={label.id} value={label.id}>
                       {label.name}
@@ -240,7 +240,7 @@ export function AutomationsSettings({
           </fieldset>
 
           <fieldset className="auto__fieldset">
-            <legend>Entao</legend>
+            <legend>{m.automations.then}</legend>
             {draft.actions.map((action, index) => (
               <div key={index}>
                 <div className="auto__row">
@@ -262,7 +262,7 @@ export function AutomationsSettings({
                   >
                     {ACTION_TYPES.map((type) => (
                       <option key={type} value={type}>
-                        {ACTION_LABELS[type]}
+                        {actionLabels[type]}
                       </option>
                     ))}
                   </select>
@@ -329,7 +329,7 @@ export function AutomationsSettings({
                     <input
                       className="field"
                       value={action.text ?? ''}
-                      placeholder="Texto do item"
+                      placeholder={m.automations.itemText}
                       onChange={(event) =>
                         setDraft({
                           ...draft,
@@ -345,7 +345,7 @@ export function AutomationsSettings({
                     <button
                       type="button"
                       className="btn btn--subtle"
-                      aria-label="Remover acao"
+                      aria-label={m.automations.removeAction}
                       onClick={() =>
                         setDraft({
                           ...draft,
@@ -358,8 +358,8 @@ export function AutomationsSettings({
                   )}
                 </div>
 
-                {ACTION_CAVEATS[action.type] && (
-                  <p className="auto__caveat">{ACTION_CAVEATS[action.type]}</p>
+                {caveats[action.type] && (
+                  <p className="auto__caveat">{caveats[action.type]}</p>
                 )}
               </div>
             ))}
@@ -371,23 +371,23 @@ export function AutomationsSettings({
                 setDraft({ ...draft, actions: [...draft.actions, { type: 'mark-card-done' }] })
               }
             >
-              + Adicionar acao
+              {m.automations.addAction}
             </button>
           </fieldset>
 
           <div className="auto__editor-actions">
             <button type="button" className="btn btn--primary" onClick={save}>
-              Salvar regra
+              {m.automations.saveRule}
             </button>
             <button type="button" className="btn btn--subtle" onClick={() => setDraft(null)}>
-              Cancelar
+              {m.common.cancel}
             </button>
             <button
               type="button"
               className="btn btn--subtle"
-              onClick={() => setDraft({ ...draft, id: id('rule'), name: `${draft.name} (copia)` })}
+              onClick={() => setDraft({ ...draft, id: id('rule'), name: m.automations.copyName(draft.name) })}
             >
-              Duplicar
+              {m.automations.duplicate}
             </button>
           </div>
         </section>

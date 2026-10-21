@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { assetUrl } from '../shared/assets';
+import { useI18n } from '../shared/i18n/context';
 import type { Card, Label } from '../shared/types';
 import type { Grab } from './BoardCanvas';
 import { hideNativeDragImage } from './dragPreview';
@@ -47,6 +48,7 @@ export function CardTile({
    * alone, every finished card on the board would pop each time it loaded.
    */
   const [ticked, setTicked] = useState(false);
+  const { m, locale } = useI18n();
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
   const done = card.checklist.filter((item) => item.done).length;
   const state = dueState(card.due);
@@ -118,8 +120,8 @@ export function CardTile({
           className={`tile__check${ticked ? ' tile__check--ticked' : ''}`}
           role="checkbox"
           aria-checked={card.done}
-          aria-label={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
-          title={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
+          aria-label={card.done ? m.tile.markUndone : m.tile.markDone}
+          title={card.done ? m.tile.markUndone : m.tile.markDone}
           onClick={(event) => {
             event.stopPropagation();
             if (preview) return;
@@ -143,7 +145,7 @@ export function CardTile({
         card.attachments.length > 0) && (
         <span className="tile__badges">
           {card.description && (
-            <span className="tile__badge" title="Tem descricao">
+            <span className="tile__badge" title={m.tile.hasDescription}>
               <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   d="M2 3h12M2 7h12M2 11h8"
@@ -157,13 +159,13 @@ export function CardTile({
           {card.checklist.length > 0 && (
             <span
               className={`tile__badge${done === card.checklist.length ? ' tile__badge--done' : ''}`}
-              title="Checklist"
+              title={m.tile.checklist}
             >
               {done}/{card.checklist.length}
             </span>
           )}
           {card.attachments.length > 0 && (
-            <span className="tile__badge" title="Anexos">
+            <span className="tile__badge" title={m.tile.attachments}>
               <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   d="M10.5 5 5.8 9.7a1.9 1.9 0 0 0 2.7 2.7l5-5a3.3 3.3 0 0 0-4.7-4.7l-5.2 5.2a4.7 4.7 0 0 0 6.6 6.6l2-2"
@@ -177,8 +179,8 @@ export function CardTile({
             </span>
           )}
           {card.due && (
-            <span className={`tile__badge tile__badge--due-${state}`} title="Prazo">
-              {new Date(card.due).toLocaleDateString('pt-BR', {
+            <span className={`tile__badge tile__badge--due-${state}`} title={m.tile.due}>
+              {new Date(card.due).toLocaleDateString(locale, {
                 day: '2-digit',
                 month: 'short',
               })}

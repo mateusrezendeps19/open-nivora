@@ -12,6 +12,8 @@ import {
   weekDays,
   type CalendarEntry,
 } from '../shared/calendar';
+import type { Locale } from '../shared/i18n';
+import { useI18n } from '../shared/i18n/context';
 import type { Action } from '../shared/reducer';
 import type { Board, Card, Label, List } from '../shared/types';
 import './Calendar.css';
@@ -19,9 +21,11 @@ import './Calendar.css';
 type Granularity = 'month' | 'week';
 
 /** Sunday first. Jan 7 2024 was a Sunday, so the week from it names them all. */
-const WEEKDAYS = weekDays(new Date(2024, 0, 7)).map((day) =>
-  day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
-);
+function weekdayNames(locale: Locale): string[] {
+  return weekDays(new Date(2024, 0, 7)).map((day) =>
+    day.toLocaleDateString(locale, { weekday: 'short' }).replace('.', ''),
+  );
+}
 
 /** Where the undated panel registers itself as a drop target. */
 const UNDATED_KEY = 'undated';
@@ -50,14 +54,14 @@ function capitalize(value: string): string {
 }
 
 /** "18 - 24 de out. de 2026", naming the month twice only when it changes. */
-function weekTitle(days: Date[]): string {
+function weekTitle(days: Date[], locale: Locale): string {
   const [first] = days;
   const last = days[days.length - 1];
   const from = first.toLocaleDateString(
-    'pt-BR',
+    locale,
     first.getMonth() === last.getMonth() ? { day: '2-digit' } : { day: '2-digit', month: 'short' },
   );
-  const to = last.toLocaleDateString('pt-BR', {
+  const to = last.toLocaleDateString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -96,6 +100,9 @@ export function Calendar({
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dropKey, setDropKey] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
+  const { m, locale } = useI18n();
+  const t = m.calendar;
+  const weekdays = useMemo(() => weekdayNames(locale), [locale]);
 
   const filtering = isFiltering(filter);
   const { byDay, undated, dated } = useMemo(
@@ -109,8 +116,8 @@ export function Calendar({
 
   const title =
     granularity === 'month'
-      ? capitalize(cursor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }))
-      : weekTitle(days);
+      ? capitalize(cursor.toLocaleDateString(locale, { month: 'long', year: 'numeric' }))
+      : weekTitle(days, locale);
 
   function step(delta: number) {
     setCursor((current) =>
@@ -195,7 +202,7 @@ export function Calendar({
         </div>
         <div className="cell__cards">
           {renderEntries(entries, tall)}
-          {tall && entries.length === 0 && <span className="cell__empty">Sem cartoes</span>}
+          {tall && entries.length === 0 && <span className="cell__empty">{t.noCards}</span>}
         </div>
       </div>
     );
@@ -209,7 +216,7 @@ export function Calendar({
             type="button"
             className="calendar__step"
             onClick={() => step(-1)}
-            aria-label={granularity === 'month' ? 'Mes anterior' : 'Semana anterior'}
+            aria-label={granularity === 'month' ? t.prevMonth : t.prevWeek}
           >
             &lsaquo;
           </button>
@@ -217,12 +224,12 @@ export function Calendar({
             type="button"
             className="calendar__step"
             onClick={() => step(1)}
-            aria-label={granularity === 'month' ? 'Proximo mes' : 'Proxima semana'}
+            aria-label={granularity === 'month' ? t.nextMonth : t.nextWeek}
           >
             &rsaquo;
           </button>
           <button type="button" className="btn btn--subtle" onClick={() => setCursor(today)}>
-            Hoje
+            {t.today}
           </button>
         </div>
 
@@ -230,10 +237,10 @@ export function Calendar({
 
         <div className="calendar__right">
           <span className="calendar__count">
-            {dated} com prazo{filtering ? ' no filtro' : ''}
+            {t.withDue(dated, filtering)}
           </span>
-          <div className="calendar__modes" role="group" aria-label="Visao do calendario">
-            {MODES.map(([id, label]) => (
+          <div className="calendar__modes" role="group" aria-label={t.modes}>
+            {MODES.map((id) => (
               <button
                 key={id}
                 type="button"
@@ -241,7 +248,7 @@ export function Calendar({
                 aria-pressed={granularity === id}
                 onClick={() => changeGranularity(id)}
               >
-                {label}
+                {t[id]}
               </button>
             ))}
           </div>
@@ -251,7 +258,7 @@ export function Calendar({
       <div className="calendar__body">
         <div className="calendar__grid">
           <div className="calendar__weekdays" aria-hidden="true">
-            {WEEKDAYS.map((name) => (
+            {weekdays.map((name) => (
               <span key={name} className="calendar__weekday">
                 {name}
               </span>
@@ -280,13 +287,13 @@ export function Calendar({
             onDrop={() => drop(null)}
           >
             <header className="undated__head">
-              <h3 className="undated__title">Sem prazo</h3>
+              <h3 className="undated__title">{t.undated}</h3>
               <span className="undated__count">{undated.length}</span>
               <button
                 type="button"
                 className="undated__toggle"
                 onClick={() => setPanelOpen(false)}
-                aria-label="Ocultar cartoes sem prazo"
+                aria-label={t.hideUndated}
               >
                 &rsaquo;
               </button>
@@ -295,7 +302,7 @@ export function Calendar({
             <div className="undated__cards">
               {undated.length === 0 ? (
                 <p className="undated__empty">
-                  {filtering ? 'Nada sem prazo no filtro.' : 'Todo cartao tem um prazo.'}
+                  {filtering ? t.undatedEmptyFiltered : t.undatedEmpty}
                 </p>
               ) : (
                 undated.map(({ card, list }) => (
@@ -314,16 +321,16 @@ export function Calendar({
               )}
             </div>
 
-            <p className="undated__hint">Arraste para um dia para definir o prazo.</p>
+            <p className="undated__hint">{t.undatedHint}</p>
           </aside>
         ) : (
           <button
             type="button"
             className="undated__show"
             onClick={() => setPanelOpen(true)}
-            aria-label="Mostrar cartoes sem prazo"
+            aria-label={t.showUndated}
           >
-            <span className="undated__show-label">Sem prazo</span>
+            <span className="undated__show-label">{t.undated}</span>
             <span className="undated__count">{undated.length}</span>
           </button>
         )}
@@ -332,10 +339,7 @@ export function Calendar({
   );
 }
 
-const MODES: [Granularity, string][] = [
-  ['month', 'Mes'],
-  ['week', 'Semana'],
-];
+const MODES: Granularity[] = ['month', 'week'];
 
 interface CardChipProps {
   card: Card;
@@ -351,6 +355,7 @@ interface CardChipProps {
 
 function CardChip({ card, list, labels, tone, time, dragging, onOpen, onDragStart }: CardChipProps) {
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
+  const { locale } = useI18n();
 
   return (
     <button
@@ -376,7 +381,7 @@ function CardChip({ card, list, labels, tone, time, dragging, onOpen, onDragStar
       <span className="chip__line">
         {time && (
           <span className="chip__time">
-            {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            {time.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
         <span className="chip__title">{card.title}</span>

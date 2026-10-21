@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../shared/i18n/context';
 import type { Action } from '../shared/reducer';
 import { LABEL_COLORS, type Label } from '../shared/types';
 import './LabelEditor.css';
@@ -9,17 +10,6 @@ interface LabelEditorProps {
   usage: (labelId: string) => { cards: number; rules: number };
   dispatch: (action: Action) => void;
   onClose: () => void;
-}
-
-/** What the confirmation says deleting will do; nothing is hidden behind "tem certeza". */
-function removalText(name: string, usage: { cards: number; rules: number }): string {
-  let text = `Excluir a etiqueta ${name}?`;
-  if (usage.cards) {
-    text += ` Ela sai de ${usage.cards} ${usage.cards === 1 ? 'cartao' : 'cartoes'}.`;
-  }
-  if (usage.rules === 1) text += ' 1 automacao que depende dela muda ou e removida.';
-  if (usage.rules > 1) text += ` ${usage.rules} automacoes que dependem dela mudam ou sao removidas.`;
-  return `${text} Nao da para desfazer.`;
 }
 
 /**
@@ -44,6 +34,8 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
   const [creating, setCreating] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [newColor, setNewColor] = useState<string>(LABEL_COLORS[0]);
+  const { m } = useI18n();
+  const t = m.labels;
 
   useEffect(() => {
     // The card body is the scrolling surface, so a panel opened near its
@@ -94,14 +86,14 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
 
   function palette(selected: string, onPick: (color: string) => void) {
     return (
-      <div className="labels__palette" role="group" aria-label="Cor da etiqueta">
+      <div className="labels__palette" role="group" aria-label={t.palette}>
         {LABEL_COLORS.map((option) => (
           <button
             key={option}
             type="button"
             className={`labels__swatch${option === selected ? ' labels__swatch--on' : ''}`}
             style={{ background: option }}
-            aria-label={`Cor ${option}`}
+            aria-label={m.common.color(option)}
             aria-pressed={option === selected}
             onClick={() => onPick(option)}
           />
@@ -115,7 +107,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
       className="labels"
       ref={panelRef}
       role="dialog"
-      aria-label="Editar etiquetas"
+      aria-label={t.dialog}
       onKeyDown={(event) => {
         if (event.key !== 'Escape') return;
         // Escape belongs to the panel while it is open; without this it
@@ -131,26 +123,26 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
       }}
     >
       <header className="labels__head">
-        <strong>Etiquetas</strong>
-        <button type="button" className="labels__close" aria-label="Fechar" onClick={onClose}>
+        <strong>{t.heading}</strong>
+        <button type="button" className="labels__close" aria-label={m.common.close} onClick={onClose}>
           x
         </button>
       </header>
 
-      <p className="labels__hint">Valem para todos os quadros.</p>
+      <p className="labels__hint">{t.hint}</p>
 
       <ul className="labels__list">
         {labels.map((label) => (
           <li key={label.id} className="labels__row">
             {removingId === label.id ? (
-              <div className="labels__confirm" role="alertdialog" aria-label={`Excluir ${label.name}`}>
-                <p>{removalText(label.name, usage(label.id))}</p>
+              <div className="labels__confirm" role="alertdialog" aria-label={t.removeOne(label.name)}>
+                <p>{t.removal(label.name, usage(label.id))}</p>
                 <div className="labels__confirm-actions">
                   <button type="button" className="btn btn--danger" onClick={() => remove(label)}>
-                    Excluir
+                    {m.common.delete}
                   </button>
                   <button type="button" className="btn btn--subtle" onClick={() => setRemovingId(null)}>
-                    Cancelar
+                    {m.common.cancel}
                   </button>
                 </div>
               </div>
@@ -160,7 +152,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
                   className="field"
                   autoFocus
                   value={draft}
-                  aria-label={`Nome de ${label.name}`}
+                  aria-label={t.nameOf(label.name)}
                   onChange={(event) => setDraft(event.target.value)}
                   onBlur={() => commitName(label)}
                   onKeyDown={(event) => {
@@ -184,7 +176,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
                     setRemovingId(label.id);
                   }}
                 >
-                  Excluir etiqueta
+                  {t.removeLabel}
                 </button>
               </div>
             ) : (
@@ -195,7 +187,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
                 <button
                   type="button"
                   className="labels__pencil"
-                  aria-label={`Editar ${label.name}`}
+                  aria-label={t.editOne(label.name)}
                   onClick={() => startEdit(label)}
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
@@ -221,8 +213,8 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
               className="field"
               autoFocus
               value={draft}
-              placeholder="Nome da etiqueta"
-              aria-label="Nome da nova etiqueta"
+              placeholder={t.namePlaceholder}
+              aria-label={t.newName}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') create();
@@ -235,7 +227,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
               disabled={!draft.trim()}
               onClick={create}
             >
-              Criar
+              {m.common.create}
             </button>
           </div>
         ) : (
@@ -248,7 +240,7 @@ export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorPro
               setDraft('');
             }}
           >
-            + Criar uma nova etiqueta
+            {t.newLabel}
           </button>
         )}
       </footer>

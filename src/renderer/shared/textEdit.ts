@@ -109,9 +109,9 @@ export function toggleLinePrefix(state: TextState, kind: LineKind): TextState {
 }
 
 /** `[selection](url)`, with "url" selected so it can be pasted over. */
-export function insertLink(state: TextState): TextState {
+export function insertLink(state: TextState, sample = 'texto do link'): TextState {
   const { value, start, end } = state;
-  const label = value.slice(start, end) || 'texto do link';
+  const label = value.slice(start, end) || sample;
   const url = 'https://';
   const before = value.slice(0, start) + `[${label}](`;
   return {
@@ -122,9 +122,9 @@ export function insertLink(state: TextState): TextState {
 }
 
 /** A fenced block on lines of its own around the selection. */
-export function insertCodeBlock(state: TextState): TextState {
+export function insertCodeBlock(state: TextState, sample = 'codigo'): TextState {
   const { value, start, end } = state;
-  const body = value.slice(start, end) || 'codigo';
+  const body = value.slice(start, end) || sample;
   const lead = start > 0 && value[start - 1] !== '\n' ? '\n' : '';
   const tail = end < value.length && value[end] !== '\n' ? '\n' : '';
   const opening = `${lead}\`\`\`\n`;

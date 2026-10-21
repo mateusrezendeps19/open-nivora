@@ -1,3 +1,4 @@
+import { messages, toLocale, type Messages } from './i18n';
 import { id } from './id';
 import type { Action } from './reducer';
 import type { Activity, BoardDocument, Card, List } from './types';
@@ -34,13 +35,13 @@ function cardById(doc: BoardDocument, cardId: string): Card | undefined {
   return undefined;
 }
 
-function labelName(doc: BoardDocument, labelId: string): string {
-  return doc.labels.find((label) => label.id === labelId)?.name ?? 'etiqueta';
+function labelName(doc: BoardDocument, labelId: string, m: Messages): string {
+  return doc.labels.find((label) => label.id === labelId)?.name ?? m.events.unknownLabel;
 }
 
 /** The due date as the card badge shows it. Intl output keeps its accents. */
-function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-BR', {
+function dayLabel(iso: string, doc: BoardDocument): string {
+  return new Date(iso).toLocaleDateString(toLocale(doc.prefs.locale), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -99,6 +100,10 @@ export function logActivity(
   next: BoardDocument,
   action: Action,
 ): BoardDocument {
+  // Written in the language in use now, and left in it: like the titles it
+  // quotes, a line of history is not recomposed when the setting changes.
+  const m = messages(next.prefs.locale);
+  const { events } = m;
   switch (action.type) {
     case 'card/add': {
       const list = activeBoardLists(next).find((entry) => entry.id === action.listId);
@@ -109,7 +114,7 @@ export function logActivity(
         ),
       );
       const added = list.cards.find((card) => !known.has(card.id));
-      return added ? append(next, added.id, [`Adicionou este cartao a lista ${list.title}`]) : next;
+      return added ? append(next, added.id, [events.added(list.title)]) : next;
     }
 
     case 'card/move': {
@@ -117,7 +122,7 @@ export function logActivity(
       const from = listOfCard(prev, action.cardId);
       const to = listOfCard(next, action.cardId);
       if (!from || !to || from.id === to.id) return next;
-      return append(next, action.cardId, [`Moveu de ${from.title} para ${to.title}`]);
+      return append(next, action.cardId, [events.moved(from.title, to.title)]);
     }
 
     case 'card/update': {
@@ -127,19 +132,19 @@ export function logActivity(
 
       const texts: string[] = [];
       if (before.done !== after.done) {
-        texts.push(after.done ? 'Marcou como concluido' : 'Reabriu o cartao');
+        texts.push(after.done ? events.done : events.reopened);
       }
       if (before.due !== after.due) {
-        texts.push(after.due ? `Definiu o prazo para ${dayLabel(after.due)}` : 'Removeu o prazo');
+        texts.push(after.due ? events.dueSet(dayLabel(after.due, next)) : events.dueRemoved);
       }
       for (const labelId of after.labelIds) {
         if (!before.labelIds.includes(labelId)) {
-          texts.push(`Adicionou a etiqueta ${labelName(next, labelId)}`);
+          texts.push(events.labelAdded(labelName(next, labelId, m)));
         }
       }
       for (const labelId of before.labelIds) {
         if (!after.labelIds.includes(labelId)) {
-          texts.push(`Removeu a etiqueta ${labelName(next, labelId)}`);
+          texts.push(events.labelRemoved(labelName(next, labelId, m)));
         }
       }
       return append(next, action.cardId, texts);
@@ -151,7 +156,7 @@ export function logActivity(
       const after = cardById(next, action.cardId);
       if (!before || !after || before.archivedAt === after.archivedAt) return next;
       return append(next, action.cardId, [
-        after.archivedAt ? 'Arquivou o cartao' : 'Restaurou o cartao',
+        after.archivedAt ? events.archived : events.restored,
       ]);
     }
 
@@ -159,13 +164,13 @@ export function logActivity(
       return append(
         next,
         action.cardId,
-        action.attachments.map((attachment) => `Anexou ${attachment.name}`),
+        action.attachments.map((attachment) => events.attached(attachment.name)),
       );
 
     case 'card/detach': {
       const before = cardById(prev, action.cardId);
       const gone = before?.attachments.find((a) => a.id === action.attachmentId);
-      return gone ? append(next, action.cardId, [`Removeu o anexo ${gone.name}`]) : next;
+      return gone ? append(next, action.cardId, [events.detached(gone.name)]) : next;
     }
 
     case 'checklist/add':
@@ -176,7 +181,7 @@ export function logActivity(
       const after = cardById(next, action.cardId);
       if (!after || after.checklist.length === 0 || !allDone(after)) return next;
       if (before && before.checklist.length > 0 && allDone(before)) return next;
-      return append(next, action.cardId, ['Concluiu a checklist']);
+      return append(next, action.cardId, [events.checklistDone]);
     }
 
     case 'list/copy': {
@@ -185,7 +190,7 @@ export function logActivity(
       const copy = activeBoardLists(next).find((list) => !known.has(list.id));
       if (!original || !copy) return next;
       if (!next.activeBoardId) return next;
-      return appendToList(next, next.activeBoardId, copy.id, `Copiou este cartao da lista ${original.title}`);
+      return appendToList(next, next.activeBoardId, copy.id, events.copied(original.title));
     }
 
     case 'list/transfer': {
@@ -198,7 +203,7 @@ export function logActivity(
         next,
         to.id,
         action.listId,
-        `Moveu a lista para o quadro ${to.title}, vinda de ${from.title}`,
+        events.listMoved(to.title, from.title),
       );
     }
 

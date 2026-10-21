@@ -2,13 +2,11 @@ import { useCallback, useRef, useState } from 'react';
 import { hasShell } from '../shared/bridge';
 import { activeFilterCount, type CardFilter } from '../shared/filter';
 import type { AppView, Label } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import { FilterPanel } from './FilterPanel';
 import './Toolbar.css';
 
-const VIEWS: { id: AppView; label: string }[] = [
-  { id: 'board', label: 'Quadro' },
-  { id: 'calendar', label: 'Calendario' },
-];
+const VIEWS: AppView[] = ['board', 'calendar'];
 
 interface ToolbarProps {
   filter: CardFilter;
@@ -37,6 +35,7 @@ export function Toolbar({
   onSettings,
 }: ToolbarProps) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const { m } = useI18n();
   const filterButton = useRef<HTMLButtonElement>(null);
   const closeFilter = useCallback(() => setFilterOpen(false), []);
   const query = filter.keyword;
@@ -44,16 +43,16 @@ export function Toolbar({
 
   return (
     <div className="toolbar">
-      <div className="toolbar__views" role="group" aria-label="Visao">
-        {VIEWS.map((entry) => (
+      <div className="toolbar__views" role="group" aria-label={m.toolbar.views}>
+        {VIEWS.map((id) => (
           <button
-            key={entry.id}
+            key={id}
             type="button"
-            className={`toolbar__view${view === entry.id ? ' toolbar__view--on' : ''}`}
-            aria-pressed={view === entry.id}
-            onClick={() => onViewChange(entry.id)}
+            className={`toolbar__view${view === id ? ' toolbar__view--on' : ''}`}
+            aria-pressed={view === id}
+            onClick={() => onViewChange(id)}
           >
-            {entry.label}
+            {m.toolbar[id]}
           </button>
         ))}
       </div>
@@ -73,16 +72,16 @@ export function Toolbar({
           <input
             type="search"
             value={query}
-            placeholder="Filtrar cartoes  (Ctrl+K)"
+            placeholder={m.toolbar.searchPlaceholder}
             onChange={(event) => onQueryChange(event.target.value)}
-            aria-label="Filtrar cartoes"
+            aria-label={m.toolbar.searchLabel}
           />
           {query && (
             <button
               type="button"
               className="toolbar__clear"
               onClick={() => onQueryChange('')}
-              aria-label="Limpar filtro"
+              aria-label={m.toolbar.clearSearch}
             >
               x
             </button>
@@ -101,13 +100,13 @@ export function Toolbar({
             type="button"
             className={`toolbar__filter-btn${active ? ' toolbar__filter-btn--on' : ''}`}
             aria-expanded={filterOpen}
-            aria-label={active ? `Filtros, ${active} ativo(s)` : 'Filtros'}
+            aria-label={active ? m.toolbar.filtersActive(active) : m.toolbar.filters}
             onClick={() => setFilterOpen((open) => !open)}
           >
             <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M2 3.5h12l-4.6 5.4v4.1l-2.8 1.4V8.9z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
             </svg>
-            Filtros
+            {m.toolbar.filters}
             {active > 0 && <span className="toolbar__filter-count">{active}</span>}
           </button>
           {filterOpen && (
@@ -125,11 +124,11 @@ export function Toolbar({
       <div className="toolbar__actions">
         {hasShell() && (
           <button type="button" className="btn btn--subtle" onClick={onFind}>
-            Localizar
+            {m.toolbar.find}
           </button>
         )}
         <button type="button" className="btn btn--subtle" onClick={onSettings}>
-          Configuracoes
+          {m.toolbar.settings}
         </button>
       </div>
     </div>

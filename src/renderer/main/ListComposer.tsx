@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '../shared/i18n/context';
 import './Composer.css';
 
 interface ListComposerProps {
@@ -10,6 +11,7 @@ export function ListComposer({ onAdd }: ListComposerProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { m } = useI18n();
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -31,7 +33,7 @@ export function ListComposer({ onAdd }: ListComposerProps) {
             ref={inputRef}
             className="field"
             value={title}
-            placeholder="Titulo da lista"
+            placeholder={m.composer.listTitle}
             onChange={(event) => setTitle(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') submit();
@@ -43,7 +45,7 @@ export function ListComposer({ onAdd }: ListComposerProps) {
           />
           <div className="composer__actions">
             <button type="button" className="btn btn--primary" onClick={submit}>
-              Adicionar lista
+              {m.composer.addList}
             </button>
             <button
               type="button"
@@ -53,13 +55,13 @@ export function ListComposer({ onAdd }: ListComposerProps) {
                 setOpen(false);
               }}
             >
-              Cancelar
+              {m.common.cancel}
             </button>
           </div>
         </>
       ) : (
         <button type="button" className="list-composer__open" onClick={() => setOpen(true)}>
-          + Adicionar outra lista
+          {m.composer.addAnotherList}
         </button>
       )}
     </div>

@@ -6,6 +6,7 @@ import { CardComposer } from './CardComposer';
 import { CardTile } from './CardTile';
 import { InlineTitle } from './InlineTitle';
 import { ListMenu } from './ListMenu';
+import { useI18n } from '../shared/i18n/context';
 import './ListColumn.css';
 
 interface ListColumnProps {
@@ -45,6 +46,7 @@ export function ListColumn({
   dispatch,
 }: ListColumnProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { m } = useI18n();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -109,7 +111,7 @@ export function ListColumn({
         <InlineTitle
           value={list.title}
           className="column__title"
-          ariaLabel="Renomear lista"
+          ariaLabel={m.list.rename}
           onCommit={(title) => dispatch({ type: 'list/rename', listId: list.id, title })}
         />
         <span className="column__count">{active}</span>
@@ -117,7 +119,7 @@ export function ListColumn({
           ref={menuButtonRef}
           type="button"
           className={`column__menu-btn${menuOpen ? ' column__menu-btn--open' : ''}`}
-          aria-label="Acoes da lista"
+          aria-label={m.list.actions}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
         >
@@ -157,7 +159,7 @@ export function ListColumn({
 
         {cards.length === 0 && (
           <p className="column__empty">
-            {filtered ? 'Nenhum cartao corresponde ao filtro.' : 'Nenhum cartao ainda.'}
+            {filtered ? m.list.emptyFiltered : m.list.empty}
           </p>
         )}
       </div>

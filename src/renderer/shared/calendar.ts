@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, messages, type Locale } from './i18n';
 import type { Card, List } from './types';
 
 /*
@@ -108,18 +109,23 @@ export function moveDue(iso: string | null, day: Date): string {
  * clock. A timestamp in the future - a document written by a machine whose
  * clock runs ahead - reads as "agora" rather than as a negative age.
  */
-export function relativeTime(iso: string, now: Date = new Date()): string {
+export function relativeTime(
+  iso: string,
+  now: Date = new Date(),
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   const date = parseDue(iso);
   if (!date) return '';
+  const { time } = messages(locale);
 
   const minutes = Math.floor((now.getTime() - date.getTime()) / 60_000);
-  if (minutes < 1) return 'agora';
-  if (minutes < 60) return `ha ${minutes} min`;
+  if (minutes < 1) return time.now;
+  if (minutes < 60) return time.minutes(minutes);
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `ha ${hours} h`;
+  if (hours < 24) return time.hours(hours);
 
-  return date.toLocaleDateString('pt-BR', {
+  return date.toLocaleDateString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

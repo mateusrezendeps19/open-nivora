@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, messages, toLocale, type Locale, type Messages } from './i18n';
 import { id } from './id';
 import {
   DEFAULT_LABELS,
@@ -9,6 +10,7 @@ import {
   type Board,
   type BoardDocument,
   type Card,
+  type Label,
   type List,
   type Rule,
   type RuleAction,
@@ -63,34 +65,44 @@ export function emptyRule(name: string, trigger: Trigger, actions: RuleAction[])
   };
 }
 
-/** First-run content, so the app is never an empty screen. */
-export function seedDocument(): BoardDocument {
-  const board = emptyBoard('Meu primeiro quadro', '#0079bf');
+/** The starting labels, named in `m`'s language; ids and colors are the same in all of them. */
+function defaultLabels(m: Messages): Label[] {
+  return DEFAULT_LABELS.map((label) => ({ ...label, name: m.defaultLabels[label.id] ?? label.name }));
+}
+
+/**
+ * First-run content, so the app is never an empty screen. Written in the
+ * language the app starts in; changing the language later leaves it as it
+ * is, because by then it is the user's content like any other.
+ */
+export function seedDocument(locale: Locale = DEFAULT_LOCALE): BoardDocument {
+  const m = messages(locale);
+  const { seed } = m;
+  const board = emptyBoard(seed.board, '#0079bf');
   board.background = { kind: 'gradient', value: 'midnight' };
 
-  const todo = emptyList('A fazer');
-  const doing = emptyList('Em andamento');
-  const done = emptyList('Concluido');
+  const todo = emptyList(seed.todo);
+  const doing = emptyList(seed.doing);
+  const done = emptyList(seed.done);
 
   todo.cards = [
-    { ...emptyCard('Arrastar um cartao entre as listas'), labelIds: ['lbl-blue'] },
-    { ...emptyCard('Abrir um cartao para anexar uma imagem') },
-    { ...emptyCard('Trocar o fundo do quadro pelo botao Fundo') },
+    { ...emptyCard(seed.dragCard), labelIds: ['lbl-blue'] },
+    { ...emptyCard(seed.attachImage) },
+    { ...emptyCard(seed.changeBackground) },
   ];
   doing.cards = [
     {
-      ...emptyCard('Reconstruir o shell Electron a partir das evidencias'),
-      description:
-        'Janelas, contrato IPC e titlebar sem moldura foram reconstruidos a partir da analise do app.asar feita pelo REA.',
+      ...emptyCard(seed.rebuildShell),
+      description: seed.rebuildShellDescription,
       labelIds: ['lbl-purple'],
       checklist: [
-        { id: id('chk'), text: 'Inventario de 10 janelas', done: true },
-        { id: id('chk'), text: 'Canais IPC de janela', done: true },
-        { id: id('chk'), text: 'contextBridge com allowlist', done: true },
+        { id: id('chk'), text: seed.windows, done: true },
+        { id: id('chk'), text: seed.channels, done: true },
+        { id: id('chk'), text: seed.bridge, done: true },
       ],
     },
   ];
-  done.cards = [{ ...emptyCard('Analisar o app.asar com o REA'), labelIds: ['lbl-green'] }];
+  done.cards = [{ ...emptyCard(seed.analyse), labelIds: ['lbl-green'] }];
 
   board.lists = [todo, doing, done];
 
@@ -98,7 +110,7 @@ export function seedDocument(): BoardDocument {
   // behind an empty panel.
   board.automations = [
     emptyRule(
-      'Ao concluir, marcar como Pronto',
+      seed.rule,
       { type: 'card-moved', listId: done.id },
       [
         { type: 'mark-card-done' },
@@ -113,10 +125,10 @@ export function seedDocument(): BoardDocument {
     version: 2,
     boards: [board],
     activeBoardId: board.id,
-    labels: DEFAULT_LABELS,
+    labels: defaultLabels(m),
     prefs: {
       theme: 'dark',
-      locale: 'pt-BR',
+      locale,
       confirmCardDelete: true,
       automationsEnabled: true,
       sidebarCollapsed: false,
@@ -144,13 +156,13 @@ function normalizeBackground(input: unknown, color: string): Background {
   return { kind: 'color', value: color };
 }
 
-function normalizeAttachment(input: unknown): Attachment | null {
+function normalizeAttachment(input: unknown, m: Messages): Attachment | null {
   const a = input as Partial<Attachment> | undefined;
   if (!a || typeof a.asset !== 'string' || !a.asset) return null;
   const mime = typeof a.mime === 'string' ? a.mime : 'application/octet-stream';
   return {
     id: a.id ?? id('att'),
-    name: typeof a.name === 'string' && a.name ? a.name : 'anexo',
+    name: typeof a.name === 'string' && a.name ? a.name : m.defaults.attachment,
     mime,
     size: typeof a.size === 'number' ? a.size : 0,
     addedAt: typeof a.addedAt === 'string' ? a.addedAt : new Date().toISOString(),
@@ -172,7 +184,7 @@ function normalizeActivity(input: unknown): Activity | null {
   };
 }
 
-function normalizeRule(input: unknown): Rule | null {
+function normalizeRule(input: unknown, m: Messages): Rule | null {
   const r = input as Partial<Rule> | undefined;
   const triggerType = r?.trigger?.type;
   const valid: Rule['trigger']['type'][] = [
@@ -188,7 +200,7 @@ function normalizeRule(input: unknown): Rule | null {
   if (actions.length === 0) return null;
   return {
     id: r?.id ?? id('rule'),
-    name: r?.name ?? 'Regra sem nome',
+    name: r?.name ?? m.defaults.rule,
     enabled: r?.enabled !== false,
     trigger: {
       type: triggerType,
@@ -199,25 +211,33 @@ function normalizeRule(input: unknown): Rule | null {
   };
 }
 
-/** Tolerates a partial or older document instead of throwing it away. */
-export function normalize(input: unknown): BoardDocument {
-  if (!input || typeof input !== 'object') return seedDocument();
+/**
+ * Tolerates a partial or older document instead of throwing it away.
+ *
+ * `fallbackLocale` is the language of the seed returned when there is no
+ * document at all - the first run. A document without a language is one from
+ * before the choice existed, and that was Portuguese.
+ */
+export function normalize(input: unknown, fallbackLocale: Locale = DEFAULT_LOCALE): BoardDocument {
+  if (!input || typeof input !== 'object') return seedDocument(fallbackLocale);
   const doc = input as Partial<BoardDocument>;
-  if (!Array.isArray(doc.boards) || doc.boards.length === 0) return seedDocument();
+  if (!Array.isArray(doc.boards) || doc.boards.length === 0) return seedDocument(fallbackLocale);
+  const locale = toLocale(doc.prefs?.locale);
+  const m = messages(locale);
 
   const boards = doc.boards.map((board) => {
     const color = board.color ?? '#0079bf';
     return {
       id: board.id ?? id('board'),
-      title: board.title ?? 'Quadro sem titulo',
+      title: board.title ?? m.defaults.board,
       color,
       background: normalizeBackground(board.background, color),
       lists: (board.lists ?? []).map((list) => ({
         id: list.id ?? id('list'),
-        title: list.title ?? 'Lista',
+        title: list.title ?? m.defaults.list,
         cards: (list.cards ?? []).map((card) => {
           const attachments = (card.attachments ?? [])
-            .map(normalizeAttachment)
+            .map((attachment) => normalizeAttachment(attachment, m))
             .filter((attachment): attachment is Attachment => attachment !== null);
           const cover =
             card.coverAttachmentId &&
@@ -225,7 +245,7 @@ export function normalize(input: unknown): BoardDocument {
               ? card.coverAttachmentId
               : null;
           return {
-            ...emptyCard(card.title ?? 'Cartao'),
+            ...emptyCard(card.title ?? m.defaults.card),
             ...card,
             labelIds: card.labelIds ?? [],
             checklist: card.checklist ?? [],
@@ -242,7 +262,7 @@ export function normalize(input: unknown): BoardDocument {
         }),
       })),
       automations: (board.automations ?? [])
-        .map(normalizeRule)
+        .map((rule) => normalizeRule(rule, m))
         .filter((rule): rule is Rule => rule !== null),
     };
   });
@@ -254,10 +274,10 @@ export function normalize(input: unknown): BoardDocument {
       doc.activeBoardId && boards.some((b) => b.id === doc.activeBoardId)
         ? doc.activeBoardId
         : boards[0].id,
-    labels: doc.labels?.length ? doc.labels : DEFAULT_LABELS,
+    labels: doc.labels?.length ? doc.labels : defaultLabels(m),
     prefs: {
       theme: doc.prefs?.theme ?? 'dark',
-      locale: doc.prefs?.locale ?? 'pt-BR',
+      locale,
       confirmCardDelete: doc.prefs?.confirmCardDelete ?? true,
       automationsEnabled: doc.prefs?.automationsEnabled ?? true,
       sidebarCollapsed: doc.prefs?.sidebarCollapsed === true,

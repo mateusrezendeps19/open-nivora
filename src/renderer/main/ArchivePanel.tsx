@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Board, Card, List } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import './ArchivePanel.css';
 
 interface ArchivePanelProps {
@@ -35,6 +36,7 @@ export function archivedCards(board: Board): ArchivedEntry[] {
 export function ArchivePanel({ board, confirmDelete, onClose, dispatch }: ArchivePanelProps) {
   const entries = archivedCards(board);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const { m, locale } = useI18n();
 
   // Nothing left to show: the panel would be an empty dialog over the board.
   useEffect(() => {
@@ -58,11 +60,11 @@ export function ArchivePanel({ board, confirmDelete, onClose, dispatch }: Archiv
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="archive" role="dialog" aria-modal="true" aria-label="Cartoes arquivados">
+      <div className="archive" role="dialog" aria-modal="true" aria-label={m.archive.dialog}>
         <header className="archive__header">
-          <h2>Arquivados</h2>
+          <h2>{m.archive.heading}</h2>
           <span className="archive__count">{entries.length}</span>
-          <button type="button" className="archive__close" aria-label="Fechar" onClick={onClose}>
+          <button type="button" className="archive__close" aria-label={m.common.close} onClick={onClose}>
             x
           </button>
         </header>
@@ -73,8 +75,8 @@ export function ArchivePanel({ board, confirmDelete, onClose, dispatch }: Archiv
               <div className="archive__card">
                 <span className="archive__title">{card.title}</span>
                 <span className="archive__meta">
-                  {list.title} &middot; arquivado em{' '}
-                  {new Date(card.archivedAt!).toLocaleDateString('pt-BR', {
+                  {list.title} &middot; {m.archive.archivedOn}{' '}
+                  {new Date(card.archivedAt!).toLocaleDateString(locale, {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric',
@@ -89,10 +91,10 @@ export function ArchivePanel({ board, confirmDelete, onClose, dispatch }: Archiv
                   dispatch({ type: 'card/restore', cardId: card.id });
                 }}
               >
-                Restaurar
+                {m.archive.restore}
               </button>
               <button type="button" className="btn btn--danger" onClick={() => remove(card)}>
-                {confirmingId === card.id ? 'Confirmar exclusao' : 'Excluir'}
+                {confirmingId === card.id ? m.common.confirmDelete : m.common.delete}
               </button>
             </li>
           ))}

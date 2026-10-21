@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { bridge, hasShell } from './bridge';
 import { AppChannel, StoreOp } from './channels';
 import { normalize, readLocal, seedDocument, writeLocal } from './document';
+import { systemLocale } from './i18n';
 import { reducer, type Action } from './reducer';
 import type { BoardDocument } from './types';
 
@@ -15,7 +16,7 @@ const SAVE_DEBOUNCE_MS = 250;
  * back to localStorage so the same bundle stays usable.
  */
 export function useDocument() {
-  const [doc, dispatch] = useReducer(reducer, null, seedDocument);
+  const [doc, dispatch] = useReducer(reducer, null, () => seedDocument(systemLocale()));
   const [loaded, setLoaded] = useState(false);
   // False when the store had nothing to read and we fell back to the seed.
   // The asset sweep must not run in that case.
@@ -44,7 +45,7 @@ export function useDocument() {
         ? await ipc.invoke<unknown>(AppChannel.STORE, StoreOp.READ).catch(() => null)
         : readLocal();
       if (cancelled) return;
-      const loadedDoc = normalize(raw);
+      const loadedDoc = normalize(raw, systemLocale());
       fromStore.current = loadedDoc;
       dispatch({ type: 'replace', doc: loadedDoc });
       setPersisted(!!raw);

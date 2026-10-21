@@ -5,6 +5,7 @@ import { fromDateInput, toDateInput } from '../shared/calendar';
 import { Attachments } from './Attachments';
 import { CardActivity } from './CardActivity';
 import { LabelEditor } from './LabelEditor';
+import { useI18n } from '../shared/i18n/context';
 import { RichEditor } from './RichEditor';
 import { RichText } from './RichText';
 import './CardModal.css';
@@ -35,6 +36,8 @@ export function CardModal({
   const [editingLabels, setEditingLabels] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const { m, locale } = useI18n();
+  const t = m.card;
 
   // Switching cards while the modal is open has to reload the drafts.
   useEffect(() => {
@@ -110,7 +113,7 @@ export function CardModal({
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-label={`Cartao ${card.title}`}
+        aria-label={t.dialog(card.title)}
         tabIndex={-1}
         ref={dialogRef}
       >
@@ -119,7 +122,7 @@ export function CardModal({
             type="button"
             className={`modal__done${card.done ? ' modal__done--on' : ''}`}
             aria-pressed={card.done}
-            title={card.done ? 'Marcar como nao concluido' : 'Marcar como concluido'}
+            title={card.done ? t.markUndone : t.markDone}
             onClick={() =>
               dispatch({ type: 'card/update', cardId: card.id, patch: { done: !card.done } })
             }
@@ -134,14 +137,14 @@ export function CardModal({
                 strokeLinejoin="round"
               />
             </svg>
-            {card.done ? 'Concluido' : 'Marcar como concluido'}
+            {card.done ? t.done : t.markDone}
           </button>
 
           <textarea
             className="modal__title"
             rows={1}
             value={title}
-            aria-label="Titulo do cartao"
+            aria-label={t.title}
             onChange={(event) => setTitle(event.target.value)}
             onBlur={commitTitle}
             onKeyDown={(event) => {
@@ -153,9 +156,9 @@ export function CardModal({
             }}
           />
           <p className="modal__context">
-            na lista <strong>{listTitle}</strong>
+            {t.inList} <strong>{listTitle}</strong>
           </p>
-          <button type="button" className="modal__close" aria-label="Fechar" onClick={onClose}>
+          <button type="button" className="modal__close" aria-label={m.common.close} onClick={onClose}>
             x
           </button>
         </header>
@@ -164,14 +167,14 @@ export function CardModal({
           <div className="modal__main">
             <section className="modal__section modal__section--labels">
               <h3>
-                Etiquetas
+                {t.labels}
                 <button
                   type="button"
                   className="modal__section-action"
                   aria-expanded={editingLabels}
                   onClick={() => setEditingLabels((open) => !open)}
                 >
-                  {editingLabels ? 'Concluir' : 'Editar etiquetas'}
+                  {editingLabels ? t.labelsDone : t.editLabels}
                 </button>
               </h3>
               <div className="modal__labels">
@@ -203,7 +206,7 @@ export function CardModal({
             </section>
 
             <section className="modal__section">
-              <h3>Prazo</h3>
+              <h3>{t.due}</h3>
               <div className="modal__due">
                 <input
                   type="date"
@@ -227,7 +230,7 @@ export function CardModal({
                       dispatch({ type: 'card/update', cardId: card.id, patch: { due: null } })
                     }
                   >
-                    Remover
+                    {m.common.remove}
                   </button>
                 )}
               </div>
@@ -251,14 +254,14 @@ export function CardModal({
               }}
             >
               <h3>
-                Descricao
+                {t.description}
                 {!editingDescription && card.description && (
                   <button
                     type="button"
                     className="modal__description-edit"
                     onClick={() => setEditingDescription(true)}
                   >
-                    Editar
+                    {m.common.edit}
                   </button>
                 )}
               </h3>
@@ -267,8 +270,8 @@ export function CardModal({
                   <RichEditor
                     autoFocus
                     value={description}
-                    ariaLabel="Descricao"
-                    placeholder="Adicione mais detalhes..."
+                    ariaLabel={t.description}
+                    placeholder={t.descriptionPlaceholder}
                     onChange={setDescription}
                     onSubmit={saveDescription}
                     onCancel={cancelDescription}
@@ -276,10 +279,10 @@ export function CardModal({
                   />
                   <div className="modal__description-actions">
                     <button type="button" className="btn btn--primary" onClick={saveDescription}>
-                      Salvar
+                      {m.common.save}
                     </button>
                     <button type="button" className="btn btn--subtle" onClick={cancelDescription}>
-                      Cancelar
+                      {m.common.cancel}
                     </button>
                   </div>
                 </>
@@ -288,7 +291,7 @@ export function CardModal({
                   className="modal__description-view"
                   role="button"
                   tabIndex={0}
-                  aria-label="Editar descricao"
+                  aria-label={t.editDescription}
                   // A click on a link follows the link; anywhere else edits.
                   onClick={(event) => {
                     if ((event.target as HTMLElement).closest('a')) return;
@@ -309,7 +312,7 @@ export function CardModal({
                   className="modal__description-empty"
                   onClick={() => setEditingDescription(true)}
                 >
-                  Adicione uma descricao mais detalhada...
+                  {t.descriptionEmpty}
                 </button>
               )}
             </section>
@@ -318,7 +321,7 @@ export function CardModal({
 
             <section className="modal__section">
               <h3>
-                Checklist{' '}
+                {t.checklist}{' '}
                 {card.checklist.length > 0 && (
                   <span className="modal__progress-label">
                     {done}/{card.checklist.length}
@@ -348,7 +351,7 @@ export function CardModal({
                     <button
                       type="button"
                       className="modal__check-remove"
-                      aria-label={`Remover ${item.text}`}
+                      aria-label={t.removeItem(item.text)}
                       onClick={() =>
                         dispatch({ type: 'checklist/remove', cardId: card.id, itemId: item.id })
                       }
@@ -362,7 +365,7 @@ export function CardModal({
               <input
                 className="field"
                 value={checkItem}
-                placeholder="Adicionar item e pressionar Enter"
+                placeholder={t.addItem}
                 onChange={(event) => setCheckItem(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key !== 'Enter') return;
@@ -382,10 +385,10 @@ export function CardModal({
 
         <footer className="modal__footer">
           <span className="modal__created">
-            Criado em {new Date(card.createdAt).toLocaleString('pt-BR')}
+            {t.created(new Date(card.createdAt).toLocaleString(locale))}
           </span>
           <button type="button" className="btn btn--danger" onClick={remove}>
-            {confirming ? 'Confirmar exclusao' : 'Excluir cartao'}
+            {confirming ? m.common.confirmDelete : t.deleteCard}
           </button>
         </footer>
       </div>

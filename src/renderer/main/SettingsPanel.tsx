@@ -1,6 +1,7 @@
 import type { Action } from '../shared/reducer';
 import { Settings, type SettingsTab } from '../shared/settings/Settings';
 import type { Board, BoardDocument } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import './SettingsPanel.css';
 
 interface SettingsPanelProps {
@@ -19,6 +20,8 @@ export function SettingsPanel({
   onClose,
   dispatch,
 }: SettingsPanelProps) {
+  const { m } = useI18n();
+
   return (
     <div
       className="settings__backdrop"
@@ -30,11 +33,11 @@ export function SettingsPanel({
         className="settings__modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Configuracoes"
+        aria-label={m.settings.title}
       >
         <header className="settings__header">
-          <h2>Configuracoes</h2>
-          <button type="button" className="settings__close" aria-label="Fechar" onClick={onClose}>
+          <h2>{m.settings.title}</h2>
+          <button type="button" className="settings__close" aria-label={m.common.close} onClick={onClose}>
             x
           </button>
         </header>

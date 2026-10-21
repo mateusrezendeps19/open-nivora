@@ -1,6 +1,7 @@
 import { useRef, useState, type RefObject } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Board, List } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import { useDismiss } from './useDismiss';
 import './ListMenu.css';
 
@@ -39,6 +40,7 @@ export function ListMenu({
   const [name, setName] = useState(list.title);
   const [targetId, setTargetId] = useState(board.id);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { m } = useI18n();
 
   useDismiss(menuRef, trigger, onClose);
 
@@ -68,8 +70,8 @@ export function ListMenu({
     <button
       type="button"
       className="list-menu__icon"
-      aria-label="Voltar"
-      title="Voltar"
+      aria-label={m.list.back}
+      title={m.list.back}
       onClick={() => setPanel('actions')}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -85,8 +87,8 @@ export function ListMenu({
       <button
         type="button"
         className="list-menu__icon"
-        aria-label="Fechar"
-        title="Fechar"
+        aria-label={m.common.close}
+        title={m.common.close}
         onClick={onClose}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
@@ -97,20 +99,20 @@ export function ListMenu({
   );
 
   return (
-    <div className="list-menu" ref={menuRef} role="dialog" aria-label="Acoes da lista">
+    <div className="list-menu" ref={menuRef} role="dialog" aria-label={m.list.actions}>
       {panel === 'actions' && (
         <>
-          {heading('Acoes da lista', false)}
+          {heading(m.list.actions, false)}
           <div className="list-menu__items" role="menu">
             <button
               type="button"
               role="menuitem"
               onClick={() => {
-                dispatch({ type: 'card/add', listId: list.id, title: 'Novo cartao', atTop: true });
+                dispatch({ type: 'card/add', listId: list.id, title: m.list.newCardTitle, atTop: true });
                 onClose();
               }}
             >
-              Adicionar cartao no topo
+              {m.list.addAtTop}
             </button>
             <button
               type="button"
@@ -120,7 +122,7 @@ export function ListMenu({
                 setPanel('copy');
               }}
             >
-              Copiar lista
+              {m.list.copy}
             </button>
             <button
               type="button"
@@ -131,7 +133,7 @@ export function ListMenu({
                 setPanel('move');
               }}
             >
-              Mover lista
+              {m.list.move}
             </button>
             <hr />
             <button
@@ -143,7 +145,7 @@ export function ListMenu({
                 onClose();
               }}
             >
-              Excluir lista
+              {m.list.remove}
             </button>
           </div>
         </>
@@ -157,9 +159,9 @@ export function ListMenu({
             copy();
           }}
         >
-          {heading('Copiar lista', true)}
+          {heading(m.list.copy, true)}
           <label className="list-menu__label" htmlFor={`copy-${list.id}`}>
-            Nome
+            {m.list.name}
           </label>
           <textarea
             id={`copy-${list.id}`}
@@ -178,10 +180,10 @@ export function ListMenu({
             }}
           />
           <p className="list-menu__hint">
-            Os cartoes vem junto, com etiquetas, prazos, checklist e anexos. Os arquivados ficam.
+            {m.list.copyHint}
           </p>
           <button type="submit" className="btn btn--primary" disabled={!name.trim()}>
-            Criar lista
+            {m.list.createList}
           </button>
         </form>
       )}
@@ -194,9 +196,9 @@ export function ListMenu({
             move();
           }}
         >
-          {heading('Mover lista', true)}
+          {heading(m.list.move, true)}
           <label className="list-menu__label" htmlFor={`move-board-${list.id}`}>
-            Quadro
+            {m.list.board}
           </label>
           <select
             id={`move-board-${list.id}`}
@@ -212,12 +214,12 @@ export function ListMenu({
             {boards.map((entry) => (
               <option key={entry.id} value={entry.id}>
                 {entry.title}
-                {entry.id === board.id ? ' (atual)' : ''}
+                {entry.id === board.id ? m.common.current : ''}
               </option>
             ))}
           </select>
           <label className="list-menu__label" htmlFor={`move-place-${list.id}`}>
-            Posicao
+            {m.list.position}
           </label>
           <select
             id={`move-place-${list.id}`}
@@ -228,7 +230,7 @@ export function ListMenu({
             {Array.from({ length: places }, (_, index) => (
               <option key={index} value={index}>
                 {index + 1}
-                {sameBoard && index === listIndex ? ' (atual)' : ''}
+                {sameBoard && index === listIndex ? m.common.current : ''}
               </option>
             ))}
           </select>
@@ -237,7 +239,7 @@ export function ListMenu({
             className="btn btn--primary"
             disabled={sameBoard && safePlace === listIndex}
           >
-            Mover
+            {m.list.moveSubmit}
           </button>
         </form>
       )}

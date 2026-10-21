@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { bridge, hasShell } from '../shared/bridge';
 import { WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
+import { messages } from '../shared/i18n';
+import { I18nProvider } from '../shared/i18n/context';
 import { commitToStore, useDocument, useTheme } from '../shared/useDocument';
 import '../shared/styles/tokens.css';
 import '../shared/styles/base.css';
@@ -24,6 +26,8 @@ function NewCard() {
   const { ipc } = bridge();
 
   useTheme(doc.prefs.theme);
+  const m = messages(doc.prefs.locale);
+  const t = m.newcard;
 
   /**
    * Which board to add to is this window's own state, not an edit of the
@@ -100,100 +104,102 @@ function NewCard() {
   }
 
   return (
-    <div className="newcard">
-      <TitleBar title="Novo cartao" />
+    <I18nProvider locale={doc.prefs.locale}>
+      <div className="newcard">
+        <TitleBar title={t.title} />
 
-      <div className="newcard__body">
-        <label className="newcard__field">
-          <span>Quadro</span>
-          <select
-            className="field"
-            value={boardId}
-            onChange={(event) => {
-              setBoardId(event.target.value);
-              setListId('');
-            }}
-          >
-            {doc.boards.map((board) => (
-              <option key={board.id} value={board.id}>
-                {board.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="newcard__body">
+          <label className="newcard__field">
+            <span>{t.board}</span>
+            <select
+              className="field"
+              value={boardId}
+              onChange={(event) => {
+                setBoardId(event.target.value);
+                setListId('');
+              }}
+            >
+              {doc.boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.title}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="newcard__field">
-          <span>Lista</span>
-          <select
-            className="field"
-            value={listId}
-            onChange={(event) => setListId(event.target.value)}
-            disabled={lists.length === 0}
-          >
-            {lists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.title}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="newcard__field">
+            <span>{t.list}</span>
+            <select
+              className="field"
+              value={listId}
+              onChange={(event) => setListId(event.target.value)}
+              disabled={lists.length === 0}
+            >
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.title}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="newcard__field">
-          <span>Titulo</span>
-          <textarea
-            className="field"
-            rows={3}
-            autoFocus
-            value={title}
-            placeholder="O que precisa ser feito?"
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setSaved(false);
-              setFailed(false);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                void submit(!event.ctrlKey && !event.metaKey);
-              }
-              if (event.key === 'Escape' && hasShell()) {
-                ipc.send(WindowChannel.TRIGGER_CLOSE);
-              }
-            }}
-          />
-        </label>
-      </div>
-
-      <footer className="newcard__footer">
-        <span className="newcard__hint">
-          {!loaded
-            ? 'Carregando...'
-            : failed
-              ? 'Nao foi possivel adicionar o cartao.'
-              : saved
-                ? 'Cartao adicionado.'
-                : 'Enter adiciona e fecha - Ctrl+Enter mantem aberto'}
-        </span>
-        <div className="newcard__actions">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void submit(false)}
-            disabled={!canSubmit}
-          >
-            Adicionar outro
-          </button>
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => void submit(true)}
-            disabled={!canSubmit}
-          >
-            Adicionar
-          </button>
+          <label className="newcard__field">
+            <span>{t.cardTitle}</span>
+            <textarea
+              className="field"
+              rows={3}
+              autoFocus
+              value={title}
+              placeholder={t.placeholder}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                setSaved(false);
+                setFailed(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  void submit(!event.ctrlKey && !event.metaKey);
+                }
+                if (event.key === 'Escape' && hasShell()) {
+                  ipc.send(WindowChannel.TRIGGER_CLOSE);
+                }
+              }}
+            />
+          </label>
         </div>
-      </footer>
-    </div>
+
+        <footer className="newcard__footer">
+          <span className="newcard__hint">
+            {!loaded
+              ? m.common.loading
+              : failed
+                ? t.failed
+                : saved
+                  ? t.added
+                  : t.hint}
+          </span>
+          <div className="newcard__actions">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void submit(false)}
+              disabled={!canSubmit}
+            >
+              {t.addAnother}
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => void submit(true)}
+              disabled={!canSubmit}
+            >
+              {t.add}
+            </button>
+          </div>
+        </footer>
+      </div>
+    </I18nProvider>
   );
 }
 

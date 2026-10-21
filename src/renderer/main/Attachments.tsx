@@ -8,6 +8,7 @@ import {
   pickAssets,
   revealAsset,
 } from '../shared/assets';
+import { useI18n } from '../shared/i18n/context';
 import type { Action } from '../shared/reducer';
 import type { Card } from '../shared/types';
 import './Attachments.css';
@@ -25,6 +26,8 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
   const [busy, setBusy] = useState(false);
   const [dropping, setDropping] = useState(false);
   const available = assetsAvailable();
+  const { m, locale } = useI18n();
+  const t = m.attachments;
 
   async function attach(found: Promise<Card['attachments']>) {
     setBusy(true);
@@ -52,10 +55,8 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
   if (!available) {
     return (
       <section className="modal__section">
-        <h3>Anexos</h3>
-        <p className="attach__hint">
-          Anexos precisam do app desktop; no navegador nao ha onde copiar o arquivo.
-        </p>
+        <h3>{t.heading}</h3>
+        <p className="attach__hint">{t.unavailable}</p>
       </section>
     );
   }
@@ -63,7 +64,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
   return (
     <section className="modal__section">
       <h3>
-        Anexos{' '}
+        {t.heading}{' '}
         {card.attachments.length > 0 && (
           <span className="modal__progress-label">{card.attachments.length}</span>
         )}
@@ -78,7 +79,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
         onDragLeave={() => setDropping(false)}
         onDrop={onDrop}
       >
-        <p>Arraste arquivos aqui</p>
+        <p>{t.dropHere}</p>
         <div className="attach__actions">
           <button
             type="button"
@@ -86,7 +87,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
             disabled={busy}
             onClick={() => void attach(pickAssets('any'))}
           >
-            Escolher arquivos
+            {t.pickFiles}
           </button>
           <button
             type="button"
@@ -94,7 +95,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
             disabled={busy}
             onClick={() => void attach(pickAssets('image'))}
           >
-            Escolher imagem
+            {t.pickImage}
           </button>
         </div>
       </div>
@@ -130,15 +131,15 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
                   <button
                     type="button"
                     className="attach__name"
-                    title="Abrir com o aplicativo do sistema"
+                    title={t.openWithSystem}
                     onClick={() => void openAsset(attachment.asset)}
                   >
                     {attachment.name}
                   </button>
                   <span className="attach__sub">
                     {formatBytes(attachment.size)} -{' '}
-                    {new Date(attachment.addedAt).toLocaleDateString('pt-BR')}
-                    {isCover && ' - capa'}
+                    {new Date(attachment.addedAt).toLocaleDateString(locale)}
+                    {isCover && t.isCover}
                   </span>
                 </div>
 
@@ -155,7 +156,7 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
                         })
                       }
                     >
-                      {isCover ? 'Tirar capa' : 'Usar como capa'}
+                      {isCover ? t.removeCover : t.useAsCover}
                     </button>
                   )}
                   <button
@@ -163,14 +164,14 @@ export function Attachments({ card, dispatch }: AttachmentsProps) {
                     className="btn btn--subtle"
                     onClick={() => revealAsset(attachment.asset)}
                   >
-                    Na pasta
+                    {t.reveal}
                   </button>
                   <button
                     type="button"
                     className="btn btn--danger"
                     onClick={() => detach(attachment.id)}
                   >
-                    Remover
+                    {m.common.remove}
                   </button>
                 </div>
               </li>

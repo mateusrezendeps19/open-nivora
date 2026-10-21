@@ -1,6 +1,7 @@
 import { useEffect, useState, type DragEvent } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Board, Card } from '../shared/types';
+import { useI18n } from '../shared/i18n/context';
 import './Fab.css';
 
 interface FabProps {
@@ -39,6 +40,8 @@ function findCard(board: Board, cardId: string): Card | null {
 export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabProps) {
   const [armed, setArmed] = useState<Target | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const { m } = useI18n();
+  const t = m.fab;
 
   // The card is looked up on every render instead of being held in state: it
   // can be edited, moved or deleted from the modal, an automation or another
@@ -107,13 +110,15 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
         <div
           className="fab-confirm"
           role="dialog"
-          aria-label="Confirmar exclusao do cartao"
+          aria-label={t.confirmDialog}
           onKeyDown={(event) => {
             if (event.key === 'Escape') setPendingId(null);
           }}
         >
           <p className="fab-confirm__text">
-            Excluir <strong>{pending.title}</strong>?
+            {t.confirmBefore}
+            <strong>{pending.title}</strong>
+            {t.confirmAfter}
           </p>
           <div className="fab-confirm__actions">
             {/* Focus starts on the harmless option, so Enter does not delete. */}
@@ -123,7 +128,7 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
               autoFocus
               onClick={() => setPendingId(null)}
             >
-              Cancelar
+              {m.common.cancel}
             </button>
             <button
               type="button"
@@ -133,7 +138,7 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
                 setPendingId(null);
               }}
             >
-              Excluir
+              {m.common.delete}
             </button>
           </div>
         </div>
@@ -146,8 +151,8 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
           onDragOver={(event) => allowDrop(event, 'archive')}
           onDragLeave={() => setArmed(null)}
           onDrop={onArchiveDrop}
-          aria-label="Arquivar cartao"
-          title="Solte aqui para arquivar o cartao"
+          aria-label={t.archiveCard}
+          title={t.archiveHint}
         >
           <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden="true">
             <path
@@ -159,7 +164,7 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
             />
             <path d="M6.4 8.5h3.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
-          <span className="fab-archive__label">Arquivar</span>
+          <span className="fab-archive__label">{t.archive}</span>
         </button>
       )}
 
@@ -174,8 +179,8 @@ export function Fab({ board, dragCardId, confirmDelete, onNew, dispatch }: FabPr
         onDragOver={(event) => allowDrop(event, 'trash')}
         onDragLeave={() => setArmed(null)}
         onDrop={onTrashDrop}
-        aria-label={trash ? 'Excluir cartao' : 'Novo cartao'}
-        title={trash ? 'Solte aqui para excluir o cartao' : 'Novo cartao (Ctrl+N)'}
+        aria-label={trash ? t.deleteCard : t.newCard}
+        title={trash ? t.deleteHint : t.newCardHint}
       >
         {trash ? (
           <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden="true">

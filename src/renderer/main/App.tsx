@@ -6,6 +6,8 @@ import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
 import { referencedAssets, releasedAssets } from '../shared/document';
 import { EMPTY_FILTER, withLabels, type CardFilter } from '../shared/filter';
+import { messages } from '../shared/i18n';
+import { I18nProvider } from '../shared/i18n/context';
 import { labelUsage } from '../shared/reducer';
 import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
@@ -44,6 +46,7 @@ export function App() {
   const { ipc } = bridge();
 
   useTheme(doc.prefs.theme);
+  const m = messages(doc.prefs.locale);
 
   // The sidebar and the current view live in the document, so the window opens
   // the way it was left.
@@ -148,105 +151,109 @@ export function App() {
 
   if (!loaded) {
     return (
-      <div className="app">
-        <TitleBar title="Taskly" />
-        <div className="app__loading">Carregando quadros...</div>
-      </div>
+      <I18nProvider locale={doc.prefs.locale}>
+        <div className="app">
+          <TitleBar title="Taskly" />
+          <div className="app__loading">{m.app.loadingBoards}</div>
+        </div>
+      </I18nProvider>
     );
   }
 
   return (
-    <div className="app">
-      <TitleBar title={`${activeBoard.title} - Taskly`}>
-        <Toolbar
-          filter={shownFilter}
-          labels={doc.labels}
-          view={view}
-          onQueryChange={setQuery}
-          onFilterChange={setFilter}
-          onViewChange={(next) => setPrefs({ view: next })}
-          onFind={openFind}
-          onSettings={() => setSettingsTab('appearance')}
-        />
-      </TitleBar>
-
-      <div className="app__body" style={backgroundStyle(activeBoard.background)}>
-        <Sidebar
-          boards={doc.boards}
-          activeBoardId={activeBoard.id}
-          collapsed={sidebarCollapsed}
-          archivedCount={archived.length}
-          onToggle={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
-          onOpenArchive={() => setArchiveOpen(true)}
-          onSelect={(boardId) => dispatch({ type: 'board/select', boardId })}
-          onAdd={(title, color) => dispatch({ type: 'board/add', title, color })}
-          onRename={(boardId, title) => dispatch({ type: 'board/rename', boardId, title })}
-          onRemove={(boardId) => dispatch({ type: 'board/remove', boardId })}
-        />
-
-        {view === 'calendar' ? (
-          <Calendar
-            board={activeBoard}
-            labels={doc.labels}
+    <I18nProvider locale={doc.prefs.locale}>
+      <div className="app">
+        <TitleBar title={`${activeBoard.title} - Taskly`}>
+          <Toolbar
             filter={shownFilter}
-            dispatch={dispatch}
-            onOpenCard={setOpenCardId}
-            onCardDragChange={setDragCardId}
+            labels={doc.labels}
+            view={view}
+            onQueryChange={setQuery}
+            onFilterChange={setFilter}
+            onViewChange={(next) => setPrefs({ view: next })}
+            onFind={openFind}
+            onSettings={() => setSettingsTab('appearance')}
           />
-        ) : (
-          <BoardCanvas
-            board={activeBoard}
+        </TitleBar>
+
+        <div className="app__body" style={backgroundStyle(activeBoard.background)}>
+          <Sidebar
             boards={doc.boards}
-            labels={doc.labels}
-            filter={shownFilter}
-            onClearFilter={() => setFilter(EMPTY_FILTER)}
+            activeBoardId={activeBoard.id}
+            collapsed={sidebarCollapsed}
+            archivedCount={archived.length}
+            onToggle={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
+            onOpenArchive={() => setArchiveOpen(true)}
+            onSelect={(boardId) => dispatch({ type: 'board/select', boardId })}
+            onAdd={(title, color) => dispatch({ type: 'board/add', title, color })}
+            onRename={(boardId, title) => dispatch({ type: 'board/rename', boardId, title })}
+            onRemove={(boardId) => dispatch({ type: 'board/remove', boardId })}
+          />
+
+          {view === 'calendar' ? (
+            <Calendar
+              board={activeBoard}
+              labels={doc.labels}
+              filter={shownFilter}
+              dispatch={dispatch}
+              onOpenCard={setOpenCardId}
+              onCardDragChange={setDragCardId}
+            />
+          ) : (
+            <BoardCanvas
+              board={activeBoard}
+              boards={doc.boards}
+              labels={doc.labels}
+              filter={shownFilter}
+              onClearFilter={() => setFilter(EMPTY_FILTER)}
+              dispatch={dispatch}
+              onOpenCard={setOpenCardId}
+              onCardDragChange={setDragCardId}
+            />
+          )}
+        </div>
+
+        {hasShell() && (
+          <Fab
+            board={activeBoard}
+            dragCardId={dragCardId}
+            confirmDelete={doc.prefs.confirmCardDelete}
+            onNew={openNewCard}
             dispatch={dispatch}
-            onOpenCard={setOpenCardId}
-            onCardDragChange={setDragCardId}
+          />
+        )}
+
+        {archiveOpen && (
+          <ArchivePanel
+            board={activeBoard}
+            confirmDelete={doc.prefs.confirmCardDelete}
+            onClose={() => setArchiveOpen(false)}
+            dispatch={dispatch}
+          />
+        )}
+
+        {settingsTab && (
+          <SettingsPanel
+            doc={doc}
+            board={activeBoard}
+            initialTab={settingsTab}
+            onClose={() => setSettingsTab(null)}
+            dispatch={dispatch}
+          />
+        )}
+
+        {openCard && (
+          <CardModal
+            card={openCard.card}
+            listTitle={openCard.list.title}
+            labels={doc.labels}
+            labelUsage={(labelId) => labelUsage(doc, labelId)}
+            confirmDelete={doc.prefs.confirmCardDelete}
+            onClose={() => setOpenCardId(null)}
+            dispatch={dispatch}
           />
         )}
       </div>
-
-      {hasShell() && (
-        <Fab
-          board={activeBoard}
-          dragCardId={dragCardId}
-          confirmDelete={doc.prefs.confirmCardDelete}
-          onNew={openNewCard}
-          dispatch={dispatch}
-        />
-      )}
-
-      {archiveOpen && (
-        <ArchivePanel
-          board={activeBoard}
-          confirmDelete={doc.prefs.confirmCardDelete}
-          onClose={() => setArchiveOpen(false)}
-          dispatch={dispatch}
-        />
-      )}
-
-      {settingsTab && (
-        <SettingsPanel
-          doc={doc}
-          board={activeBoard}
-          initialTab={settingsTab}
-          onClose={() => setSettingsTab(null)}
-          dispatch={dispatch}
-        />
-      )}
-
-      {openCard && (
-        <CardModal
-          card={openCard.card}
-          listTitle={openCard.list.title}
-          labels={doc.labels}
-          labelUsage={(labelId) => labelUsage(doc, labelId)}
-          confirmDelete={doc.prefs.confirmCardDelete}
-          onClose={() => setOpenCardId(null)}
-          dispatch={dispatch}
-        />
-      )}
-    </div>
+    </I18nProvider>
   );
 }

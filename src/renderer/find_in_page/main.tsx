@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel } from '../shared/channels';
+import { messages } from '../shared/i18n';
+import { I18nProvider } from '../shared/i18n/context';
+import { useDocument } from '../shared/useDocument';
 import '../shared/styles/tokens.css';
 import '../shared/styles/base.css';
 import './find_in_page.css';
@@ -15,6 +18,9 @@ function FindInPage() {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<{ active: number; total: number } | null>(null);
   const { ipc } = bridge();
+  // Read for the language only; this window never writes.
+  const { doc } = useDocument();
+  const m = messages(doc.prefs.locale);
 
   // Debounced so every keystroke does not restart the search.
   useEffect(() => {
@@ -41,25 +47,27 @@ function FindInPage() {
   }
 
   return (
-    <div className="find">
-      <input
-        className="find__input"
-        autoFocus
-        value={query}
-        placeholder="Localizar no quadro"
-        aria-label="Localizar no quadro"
-        onChange={(event) => setQuery(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') close();
-        }}
-      />
-      <span className="find__count">
-        {query && result ? `${result.active}/${result.total}` : ''}
-      </span>
-      <button type="button" className="find__close" aria-label="Fechar" onClick={close}>
-        x
-      </button>
-    </div>
+    <I18nProvider locale={doc.prefs.locale}>
+      <div className="find">
+        <input
+          className="find__input"
+          autoFocus
+          value={query}
+          placeholder={m.find.placeholder}
+          aria-label={m.find.placeholder}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') close();
+          }}
+        />
+        <span className="find__count">
+          {query && result ? `${result.active}/${result.total}` : ''}
+        </span>
+        <button type="button" className="find__close" aria-label={m.common.close} onClick={close}>
+          x
+        </button>
+      </div>
+    </I18nProvider>
   );
 }
 
