@@ -11,7 +11,14 @@ npm run build      # esbuild (main + preloads) then vite build
 npm run typecheck  # tsc --noEmit over src, electron, scripts, vite.config.ts
 npm test           # unit tests: esbuild tests/*.test.ts to CJS, run with node --test
 npm run smoke      # npm run build, then drive the built app with Playwright
+npm run dist       # npm run build, then electron-builder: installers for this OS in release/
 ```
+
+Releases are cut by pushing a tag `vX.Y.Z` equal to `package.json`'s version:
+`.github/workflows/release.yml` checks that they match, runs typecheck and the unit tests, builds
+the NSIS installer on Windows and the `.deb` + AppImage on Linux - each on its own runner, since
+neither cross-builds reliably - and publishes them as a GitHub release. Bump the version in a
+commit first; the installers are unsigned.
 
 There is no linter. `npm run typecheck` is the static gate; it is strict with `noUnusedLocals`.
 

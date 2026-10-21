@@ -121,6 +121,14 @@ equivalent here is picking a local file.
 
 ---
 
+## Download
+
+Installers for Windows (`.exe`) and Linux (`.deb` and `.AppImage`) are on the
+[Releases page](https://github.com/mateusrezendeps19/taskly/releases/latest). They are not
+code-signed, so Windows SmartScreen may ask for confirmation the first time.
+
+---
+
 ## Running it
 
 ```bash
@@ -136,6 +144,7 @@ npm test             # 41 reducer and automation-engine tests (Node's test runne
 npm run smoke        # 13 end-to-end checks against the packaged app (Playwright)
 npm run typecheck    # tsc --noEmit
 npm run build        # main/preload bundle (esbuild) + renderers (Vite)
+npm run dist         # build, then package installers for this OS into release/
 ```
 
 > npm 12 blocks install scripts by default. `package.json` declares

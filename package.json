@@ -20,7 +20,8 @@
     "start": "npm run build && electron .",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
-    "smoke": "npm run build && node tests/smoke.mjs"
+    "smoke": "npm run build && node tests/smoke.mjs",
+    "dist": "npm run build && electron-builder --publish never"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -32,6 +33,7 @@
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.4",
     "electron": "^44.9.1",
+    "electron-builder": "^26.15.3",
     "esbuild": "0.24.2",
     "playwright": "^1.49.1",
     "typescript": "5.7.2",
@@ -40,5 +42,63 @@
   "allowScripts": [
     "electron",
     "esbuild"
-  ]
+  ],
+  "build": {
+    "appId": "io.github.mateusrezendeps19.taskly",
+    "productName": "Taskly",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/main/**",
+      "dist/preload/**",
+      "dist/renderer/**",
+      "resources/icon.ico",
+      "resources/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Taskly"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.png",
+      "category": "Office",
+      "synopsis": "Offline kanban board",
+      "maintainer": "Mateus Rezende"
+    },
+    "deb": {
+      "packageName": "taskly"
+    }
+  }
 }

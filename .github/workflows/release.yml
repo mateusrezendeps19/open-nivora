@@ -1,0 +1,89 @@
+# Builds the installers on each platform's own runner and publishes them as a
+# GitHub release. Triggered by pushing a version tag (v0.1.0) that matches
+# package.json - the build checks this, so a release can never carry
+# installers that report a different version than its name.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != v$version"; exit 1; }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  build:
+    needs: check
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+          - os: ubuntu-latest
+            target: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Unsigned: there is no code-signing certificate, so electron-builder
+      # must not go looking for one.
+      - run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.os }}
+          path: |
+            release/*.exe
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Taskly ${{ github.ref_name }}
+          files: installers/*
+          generate_release_notes: true
+          body: |
+            ## Downloads
+
+            | System | File |
+            |---|---|
+            | Windows 10/11 (x64) | `Taskly-*-win-x64.exe` - installer |
+            | Debian / Ubuntu (x64) | `Taskly-*-linux-amd64.deb` - `sudo apt install ./Taskly-*.deb` |
+            | Any Linux (x64) | `Taskly-*-linux-x86_64.AppImage` - `chmod +x`, then run it |
+
+            The installers are not code-signed, so Windows SmartScreen may warn on
+            first launch: choose "More info" and then "Run anyway".
+
+            The interface is available in Portuguese, English and Spanish
+            (Settings > Appearance > Language).
