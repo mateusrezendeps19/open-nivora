@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { app, BrowserWindow, ipcMain, Menu, shell, type IpcMainInvokeEvent } from 'electron';
 import {
   AppChannel,
@@ -17,6 +18,7 @@ import {
   revealAsset,
   sweepAssets,
 } from './assets';
+import { LEGACY_NAME, migrateUserData } from './migrate';
 import { getStorePath, readStore, writeStore } from './store';
 import { closeWindow, each, find, nameOf, openWindow, WINDOWS, type WindowName } from './windows';
 
@@ -269,6 +271,20 @@ function buildMenu(): void {
 }
 
 app.whenReady().then(() => {
+  // Only for the default folder: a --user-data-dir (the smoke test's, say)
+  // asked for a folder of its own and must not be filled with the user's boards.
+  const appData = app.getPath('appData');
+  const userData = app.getPath('userData');
+  if (path.resolve(userData) === path.resolve(appData, app.getName())) {
+    try {
+      if (migrateUserData(path.join(appData, LEGACY_NAME), userData)) {
+        console.log(`[migrate] boards copied from ${LEGACY_NAME} to ${userData}`);
+      }
+    } catch (error) {
+      console.error('[migrate] could not copy the old boards:', error);
+    }
+  }
+
   handleAssetProtocol();
   buildMenu();
   openWindow('main');

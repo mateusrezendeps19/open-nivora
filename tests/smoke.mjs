@@ -20,7 +20,7 @@ import { _electron as electron } from 'playwright';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 // A throwaway userData directory, so the test never touches real boards.
-const userData = await mkdtemp(path.join(os.tmpdir(), 'nivora-smoke-'));
+const userData = await mkdtemp(path.join(os.tmpdir(), 'taskly-smoke-'));
 let app;
 let failures = 0;
 
@@ -185,7 +185,7 @@ try {
     }, 'o fundo gradiente nao chegou ao boards.json');
   });
 
-  await check('importar um anexo copia o arquivo e o serve por nivora://', async () => {
+  await check('importar um anexo copia o arquivo e o serve por taskly://', async () => {
     // PNG 1x1 valido, so para ter um arquivo de verdade em disco.
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
@@ -217,11 +217,11 @@ try {
           const img = new Image();
           img.onload = () => resolve({ ok: true, width: img.naturalWidth });
           img.onerror = () => resolve({ ok: false, width: 0 });
-          img.src = `nivora://assets/${encodeURIComponent(asset)}`;
+          img.src = `taskly://assets/${encodeURIComponent(asset)}`;
         }),
       record.asset,
     );
-    assert.deepEqual(loaded, { ok: true, width: 1 }, 'nivora:// nao entregou a imagem');
+    assert.deepEqual(loaded, { ok: true, width: 1 }, 'taskly:// nao entregou a imagem');
   });
 
   await check('o protocolo recusa sair da pasta de ativos', async () => {
@@ -231,7 +231,7 @@ try {
           const img = new Image();
           img.onload = () => resolve('carregou');
           img.onerror = () => resolve('recusou');
-          img.src = 'nivora://assets/..%2F..%2Fboards.json';
+          img.src = 'taskly://assets/..%2F..%2Fboards.json';
         }),
     );
     assert.equal(status, 'recusou', 'travessia de caminho deveria ser bloqueada');

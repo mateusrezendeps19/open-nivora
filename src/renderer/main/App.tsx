@@ -149,7 +149,7 @@ export function App() {
   if (!loaded) {
     return (
       <div className="app">
-        <TitleBar title="Nivora" />
+        <TitleBar title="Taskly" />
         <div className="app__loading">Carregando quadros...</div>
       </div>
     );
@@ -157,7 +157,7 @@ export function App() {
 
   return (
     <div className="app">
-      <TitleBar title={`${activeBoard.title} - Nivora`}>
+      <TitleBar title={`${activeBoard.title} - Taskly`}>
         <Toolbar
           filter={shownFilter}
           labels={doc.labels}

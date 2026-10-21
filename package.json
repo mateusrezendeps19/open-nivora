@@ -1,9 +1,9 @@
 {
-  "name": "open-nivora",
-  "productName": "Nivora",
+  "name": "taskly",
+  "productName": "Taskly",
   "version": "0.1.0",
   "private": true,
-  "description": "Nivora: an offline kanban board for the desktop, whose Electron shell was rebuilt from a reverse engineering analysis of the official Trello desktop app.",
+  "description": "Taskly: an offline kanban board for the desktop, whose Electron shell was rebuilt from a reverse engineering analysis of the official Trello desktop app.",
   "license": "MIT",
   "author": {
     "name": "Mateus Rezende",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mateusrezendeps19/open-nivora.git"
+    "url": "https://github.com/mateusrezendeps19/taskly.git"
   },
   "main": "dist/main/index.js",
   "scripts": {

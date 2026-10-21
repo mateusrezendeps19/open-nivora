@@ -15,7 +15,9 @@ import {
   type Trigger,
 } from './types';
 
-const LOCAL_KEY = 'nivora:document';
+const LOCAL_KEY = 'taskly:document';
+/** The key from before the rename, read once so a browser session keeps its boards. */
+const LEGACY_LOCAL_KEY = 'nivora:document';
 
 export function emptyCard(title: string): Card {
   return {
@@ -295,7 +297,7 @@ export function releasedAssets(before: BoardDocument, after: BoardDocument): str
 
 export function readLocal(): unknown {
   try {
-    const raw = localStorage.getItem(LOCAL_KEY);
+    const raw = localStorage.getItem(LOCAL_KEY) ?? localStorage.getItem(LEGACY_LOCAL_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

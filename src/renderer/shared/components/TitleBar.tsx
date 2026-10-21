@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { bridge, hasShell } from '../bridge';
 import { WindowChannel } from '../channels';
+import icon from '../../../../resources/icon.png';
 import './TitleBar.css';
 
 interface TitleBarProps {
@@ -13,7 +14,8 @@ interface TitleBarProps {
  * The real app creates every window with `frame: false`, so the title bar is
  * drawn by the renderer and minimise/maximise/close round-trip through IPC
  * (TRIGGER_MINIMIZE / TRIGGER_MAXIMIZE / TRIGGER_CLOSE, the three channels REA
- * found in all ten preloads). This reproduces that arrangement.
+ * found in all ten preloads). This reproduces that arrangement. The icon is
+ * ours: what the real app puts there is Trello's mark.
  */
 export function TitleBar({ title, children }: TitleBarProps) {
   const [maximized, setMaximized] = useState(false);
@@ -50,7 +52,8 @@ export function TitleBar({ title, children }: TitleBarProps) {
     // so layout and the embedded controls stay identical.
     return (
       <header className="titlebar titlebar--browser">
-        <span className="titlebar__title">{title}</span>
+        <img className="titlebar__icon" src={icon} alt="" />
+      <span className="titlebar__title">{title}</span>
         <div className="titlebar__slot">{children}</div>
       </header>
     );
@@ -58,6 +61,7 @@ export function TitleBar({ title, children }: TitleBarProps) {
 
   return (
     <header className={`titlebar${focused ? '' : ' titlebar--blurred'}`}>
+      <img className="titlebar__icon" src={icon} alt="" />
       <span className="titlebar__title">{title}</span>
       <div className="titlebar__slot">{children}</div>
       <div className="titlebar__controls">

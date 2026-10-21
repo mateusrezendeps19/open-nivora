@@ -65,7 +65,7 @@ export const StoreOp = {
   WRITE: 'write',
   PATH: 'path',
   /**
-   * Nivora addition. A satellite window hands an action to the window that
+   * Taskly addition. A satellite window hands an action to the window that
    * owns the document instead of writing the whole document itself, so there
    * is only ever one writer. See the note on the handler in main.ts.
    */
@@ -73,7 +73,7 @@ export const StoreOp = {
 } as const;
 
 /**
- * Nivora additions, not recovered from the Trello app: the asset store behind
+ * Taskly additions, not recovered from the Trello app: the asset store behind
  * board backgrounds and card attachments. Named apart from the channels above
  * so the evidence-backed contract stays recognisable.
  */

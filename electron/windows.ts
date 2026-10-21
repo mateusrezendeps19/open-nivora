@@ -1,4 +1,4 @@
-import { BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
+import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron';
 import path from 'node:path';
 import { FindInPageChannel, WindowChannel } from './channels';
 
@@ -69,7 +69,7 @@ function webPreferences(kind: 'main' | 'window'): BrowserWindowConstructorOption
 export const WINDOWS: Record<WindowName, WindowSpec> = {
   main: {
     entry: 'main',
-    title: 'Nivora',
+    title: 'Taskly',
     singleton: true,
     mainPreload: true,
     options: {
@@ -154,7 +154,7 @@ export const WINDOWS: Record<WindowName, WindowSpec> = {
   },
   prompt: {
     entry: 'newcard',
-    title: 'Nivora',
+    title: 'Taskly',
     singleton: false,
     options: { width: 500, height: 325, frame: false, resizable: false, backgroundColor: '#22272b', show: false },
   },
@@ -192,6 +192,16 @@ export function each(fn: (win: BrowserWindow, name: WindowName) => void): void {
   }
 }
 
+/**
+ * Taskly's own icon, not recovered: the Trello one is Atlassian's mark. Read
+ * from the app root rather than from dist, which the build empties. Windows
+ * gets the .ico, which carries the small sizes the taskbar picks from.
+ */
+function iconPath(): string {
+  const file = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  return path.join(app.getAppPath(), 'resources', file);
+}
+
 function urlFor(entry: WindowSpec['entry']): { url: string } | { file: string } {
   if (DEV) return { url: `${process.env.VITE_DEV_SERVER_URL}${entry}/index.html` };
   return { file: path.join(__dirname, '..', 'renderer', entry, 'index.html') };
@@ -212,6 +222,7 @@ export function openWindow(name: WindowName): BrowserWindow {
   const win = new BrowserWindow({
     ...spec.options,
     title: spec.title,
+    icon: iconPath(),
     webPreferences: webPreferences(spec.mainPreload ? 'main' : 'window'),
   });
 

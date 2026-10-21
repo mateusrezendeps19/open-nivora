@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { bridge, hasShell } from '../shared/bridge';
 import { WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
+import icon from '../../../resources/icon.png';
 import '../shared/styles/tokens.css';
 import '../shared/styles/base.css';
 import './welcome.css';
@@ -15,7 +16,10 @@ function Welcome() {
       <TitleBar title="Bem-vindo" />
 
       <div className="welcome__body">
-        <h1>Nivora</h1>
+        <h1 className="welcome__brand">
+          <img src={icon} alt="" />
+          Taskly
+        </h1>
         <p className="welcome__lead">
           Um clone de quadros kanban cujo shell desktop foi reconstruido a partir da engenharia
           reversa do app oficial do Trello instalado nesta maquina.

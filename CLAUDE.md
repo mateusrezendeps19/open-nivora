@@ -40,6 +40,21 @@ Two halves with different origins, and the distinction is the point of the proje
 Keep that line intact. Do not present renderer work as recovered, and do not change a recovered
 constant to something more convenient without saying so.
 
+### Name, icon and the old name
+
+The app is **Taskly**; it was called Nivora until the rename. The icon and logo are ours, in
+`resources/` (`icon.ico` for Windows, `icon.png` elsewhere and in the renderer, `logo.png` for the
+README, originals in `resources/brand/`). `windows.ts` reads the icon from `app.getAppPath()`, not
+from `dist`, which the build empties.
+
+Electron names `userData` after the product, so the rename moved the boards' folder from
+`%APPDATA%\Nivora` to `%APPDATA%\Taskly`. `electron/migrate.ts` copies `boards.json` and
+`assets/` across at startup - only into the **default** folder (a `--user-data-dir`, like the
+smoke test's, must stay empty), only when the new folder has no document, and by copying, so the
+old one stays as a backup. The browser fallback likewise still reads the old `nivora:document`
+localStorage key. Stored documents hold asset **names**, not URLs, which is why renaming the
+`nivora://` scheme to `taskly://` needed no migration.
+
 ### IPC contract
 
 `electron/channels.ts` and `src/renderer/shared/channels.ts` are two copies of the same contract —

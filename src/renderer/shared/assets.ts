@@ -8,7 +8,7 @@ import type { Attachment } from './types';
  * the feature as unavailable instead of half-working.
  */
 
-const SCHEME_ROOT = 'nivora://assets/';
+const SCHEME_ROOT = 'taskly://assets/';
 
 /** URL for an `<img src>` or a link, from the stored asset name. */
 export function assetUrl(asset: string): string {

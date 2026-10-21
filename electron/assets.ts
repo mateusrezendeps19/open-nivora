@@ -9,11 +9,11 @@ import { pathToFileURL } from 'node:url';
  *
  * Files the user picks are copied into `userData/assets` and referenced from the
  * document by their name inside that directory. The renderer reads them back
- * over the `nivora://` scheme rather than `file://`, so the page keeps a tight
+ * over the `taskly://` scheme rather than `file://`, so the page keeps a tight
  * CSP and never gets a path to the rest of the disk.
  */
 
-export const ASSET_SCHEME = 'nivora';
+export const ASSET_SCHEME = 'taskly';
 const ASSET_HOST = 'assets';
 const MAX_BYTES = 25 * 1024 * 1024;
 
@@ -242,7 +242,7 @@ export function revealAsset(asset: unknown): void {
 }
 
 /* ------------------------------------------------------------------ *
- * nivora:// protocol
+ * taskly:// protocol
  * ------------------------------------------------------------------ */
 
 /** Must run before `app.whenReady`, which is why it is separate. */

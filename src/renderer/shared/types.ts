@@ -12,7 +12,7 @@ export interface ChecklistItem {
 
 /**
  * A file copied into the asset store under userData. `asset` is the path
- * relative to that store, which the renderer turns into a `nivora://` URL.
+ * relative to that store, which the renderer turns into a `taskly://` URL.
  */
 export interface Attachment {
   id: string;
@@ -182,7 +182,7 @@ export const BOARD_COLORS = [
 
 /**
  * Trello offers photo backgrounds from Unsplash, which needs the network and an
- * API key. Nivora stays offline: solid colors, these gradients, or a local
+ * API key. Taskly stays offline: solid colors, these gradients, or a local
  * image the user picks.
  */
 export const GRADIENTS: Gradient[] = [
@@ -236,7 +236,7 @@ export const GRADIENTS: Gradient[] = [
   },
 ];
 
-/** The palette the label editor offers. Our own values, in the Nivora ramp. */
+/** The palette the label editor offers. Our own values, in the Taskly ramp. */
 export const LABEL_COLORS = [
   '#4bce97',
   '#f5cd47',

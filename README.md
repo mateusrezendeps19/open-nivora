@@ -1,4 +1,6 @@
-# Nivora
+# Taskly
+
+<p align="center"><img src="resources/logo.png" alt="Taskly" width="360"></p>
 
 **An offline kanban board for the desktop, whose Electron shell was rebuilt from a reverse
 engineering analysis of the official Trello desktop app.**
@@ -8,7 +10,7 @@ engineering analysis of the official Trello desktop app.**
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-Nivora is two things at once. The **desktop shell** — the window inventory, the IPC contract, the
+Taskly is two things at once. The **desktop shell** — the window inventory, the IPC contract, the
 frameless title bar, the geometry — was reconstructed from evidence extracted out of the Trello
 desktop app's `app.asar` with [REA](https://github.com/morluto/rea). The **board interface** —
 cards, drag and drop, labels, attachments, automations — is original work, because Trello's own UI
@@ -103,7 +105,7 @@ card itself, regardless of checklist or due date, the action is **mark the card 
 
 Files are copied into `userData/assets`, named by their content hash (so the same file is never
 stored twice), capped at 25 MB. The renderer reads them through a dedicated privileged scheme,
-`nivora://assets/<name>`, registered in the main process — not through `file://`. That keeps the
+`taskly://assets/<name>`, registered in the main process — not through `file://`. That keeps the
 page's CSP tight and never hands it a path into the rest of the disk; the handler rejects anything
 that tries to escape the asset folder.
 
@@ -111,7 +113,7 @@ Removing an attachment, replacing the background image, or deleting a card drops
 away. There is also an orphan sweep at startup, which only runs when a document was genuinely read
 from disk — a seeded document references nothing, and the sweep would think everything is an orphan.
 
-Trello offers Unsplash photos, which needs the network and an API key. Nivora is offline, so the
+Trello offers Unsplash photos, which needs the network and an API key. Taskly is offline, so the
 equivalent here is picking a local file.
 
 ---
@@ -147,11 +149,16 @@ electron/
   windows.ts         the 10 windows of the original app, with the recovered geometry
   main.ts            IPC handlers, menu, find-in-page, lifecycle, navigation lock
   store.ts           JSON persistence in userData, atomic write via rename
-  assets.ts          asset store, nivora:// protocol, orphan sweep
+  migrate.ts         copies the boards from the userData folder of the app's old name, Nivora
+  assets.ts          asset store, taskly:// protocol, orphan sweep
   preload/
     bridge.ts        contextBridge: electron.{logger, ipc} with a channel allowlist
     main.ts          preload for the main window (also exposes init_config)
     window.ts        preload for every other window
+resources/
+  icon.png, icon.ico the app icon (window, taskbar, title bar, welcome screen)
+  logo.png           the Taskly wordmark
+  brand/             the original artwork both are cut from
 src/renderer/
   shared/            types, document, reducer, activity, automations, calendar, assets, tokens
   shared/settings/   the Settings tabs, used by both the modal and the window
@@ -169,6 +176,8 @@ tests/
   markdown.test.ts     the Markdown subset descriptions and comments are drawn from, and unsafe links
   textedit.test.ts     every toolbar button, list continuation and list nesting
   lists.test.ts        copying and moving lists, and when a stored file may be deleted
+  filter.test.ts       the Filtros semantics, the drop slot with hidden cards, deleted labels
+  migrate.test.ts      carrying the boards over from the old userData folder, never overwriting
   smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast,
                        sidebar rail, calendar month view, rescheduling by drag, dragging a card
                        onto the trash or the archive box, reordering by drag, comments and
@@ -203,7 +212,7 @@ Atlaskit token values were copied.
 
 [MIT](LICENSE) © 2026 Mateus Rezende
 
-"Trello" and its visual identity belong to Atlassian. Nivora does not use the trademark, does not
+"Trello" and its visual identity belong to Atlassian. Taskly does not use the trademark, does not
 reuse proprietary code or assets, and does not present itself as the official product. The reverse
 engineering covered interface facts — IPC channel names, file names, window dimensions, the shape
 of the `contextBridge` contract — the kind of fact that exists for interoperability.

@@ -13,7 +13,7 @@ interface BackgroundSettingsProps {
  * Board background: solid colors, gradients, or an image from disk.
  *
  * Trello also offers Unsplash photos, which needs the network and an API key.
- * Nivora is offline, so the equivalent is picking a local file, which gets
+ * Taskly is offline, so the equivalent is picking a local file, which gets
  * copied into the asset store.
  */
 export function BackgroundSettings({ board, dispatch }: BackgroundSettingsProps) {
