@@ -13,6 +13,7 @@ interface CardModalProps {
   card: Card;
   listTitle: string;
   labels: Label[];
+  labelUsage: (labelId: string) => { cards: number; rules: number };
   confirmDelete: boolean;
   onClose: () => void;
   dispatch: (action: Action) => void;
@@ -22,6 +23,7 @@ export function CardModal({
   card,
   listTitle,
   labels,
+  labelUsage,
   confirmDelete,
   onClose,
   dispatch,
@@ -193,6 +195,7 @@ export function CardModal({
               {editingLabels && (
                 <LabelEditor
                   labels={labels}
+                  usage={labelUsage}
                   dispatch={dispatch}
                   onClose={() => setEditingLabels(false)}
                 />

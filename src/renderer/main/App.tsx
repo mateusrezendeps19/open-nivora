@@ -5,7 +5,8 @@ import { bridge, hasShell } from '../shared/bridge';
 import { FindInPageChannel, WindowChannel } from '../shared/channels';
 import { TitleBar } from '../shared/components/TitleBar';
 import { referencedAssets, releasedAssets } from '../shared/document';
-import { EMPTY_FILTER, type CardFilter } from '../shared/filter';
+import { EMPTY_FILTER, withLabels, type CardFilter } from '../shared/filter';
+import { labelUsage } from '../shared/reducer';
 import type { Prefs } from '../shared/types';
 import { useDocument, useTheme } from '../shared/useDocument';
 import type { SettingsTab } from '../shared/settings/Settings';
@@ -53,6 +54,11 @@ export function App() {
   );
 
   const archived = useMemo(() => archivedCards(activeBoard), [activeBoard]);
+  // What everything draws against: the filter minus labels deleted since they were ticked.
+  const shownFilter = useMemo(
+    () => withLabels(filter, doc.labels.map((label) => label.id)),
+    [filter, doc.labels],
+  );
 
   const openCard = useMemo(() => {
     if (!openCardId) return null;
@@ -153,7 +159,7 @@ export function App() {
     <div className="app">
       <TitleBar title={`${activeBoard.title} - Nivora`}>
         <Toolbar
-          filter={filter}
+          filter={shownFilter}
           labels={doc.labels}
           view={view}
           onQueryChange={setQuery}
@@ -182,7 +188,7 @@ export function App() {
           <Calendar
             board={activeBoard}
             labels={doc.labels}
-            filter={filter}
+            filter={shownFilter}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
             onCardDragChange={setDragCardId}
@@ -192,7 +198,7 @@ export function App() {
             board={activeBoard}
             boards={doc.boards}
             labels={doc.labels}
-            filter={filter}
+            filter={shownFilter}
             onClearFilter={() => setFilter(EMPTY_FILTER)}
             dispatch={dispatch}
             onOpenCard={setOpenCardId}
@@ -235,6 +241,7 @@ export function App() {
           card={openCard.card}
           listTitle={openCard.list.title}
           labels={doc.labels}
+          labelUsage={(labelId) => labelUsage(doc, labelId)}
           confirmDelete={doc.prefs.confirmCardDelete}
           onClose={() => setOpenCardId(null)}
           dispatch={dispatch}

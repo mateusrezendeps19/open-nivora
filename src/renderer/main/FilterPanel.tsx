@@ -33,6 +33,11 @@ const ACTIVITY: { id: ActivityWindow; label: string }[] = [
   { id: 'stale', label: 'Sem atividade nas ultimas quatro semanas' },
 ];
 
+const MATCH: { id: CardFilter['labelMatch']; label: string }[] = [
+  { id: 'any', label: 'qualquer uma' },
+  { id: 'all', label: 'todas' },
+];
+
 function toggle<T>(values: T[], value: T): T[] {
   return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value];
 }
@@ -70,100 +75,123 @@ export function FilterPanel({ filter, labels, trigger, onChange, onClose }: Filt
         </button>
       </header>
 
-      <section className="filter__group">
-        <label className="filter__title" htmlFor="filter-keyword">
-          Palavra-chave
-        </label>
-        <input
-          id="filter-keyword"
-          className="field"
-          type="search"
-          value={filter.keyword}
-          autoFocus
-          placeholder="Digite uma palavra-chave..."
-          onChange={(event) => set({ keyword: event.target.value })}
-        />
-        <p className="filter__hint">Procura no titulo e na descricao dos cartoes.</p>
-      </section>
+      <div className="filter__body">
+        <section className="filter__group">
+          <label className="filter__title" htmlFor="filter-keyword">
+            Palavra-chave
+          </label>
+          <input
+            id="filter-keyword"
+            className="field"
+            type="search"
+            value={filter.keyword}
+            autoFocus
+            placeholder="Digite uma palavra-chave..."
+            onChange={(event) => set({ keyword: event.target.value })}
+          />
+          <p className="filter__hint">Procura no titulo e na descricao dos cartoes.</p>
+        </section>
 
-      <section className="filter__group">
-        <h4 className="filter__title">Status do cartao</h4>
-        {option('done', filter.done, () => set({ done: !filter.done }), 'Marcado como concluido')}
-        {option('open', filter.open, () => set({ open: !filter.open }), 'Nao marcado como concluido')}
-      </section>
+        <section className="filter__group">
+          <h4 className="filter__title">Status do cartao</h4>
+          {option('done', filter.done, () => set({ done: !filter.done }), 'Marcado como concluido')}
+          {option('open', filter.open, () => set({ open: !filter.open }), 'Nao marcado como concluido')}
+        </section>
 
-      <section className="filter__group">
-        <h4 className="filter__title">Data de entrega</h4>
-        {DUE.map((entry) =>
-          option(
-            entry.id,
-            filter.due.includes(entry.id),
-            () => set({ due: toggle(filter.due, entry.id) }),
+        <section className="filter__group">
+          <h4 className="filter__title">Data de entrega</h4>
+          {DUE.map((entry) =>
+            option(
+              entry.id,
+              filter.due.includes(entry.id),
+              () => set({ due: toggle(filter.due, entry.id) }),
+              <>
+                <span className={`filter__due filter__due--${entry.tone}`} aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M8 4.8V8l2.2 1.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </span>
+                {entry.label}
+              </>,
+            ),
+          )}
+        </section>
+
+        <section className="filter__group">
+          <h4 className="filter__title">Etiquetas</h4>
+          {option(
+            'no-labels',
+            filter.noLabels,
+            () => set({ noLabels: !filter.noLabels }),
             <>
-              <span className={`filter__due filter__due--${entry.tone}`} aria-hidden="true">
-                <svg width="12" height="12" viewBox="0 0 16 16">
-                  <circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                  <path d="M8 4.8V8l2.2 1.6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              </span>
-              {entry.label}
+              <span className="filter__chip filter__chip--none" aria-hidden="true" />
+              Sem etiquetas
             </>,
-          ),
-        )}
-      </section>
+          )}
+          {labels.map((label) =>
+            option(
+              label.id,
+              filter.labels.includes(label.id),
+              () => set({ labels: toggle(filter.labels, label.id) }),
+              <span className="filter__chip" style={{ background: label.color }} title={label.name}>
+                {label.name}
+              </span>,
+            ),
+          )}
+          {/*
+            "Qualquer correspondencia / Correspondencia exata" in Trello. Two
+            buttons and not a select: the select was disabled until two labels
+            were ticked, and read as a dropdown that would not open. Both
+            choices are always there, and the one in force is lit.
+          */}
+          <div className="filter__match" role="radiogroup" aria-label="Como combinar as etiquetas">
+            <span className="filter__match-label">Cartoes com</span>
+            {MATCH.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                role="radio"
+                aria-checked={filter.labelMatch === entry.id}
+                className={`filter__match-btn${filter.labelMatch === entry.id ? ' filter__match-btn--on' : ''}`}
+                onClick={() => set({ labelMatch: entry.id })}
+              >
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <section className="filter__group">
-        <h4 className="filter__title">Etiquetas</h4>
-        {option(
-          'no-labels',
-          filter.noLabels,
-          () => set({ noLabels: !filter.noLabels }),
-          <>
-            <span className="filter__chip filter__chip--none" aria-hidden="true" />
-            Sem etiquetas
-          </>,
-        )}
-        {labels.map((label) =>
-          option(
-            label.id,
-            filter.labels.includes(label.id),
-            () => set({ labels: toggle(filter.labels, label.id) }),
-            <span className="filter__chip" style={{ background: label.color }} title={label.name}>
-              {label.name}
-            </span>,
-          ),
-        )}
-        {/* "Qualquer correspondencia / Correspondencia exata" in Trello. */}
-        <select
-          className="field filter__match"
-          aria-label="Como combinar as etiquetas"
-          value={filter.labelMatch}
-          disabled={filter.labels.length < 2}
-          onChange={(event) => set({ labelMatch: event.target.value as CardFilter['labelMatch'] })}
+        <section className="filter__group">
+          <h4 className="filter__title">Atividade</h4>
+          {ACTIVITY.map((entry) =>
+            option(
+              entry.id,
+              filter.activity === entry.id,
+              // One at a time: the windows overlap, so two ticked would mean the wider.
+              () => set({ activity: filter.activity === entry.id ? null : entry.id }),
+              entry.label,
+            ),
+          )}
+        </section>
+
+      </div>
+
+      {/*
+        Out of the scrolling body so it is always in reach, and always there:
+        at the bottom of the list and only while filtering, it was a button
+        nobody saw.
+      */}
+      <footer className="filter__foot">
+        <button
+          type="button"
+          className="btn btn--subtle filter__clear"
+          disabled={!isFiltering(filter)}
+          onClick={() => onChange(EMPTY_FILTER)}
         >
-          <option value="any">Qualquer etiqueta marcada</option>
-          <option value="all">Todas as etiquetas marcadas</option>
-        </select>
-      </section>
-
-      <section className="filter__group">
-        <h4 className="filter__title">Atividade</h4>
-        {ACTIVITY.map((entry) =>
-          option(
-            entry.id,
-            filter.activity === entry.id,
-            // One at a time: the windows overlap, so two ticked would mean the wider.
-            () => set({ activity: filter.activity === entry.id ? null : entry.id }),
-            entry.label,
-          ),
-        )}
-      </section>
-
-      {isFiltering(filter) && (
-        <button type="button" className="btn btn--subtle filter__clear" onClick={() => onChange(EMPTY_FILTER)}>
           Limpar filtros
         </button>
-      )}
+      </footer>
     </div>
   );
 }

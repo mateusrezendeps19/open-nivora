@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { emptyBoard, emptyCard, emptyList, normalize, seedDocument } from '../src/renderer/shared/document';
-import { reducer, type Action } from '../src/renderer/shared/reducer';
-import { DEFAULT_LABELS, type BoardDocument } from '../src/renderer/shared/types';
+import { labelUsage, reducer, type Action } from '../src/renderer/shared/reducer';
+import { DEFAULT_LABELS, type BoardDocument, type Rule } from '../src/renderer/shared/types';
 
 /** A board with one list of cards titled a, b, c and a second, empty list. */
 function fixture(): BoardDocument {
@@ -51,6 +51,57 @@ test('criar e editar etiquetas vale para o documento inteiro', () => {
 
   // O id nao muda, entao os cartoes que ja usavam a etiqueta continuam ligados.
   assert.equal(renamed.labels[renamed.labels.length - 1].id, added.id);
+});
+
+test('excluir uma etiqueta a tira de todos os cartoes, de todos os quadros', () => {
+  const doc = fixture();
+  const other = emptyBoard('Outro', '#000');
+  const list = emptyList('L');
+  list.cards = [{ ...emptyCard('arquivado'), labelIds: ['lbl-red'], archivedAt: '2026-10-01T00:00:00.000Z' }];
+  other.lists = [list];
+  doc.boards = [...doc.boards, other];
+  const [a, b] = doc.boards[0].lists[0].cards;
+  a.labelIds = ['lbl-red', 'lbl-green'];
+  b.labelIds = ['lbl-green'];
+
+  assert.equal(labelUsage(doc, 'lbl-red').cards, 2);
+  const next = run(doc, { type: 'label/remove', labelId: 'lbl-red' });
+
+  assert.ok(!next.labels.some((label) => label.id === 'lbl-red'));
+  assert.deepEqual(next.boards[0].lists[0].cards[0].labelIds, ['lbl-green']);
+  // O cartao arquivado de outro quadro tambem: restaura-lo traria de volta um id sem etiqueta.
+  assert.deepEqual(next.boards[1].lists[0].cards[0].labelIds, []);
+  // Um cartao que nao a usava fica o mesmo objeto.
+  assert.equal(next.boards[0].lists[0].cards[1], doc.boards[0].lists[0].cards[1]);
+});
+
+test('excluir uma etiqueta remove ou corta as automacoes que dependem dela', () => {
+  const doc = fixture();
+  const rule = (id: string, trigger: Rule['trigger'], actions: Rule['actions']): Rule => ({
+    id,
+    name: id,
+    enabled: true,
+    trigger,
+    actions,
+  });
+  doc.boards[0].automations = [
+    rule('dispara', { type: 'label-added', labelId: 'lbl-red' }, [{ type: 'mark-card-done' }]),
+    rule('qualquer', { type: 'label-added', labelId: null }, [{ type: 'mark-card-done' }]),
+    rule('so-ela', { type: 'card-added' }, [{ type: 'add-label', labelId: 'lbl-red' }]),
+    rule('mista', { type: 'card-added' }, [
+      { type: 'remove-label', labelId: 'lbl-red' },
+      { type: 'clear-due' },
+    ]),
+    rule('alheia', { type: 'card-added' }, [{ type: 'add-label', labelId: 'lbl-green' }]),
+  ];
+
+  assert.equal(labelUsage(doc, 'lbl-red').rules, 3);
+  const next = run(doc, { type: 'label/remove', labelId: 'lbl-red' });
+  const rules = next.boards[0].automations;
+
+  assert.deepEqual(rules.map((entry) => entry.id), ['qualquer', 'mista', 'alheia']);
+  assert.deepEqual(rules[1].actions, [{ type: 'clear-due' }]);
+  assert.equal(rules[2], doc.boards[0].automations[4]);
 });
 
 test('arquivar guarda a data e mantem o cartao no lugar', () => {

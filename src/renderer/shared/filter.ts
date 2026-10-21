@@ -58,6 +58,16 @@ export function activeFilterCount(filter: CardFilter): number {
   );
 }
 
+/**
+ * The filter without labels that no longer exist. A deleted label left ticked
+ * would still count on the button and hide every card, with no box anywhere
+ * to untick. Returns the same object when there is nothing to drop.
+ */
+export function withLabels(filter: CardFilter, labelIds: string[]): CardFilter {
+  const labels = filter.labels.filter((id) => labelIds.includes(id));
+  return labels.length === filter.labels.length ? filter : { ...filter, labels };
+}
+
 export function isFiltering(filter: CardFilter): boolean {
   return activeFilterCount(filter) > 0;
 }

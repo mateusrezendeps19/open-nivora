@@ -49,6 +49,7 @@ export type Action =
   | { type: 'comment/remove'; cardId: string; activityId: string }
   | { type: 'label/add'; name: string; color: string }
   | { type: 'label/update'; labelId: string; patch: Partial<Omit<Label, 'id'>> }
+  | { type: 'label/remove'; labelId: string }
   | { type: 'rule/add'; rule: Rule }
   | { type: 'rule/update'; rule: Rule }
   | { type: 'rule/remove'; ruleId: string }
@@ -329,6 +330,26 @@ export function baseReducer(state: BoardDocument, action: Action): BoardDocument
         ),
       };
 
+    // Every board, not the active one: labels belong to the document. Archived
+    // cards too, or restoring one would bring back an id that names nothing.
+    case 'label/remove':
+      return {
+        ...state,
+        labels: state.labels.filter((label) => label.id !== action.labelId),
+        boards: state.boards.map((board) => ({
+          ...board,
+          lists: board.lists.map((list) => ({
+            ...list,
+            cards: list.cards.map((card) =>
+              card.labelIds.includes(action.labelId)
+                ? { ...card, labelIds: card.labelIds.filter((id) => id !== action.labelId) }
+                : card,
+            ),
+          })),
+          automations: rulesWithoutLabel(board.automations, action.labelId),
+        })),
+      };
+
     case 'rule/add':
       return mapActiveBoard(state, (board) => ({
         ...board,
@@ -403,6 +424,35 @@ export function copyList(list: List, title: string): List {
         };
       }),
   };
+}
+
+/**
+ * The rules left once a label is gone. A rule that triggers on the label could
+ * never fire again, so it goes; so does a step that adds or removes it, and a
+ * rule left with no steps. Pointing either at "any label" instead would change
+ * what the rule does without anyone having asked.
+ */
+export function rulesWithoutLabel(rules: Rule[], labelId: string): Rule[] {
+  return rules.flatMap((rule) => {
+    if (rule.trigger.type === 'label-added' && rule.trigger.labelId === labelId) return [];
+    const actions = rule.actions.filter((step) => step.labelId !== labelId);
+    if (actions.length === rule.actions.length) return [rule];
+    return actions.length ? [{ ...rule, actions }] : [];
+  });
+}
+
+/** What deleting a label touches, for the editor to say before it does. */
+export function labelUsage(doc: BoardDocument, labelId: string): { cards: number; rules: number } {
+  let cards = 0;
+  let rules = 0;
+  for (const board of doc.boards) {
+    for (const list of board.lists) {
+      cards += list.cards.filter((card) => card.labelIds.includes(labelId)).length;
+    }
+    const kept = rulesWithoutLabel(board.automations, labelId);
+    rules += board.automations.filter((rule) => !kept.some((entry) => entry === rule)).length;
+  }
+  return { cards, rules };
 }
 
 function mapActiveBoard(state: BoardDocument, fn: (board: Board) => Board): BoardDocument {

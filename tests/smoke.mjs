@@ -1037,6 +1037,62 @@ try {
       }, before);
     }
   });
+  await check('o painel de filtro combina etiquetas e tem Limpar sempre a vista', async () => {
+    await page.click('.toolbar__filter-btn');
+    await page.waitForSelector('.filter');
+    const clear = page.locator('.filter__foot .filter__clear');
+    // O bug: o seletor so funcionava com duas etiquetas marcadas e parecia nao abrir.
+    const all = page.locator('.filter__match-btn:text-is("todas")');
+    assert.equal(await all.isEnabled(), true);
+    await all.click();
+    assert.equal(await all.getAttribute('aria-checked'), 'true');
+
+    // Fora do corpo que rola: a vista sem rolar nada, mesmo no fim da lista.
+    assert.equal(await clear.isDisabled(), true, 'Limpar ativo sem filtro ligado');
+    const box = await clear.boundingBox();
+    const height = await page.evaluate(() => window.innerHeight);
+    assert.ok(box && box.y + box.height <= height, 'Limpar filtros fica fora da janela');
+
+    await page.locator('.filter__option', { hasText: 'Sem prazo' }).locator('input').check();
+    await clear.click();
+    assert.equal(await page.locator('.toolbar__filter-count').count(), 0, 'Limpar nao zerou');
+    assert.equal(await page.locator('.filter__match-btn:text-is("qualquer uma")').getAttribute('aria-checked'), 'true');
+    await page.click('.toolbar__filter-btn');
+  });
+
+  await check('uma etiqueta criada pode ser excluida e sai dos cartoes', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const name = `Apagar ${Date.now()}`;
+    await page.locator('.tile').first().click();
+    await page.waitForSelector('.modal__section-action');
+    await page.locator('.modal__section-action').click();
+    await page.locator('.labels__new').click();
+    await page.locator('.labels__row--new .field').fill(name);
+    await page.locator('.labels__row--new button:text-is("Criar")').click();
+    await page.locator(`.modal__label:text-is("${name}")`).click();
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const id = doc.labels.find((entry) => entry.name === name)?.id;
+      return id && doc.boards.some((b) => b.lists.some((l) => l.cards.some((c) => c.labelIds.includes(id))));
+    }, `a etiqueta "${name}" nao chegou ao cartao no boards.json`);
+
+    // Marcar a etiqueta no cartao e um clique fora do editor, que fecha.
+    if ((await page.locator('.labels').count()) === 0) await page.locator('.modal__section-action').click();
+    await page.locator(`.labels__pencil[aria-label="Editar ${name}"]`).click();
+    await page.locator('.labels__remove').click();
+    const confirm = page.locator('.labels__confirm');
+    assert.match(await confirm.textContent(), /sai de 1 cartao/);
+    await confirm.locator('button:text-is("Excluir")').click();
+
+    assert.equal(await page.locator(`.modal__label:text-is("${name}")`).count(), 0, 'a etiqueta continuou no cartao');
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return !doc.labels.some((entry) => entry.name === name);
+    }, `a etiqueta "${name}" continuou no boards.json`);
+    // O foco ficou no corpo depois da linha de confirmacao sumir, entao Escape fecha o cartao inteiro.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.modal__close', { state: 'detached' });
+  });
 } finally {
   await app?.close().catch(() => undefined);
   await rm(userData, { recursive: true, force: true }).catch(() => undefined);

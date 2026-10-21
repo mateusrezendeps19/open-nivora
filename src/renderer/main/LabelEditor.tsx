@@ -5,8 +5,21 @@ import './LabelEditor.css';
 
 interface LabelEditorProps {
   labels: Label[];
+  /** How many cards and rules use a label, for the delete confirmation. */
+  usage: (labelId: string) => { cards: number; rules: number };
   dispatch: (action: Action) => void;
   onClose: () => void;
+}
+
+/** What the confirmation says deleting will do; nothing is hidden behind "tem certeza". */
+function removalText(name: string, usage: { cards: number; rules: number }): string {
+  let text = `Excluir a etiqueta ${name}?`;
+  if (usage.cards) {
+    text += ` Ela sai de ${usage.cards} ${usage.cards === 1 ? 'cartao' : 'cartoes'}.`;
+  }
+  if (usage.rules === 1) text += ' 1 automacao que depende dela muda ou e removida.';
+  if (usage.rules > 1) text += ` ${usage.rules} automacoes que dependem dela mudam ou sao removidas.`;
+  return `${text} Nao da para desfazer.`;
 }
 
 /**
@@ -20,15 +33,16 @@ interface LabelEditorProps {
  * every board at once - which is why the panel says so rather than letting the
  * change look local to the card that opened it.
  *
- * There is no delete: a label is referenced by cards and by automation rules,
- * and removing one would have to decide what happens to the rules that trigger
- * on it. Renaming covers what the editor is for.
+ * Deleting asks first and says what it touches: the label leaves every card
+ * on every board, and the rules that depend on it change or go (see
+ * `rulesWithoutLabel`). There is no undo, as in Trello.
  */
-export function LabelEditor({ labels, dispatch, onClose }: LabelEditorProps) {
+export function LabelEditor({ labels, usage, dispatch, onClose }: LabelEditorProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [creating, setCreating] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [newColor, setNewColor] = useState<string>(LABEL_COLORS[0]);
 
   useEffect(() => {
@@ -53,6 +67,13 @@ export function LabelEditor({ labels, dispatch, onClose }: LabelEditorProps) {
     setEditingId(label.id);
     setDraft(label.name);
     setCreating(false);
+    setRemovingId(null);
+  }
+
+  function remove(label: Label) {
+    dispatch({ type: 'label/remove', labelId: label.id });
+    setRemovingId(null);
+    setEditingId(null);
   }
 
   function commitName(label: Label) {
@@ -100,9 +121,10 @@ export function LabelEditor({ labels, dispatch, onClose }: LabelEditorProps) {
         // Escape belongs to the panel while it is open; without this it
         // reaches the window listener and closes the whole card.
         event.stopPropagation();
-        if (editingId || creating) {
+        if (editingId || creating || removingId) {
           setEditingId(null);
           setCreating(false);
+          setRemovingId(null);
           return;
         }
         onClose();
@@ -120,7 +142,19 @@ export function LabelEditor({ labels, dispatch, onClose }: LabelEditorProps) {
       <ul className="labels__list">
         {labels.map((label) => (
           <li key={label.id} className="labels__row">
-            {editingId === label.id ? (
+            {removingId === label.id ? (
+              <div className="labels__confirm" role="alertdialog" aria-label={`Excluir ${label.name}`}>
+                <p>{removalText(label.name, usage(label.id))}</p>
+                <div className="labels__confirm-actions">
+                  <button type="button" className="btn btn--danger" onClick={() => remove(label)}>
+                    Excluir
+                  </button>
+                  <button type="button" className="btn btn--subtle" onClick={() => setRemovingId(null)}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : editingId === label.id ? (
               <div className="labels__edit">
                 <input
                   className="field"
@@ -136,6 +170,22 @@ export function LabelEditor({ labels, dispatch, onClose }: LabelEditorProps) {
                 {palette(label.color, (color) =>
                   dispatch({ type: 'label/update', labelId: label.id, patch: { color } }),
                 )}
+                {/*
+                  mousedown is cancelled so the name field keeps the focus: its
+                  blur commits and closes this row, which would unmount the
+                  button before the click that was meant for it.
+                */}
+                <button
+                  type="button"
+                  className="labels__remove"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    commitName(label);
+                    setRemovingId(label.id);
+                  }}
+                >
+                  Excluir etiqueta
+                </button>
               </div>
             ) : (
               <>

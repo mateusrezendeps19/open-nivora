@@ -60,8 +60,14 @@
   list-style: none;
 }
 
+/*
+ * Rows never shrink: the list is a flex column that scrolls, and a row in edit
+ * mode is taller than the rest - shrinkable, it was squeezed under the rows
+ * below it and its controls ended up covered.
+ */
 .labels__row {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: var(--space-50);
   min-height: 32px;
@@ -88,6 +94,11 @@
 .labels__row .field {
   flex: 1 1 140px;
   min-width: 0;
+}
+
+/* In the edit column, the row rule's 140px basis would be a height. */
+.labels__edit .field {
+  flex: 0 0 auto;
 }
 
 .labels__chip {
@@ -155,4 +166,43 @@
 .labels__new:hover {
   background: var(--surface-pressed);
   color: var(--text);
+}
+
+.labels__remove {
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.labels__remove:hover {
+  background: var(--surface-hover);
+}
+
+.labels__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-100);
+  width: 100%;
+  padding: var(--space-100);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 12px;
+}
+
+.labels__confirm p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.labels__confirm-actions {
+  display: flex;
+  gap: var(--space-50);
+}
+
+.labels__confirm-actions .btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
 }

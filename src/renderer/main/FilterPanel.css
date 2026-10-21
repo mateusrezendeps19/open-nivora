@@ -3,9 +3,9 @@
  * the floating dock (20) and the card in flight (30), below the card modal and
  * the settings panel (50 and 60), which take the whole window when open.
  *
- * It is the one popover allowed to scroll. It is taller than the shortest
- * window the app allows, and unlike the card it is not a fixed shell: there is
- * no outer scroller here for a wheel gesture to be fought over.
+ * It is the one popover allowed to scroll, and only its body does: it is
+ * taller than the shortest window the app allows, and the header and the
+ * Limpar filtros footer stay put around it.
  */
 .filter {
   position: absolute;
@@ -13,9 +13,10 @@
   right: 0;
   z-index: 40;
   width: 320px;
+  display: flex;
+  flex-direction: column;
   max-height: calc(100vh - var(--titlebar-height) - var(--space-300));
-  overflow-y: auto;
-  padding: var(--space-100) var(--space-200) var(--space-200);
+  padding-top: var(--space-100);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface-overlay);
@@ -31,8 +32,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   height: 32px;
-  margin-bottom: var(--space-50);
+  margin: 0 var(--space-200) var(--space-50);
+}
+
+.filter__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-200);
+}
+
+.filter__foot {
+  flex: 0 0 auto;
+  padding: var(--space-100) var(--space-200) var(--space-150);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .filter__head h3 {
@@ -157,11 +172,45 @@
 }
 
 .filter__match {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   margin-top: var(--space-50);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
   font-size: 12px;
+}
+
+.filter__match-label {
+  padding: 0 var(--space-50);
+  color: var(--text-subtle);
+}
+
+.filter__match-btn {
+  flex: 1 1 0;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.filter__match-btn:hover {
+  color: var(--text);
+}
+
+.filter__match-btn--on {
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-raised);
 }
 
 .filter__clear {
   width: 100%;
-  margin-top: var(--space-100);
+}
+
+.filter__clear:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

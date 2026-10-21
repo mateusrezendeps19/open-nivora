@@ -240,9 +240,13 @@ search box, `Ctrl+K` and the Localizar window, so they can never disagree.
 - A hidden card is still in its list, so **the drop slot counts visible cards and the reducer
   counts all of them**. `slotToIndex` converts, after `toActionIndex`'s own off-by-one. Without
   it, a drop after the last visible card landed before it.
-- Clearing is in two places, the banner over the board and the popover. There is deliberately no
-  third beside the Filtros button: it came and went with the filter, changed the width of the
-  centred group and made the search box jump.
+- Clearing is in two places, the banner over the board and the popover's footer. The footer sits
+  outside the popover's scrolling body and is always shown (disabled with nothing on): at the end
+  of the list and only while filtering, nobody found it. There is deliberately no third beside the
+  Filtros button: it came and went with the filter, changed the width of the centred group and
+  made the search box jump.
+- Any/all label matching is two buttons, not a `<select>`: the select was disabled until two
+  labels were ticked and read as a dropdown that would not open.
 
 The title bar is a three-column grid - views, search + Filtros, actions - whose side columns
 share the leftover space, so the middle stays centred. At the window's minimum width (760) the
@@ -289,10 +293,21 @@ Two rules hold the feed together:
 `replace` is excluded, like it is from automations: a document arriving from disk or from another
 window would otherwise log its whole history a second time.
 
-Labels live on the **document**, not on a board (`label/add` and `label/update` do not go through
-`mapActiveBoard`), so an edit from one card reaches every board. There is deliberately no
-`label/remove`: cards and automation rules point at label ids, and deleting one would have to
-decide what becomes of the rules that trigger on it.
+Labels live on the **document**, not on a board (`label/add`, `label/update` and `label/remove`
+do not go through `mapActiveBoard`), so an edit from one card reaches every board. Cards and
+automation rules point at label ids, so `label/remove` cleans up after itself on every board:
+
+- the id leaves every card, **archived ones included**, or restoring one would bring back an id
+  that names nothing;
+- `rulesWithoutLabel` drops a rule that triggers on the label (it could never fire again), drops
+  steps that add or remove it, and drops a rule left with no steps. Re-pointing a trigger at "any
+  label" was rejected: it changes what the rule does without anyone asking;
+- the editor's confirmation says how many cards and rules it touches (`labelUsage`), and there is
+  no undo, as in Trello. Nothing is written to the cards' history.
+
+The filter is the one place an id can outlive its label, since it is not in the document: `App`
+draws against `withLabels(filter, ...)`, or a deleted label left ticked would hide every card
+with no box anywhere to untick.
 
 ### Due dates
 

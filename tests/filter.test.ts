@@ -7,6 +7,7 @@ import {
   EMPTY_FILTER,
   isShown,
   matchesFilter,
+  withLabels,
   type CardFilter,
 } from '../src/renderer/shared/filter';
 import type { Card } from '../src/renderer/shared/types';
@@ -136,4 +137,13 @@ test('a vaga entre os visiveis cai no lugar certo da lista inteira', () => {
 test('uma lista sem nada visivel recebe o cartao no fim', () => {
   const hidden = card({ title: 'x', archivedAt: iso(-DAY) });
   assert.equal(slotToIndex([hidden], 'outro', () => false, 0), 1);
+});
+
+test('uma etiqueta excluida sai do filtro em vez de esconder tudo', () => {
+  const ticked = filter({ labels: ['lbl-red', 'lbl-gone'] });
+  const live = withLabels(ticked, ['lbl-red', 'lbl-green']);
+  assert.deepEqual(live.labels, ['lbl-red']);
+  assert.equal(activeFilterCount(withLabels(filter({ labels: ['lbl-gone'] }), ['lbl-red'])), 0);
+  // Nada a tirar: o mesmo objeto, para nao refazer o quadro a toa.
+  assert.equal(withLabels(live, ['lbl-red']), live);
 });
