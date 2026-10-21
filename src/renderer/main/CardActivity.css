@@ -5,8 +5,8 @@
   gap: var(--space-100);
 }
 
-.activity__compose textarea {
-  resize: vertical;
+.activity__compose .rich {
+  align-self: stretch;
 }
 
 .activity__empty {
@@ -42,10 +42,9 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Line breaks and wrapping are RichText's now; pre-wrap here would double them. */
 .activity__text {
   margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .activity__dot {

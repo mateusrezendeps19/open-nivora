@@ -166,10 +166,12 @@ tests/
   activity.test.ts     which actions become history, and who may rewrite it
   calendar.test.ts     month grid, week start, local-time due dates, grouping, elapsed time
   carddrag.test.ts     the drag the board draws and the move it commits land in the same place
+  markdown.test.ts     the Markdown subset descriptions and comments are drawn from, and unsafe links
+  textedit.test.ts     every toolbar button, list continuation and list nesting
   smoke.mjs            preload, allowlist, title bar, persistence, background, assets, contrast,
                        sidebar rail, calendar month view, rescheduling by drag, dragging a card
                        onto the trash or the archive box, reordering by drag, comments and
-                       label creation
+                       label creation, formatting by toolbar and shortcut
 docs/
   REVERSE-ENGINEERING.md      the analysis report
   rea-evidence-summary.json   extract of the REA evidence

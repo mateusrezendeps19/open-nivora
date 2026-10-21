@@ -639,7 +639,9 @@ try {
 
     await page.locator('.activity__compose textarea').fill(comment);
     await page.locator('.activity__compose button:text-is("Comentar")').click();
-    await page.waitForSelector(`.activity__text:text-is("${comment}")`, { timeout: 5_000 });
+    // O comentario e desenhado como Markdown: o texto fica no paragrafo dentro
+    // de .activity__text, e e esse o menor elemento que :text-is encontra.
+    await page.waitForSelector(`.activity__text :text-is("${comment}")`, { timeout: 5_000 });
 
     // Marcar como concluido pelo modal escreve a proxima linha.
     await page.locator('.modal__done').click();
@@ -681,6 +683,67 @@ try {
         kinds.filter((kind) => kind === 'event').length >= 2
       );
     }, `o comentario, a atividade ou a etiqueta "${label}" nao chegaram ao boards.json`);
+
+    await page.locator('.modal__close').click();
+  });
+
+  await check('descricao e comentarios aceitam formatacao pela barra e por atalho', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    const title = `Cartao formatado ${Date.now()}`;
+
+    const column = page.locator('.column').first();
+    await column.locator('.composer__open').click();
+    await column.locator('.composer__input').fill(title);
+    await column.locator('.composer__input').press('Enter');
+    await column.locator('.composer__input').press('Escape');
+    await page.locator('.tile').filter({ hasText: title }).click();
+    await page.waitForSelector('.modal');
+
+    // Descricao: atalho de negrito, botao de lista, Enter continua a lista.
+    await page.click('.modal__description-empty');
+    await page.keyboard.type('Plano ');
+    await page.keyboard.press('Control+b');
+    await page.keyboard.type('urgente');
+    await page.keyboard.press('End');
+    await page.keyboard.press('Enter');
+    await page.click('.modal__description .rich__tool[aria-label="Lista com marcadores"]');
+    await page.keyboard.type('primeiro');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('segundo');
+    await page.click('.modal__description-actions button:text-is("Salvar")');
+
+    const view = page.locator('.modal__description-view');
+    await view.locator('strong:text-is("urgente")').waitFor({ timeout: 5_000 });
+    assert.deepEqual(await view.locator('li').allTextContents(), ['primeiro', 'segundo']);
+
+    // Comentario: botao de italico, enviado com Ctrl+Enter.
+    const box = page.locator('.activity__compose .rich__input');
+    await box.click();
+    await page.keyboard.type('Revisar ');
+    await page.click('.activity__compose .rich__tool[aria-label^="Italico"]');
+    await page.keyboard.type('hoje');
+    await page.keyboard.press('Control+Enter');
+    await page.locator('.activity__text em:text-is("hoje")').waitFor({ timeout: 5_000 });
+
+    // O documento guarda Markdown, como o Trello guarda.
+    await waitFor(async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      const card = doc.boards
+        .flatMap((board) => board.lists)
+        .flatMap((list) => list.cards)
+        .find((entry) => entry.title === title);
+      return (
+        card?.description === ['Plano **urgente**', '- primeiro', '- segundo'].join('\n') &&
+        card.activity.some((entry) => entry.kind === 'comment' && entry.text === 'Revisar *hoje*')
+      );
+    }, `"${title}" nao ficou com a descricao e o comentario em Markdown no boards.json`);
+
+    // Escape na edicao de um comentario cancela a edicao e nao fecha o cartao.
+    await page.locator('.activity__link:text-is("Editar")').first().click();
+    await page.locator('.activity__item .rich__input').waitFor({ timeout: 5_000 });
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.activity__item .rich').count(), 0, 'a edicao nao fechou');
+    assert.equal(await page.locator('.modal').count(), 1, 'Escape fechou o cartao inteiro');
 
     await page.locator('.modal__close').click();
   });

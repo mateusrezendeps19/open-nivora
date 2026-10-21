@@ -1,0 +1,99 @@
+/*
+ * Formatted text inside the card. Nothing here may scroll: the card body is
+ * the one scrolling surface (see CardModal.css), so a long line of code wraps
+ * instead of getting a scrollbar of its own that would catch the wheel.
+ */
+.rich-text {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.rich-text > :first-child {
+  margin-top: 0;
+}
+
+.rich-text > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text p {
+  margin: 0 0 var(--space-100);
+}
+
+.rich-text h1,
+.rich-text h2,
+.rich-text h3 {
+  margin: var(--space-150) 0 var(--space-50);
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.rich-text h1 {
+  font-size: 20px;
+}
+
+.rich-text h2 {
+  font-size: 17px;
+}
+
+.rich-text h3 {
+  font-size: 15px;
+}
+
+.rich-text ul,
+.rich-text ol {
+  margin: 0 0 var(--space-100);
+  padding-left: 22px;
+}
+
+.rich-text li + li {
+  margin-top: 2px;
+}
+
+.rich-text li > ul,
+.rich-text li > ol {
+  margin: 2px 0 0;
+}
+
+.rich-text blockquote {
+  margin: 0 0 var(--space-100);
+  padding: 2px 0 2px var(--space-150);
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-subtle);
+}
+
+.rich-text code {
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.rich-text pre {
+  margin: 0 0 var(--space-100);
+  padding: var(--space-100) 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  white-space: pre-wrap;
+}
+
+.rich-text pre code {
+  padding: 0;
+  background: none;
+}
+
+.rich-text hr {
+  margin: var(--space-150) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.rich-text a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.rich-text a:hover {
+  text-decoration: underline;
+}

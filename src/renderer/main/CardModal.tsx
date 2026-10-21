@@ -6,6 +6,8 @@ import { fromDateInput, toDateInput } from '../shared/calendar';
 import { Attachments } from './Attachments';
 import { CardActivity } from './CardActivity';
 import { LabelEditor } from './LabelEditor';
+import { RichEditor } from './RichEditor';
+import { RichText } from './RichText';
 import './CardModal.css';
 
 interface CardModalProps {
@@ -30,6 +32,7 @@ export function CardModal({
   const [checkItem, setCheckItem] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [editingLabels, setEditingLabels] = useState(false);
+  const [editingDescription, setEditingDescription] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Switching cards while the modal is open has to reload the drafts.
@@ -39,6 +42,12 @@ export function CardModal({
     setConfirming(false);
     setEditingLabels(false);
   }, [card.id, card.description, card.title]);
+
+  // Only a different card ends the editing; the description changing under
+  // it is this editor's own save arriving back from the store.
+  useEffect(() => {
+    setEditingDescription(false);
+  }, [card.id]);
 
   useEffect(() => {
     dialogRef.current?.focus();
@@ -57,6 +66,16 @@ export function CardModal({
     if (description !== card.description) {
       dispatch({ type: 'card/update', cardId: card.id, patch: { description } });
     }
+  }
+
+  function saveDescription() {
+    commitDescription();
+    setEditingDescription(false);
+  }
+
+  function cancelDescription() {
+    setDescription(card.description);
+    setEditingDescription(false);
   }
 
   function toggleLabel(labelId: string) {
@@ -213,16 +232,85 @@ export function CardModal({
               </div>
             </section>
 
-            <section className="modal__section">
-              <h3>Descricao</h3>
-              <textarea
-                className="field modal__description"
-                rows={5}
-                value={description}
-                placeholder="Adicione mais detalhes..."
-                onChange={(event) => setDescription(event.target.value)}
-                onBlur={commitDescription}
-              />
+            {/*
+              Read formatted, edited on demand, as in Trello. Leaving the
+              editor by clicking elsewhere saves - the old textarea saved on
+              blur, and nobody should lose a description for not pressing
+              Salvar - but leaves it open. Folding it into the shorter
+              formatted view at that moment would move everything below it
+              up in the middle of the click that left, and that click would
+              land on whatever slid under the pointer.
+            */}
+            <section
+              className="modal__section"
+              onBlur={(event) => {
+                if (!editingDescription) return;
+                if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+                commitDescription();
+              }}
+            >
+              <h3>
+                Descricao
+                {!editingDescription && card.description && (
+                  <button
+                    type="button"
+                    className="modal__description-edit"
+                    onClick={() => setEditingDescription(true)}
+                  >
+                    Editar
+                  </button>
+                )}
+              </h3>
+              {editingDescription ? (
+                <>
+                  <RichEditor
+                    autoFocus
+                    value={description}
+                    ariaLabel="Descricao"
+                    placeholder="Adicione mais detalhes..."
+                    onChange={setDescription}
+                    onSubmit={saveDescription}
+                    onCancel={cancelDescription}
+                    className="modal__description"
+                  />
+                  <div className="modal__description-actions">
+                    <button type="button" className="btn btn--primary" onClick={saveDescription}>
+                      Salvar
+                    </button>
+                    <button type="button" className="btn btn--subtle" onClick={cancelDescription}>
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              ) : card.description ? (
+                <div
+                  className="modal__description-view"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Editar descricao"
+                  // A click on a link follows the link; anywhere else edits.
+                  onClick={(event) => {
+                    if ((event.target as HTMLElement).closest('a')) return;
+                    setEditingDescription(true);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && event.target === event.currentTarget) {
+                      event.preventDefault();
+                      setEditingDescription(true);
+                    }
+                  }}
+                >
+                  <RichText source={card.description} />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="modal__description-empty"
+                  onClick={() => setEditingDescription(true)}
+                >
+                  Adicione uma descricao mais detalhada...
+                </button>
+              )}
             </section>
 
             <Attachments card={card} dispatch={dispatch} />

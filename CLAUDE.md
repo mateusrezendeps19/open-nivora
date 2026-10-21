@@ -154,6 +154,35 @@ real app's own reposition token is made of. New motion belongs on that scale, an
 gets the pairing that matches what it is. Every animation is switched off under
 `prefers-reduced-motion`.
 
+### Formatted text
+
+Descriptions and comments are stored as **Markdown**, as Trello stores them; text written before
+the editor existed is plain text, which is already valid, so nothing is migrated. Three pieces:
+
+- `shared/markdown.ts` parses a subset into a tree. `RichText` turns the tree into React
+  elements. **There is no HTML string anywhere** and there must never be one - no
+  `dangerouslySetInnerHTML` - because that is the whole of the XSS story. Links are only
+  `http(s)`/`mailto`; anything else stays text. They open with `target="_blank"`, which the
+  main process routes to the system browser; nothing may navigate the app window.
+- `shared/textEdit.ts` is what the toolbar does, as pure functions over value + selection, all
+  unit-tested. Blank lines do not count when deciding whether a toggle adds or removes.
+- `RichEditor` applies those edits through `execCommand('insertText')` on just the changed span,
+  so they land on the textarea's own undo stack. The selection is parked for after a render only
+  on the fallback path: parked by an edit that rendered nothing, it waited for the next
+  keystroke's render and scrambled the typing.
+
+Activity **events** stay plain text on purpose: they quote card and list titles, and a title with
+an asterisk must not italicise the history.
+
+Neither editor folds up when it loses focus. Folding moves everything below it in the middle of
+the click that took the focus away, and the click lands on whatever slid under the pointer -
+which is how "Editar" on the comment right under the comment box stopped working. The editor
+also owns `Escape` and `Ctrl+K` while focused (`stopPropagation`), because `App` listens for
+both on the window to close the card and to focus the search.
+
+The comment box's toolbar drops Titulo and Bloco de codigo (`fullOnly`): the side column is
+300px wide at the window's minimum size and the full toolbar does not fit on one row.
+
 ### Archived cards
 
 `card/archive` sets `archivedAt` rather than moving the card: it stays in its list at its own

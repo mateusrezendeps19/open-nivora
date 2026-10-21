@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { relativeTime } from '../shared/calendar';
 import type { Action } from '../shared/reducer';
 import type { Card } from '../shared/types';
+import { RichEditor } from './RichEditor';
+import { RichText } from './RichText';
 import './CardActivity.css';
 
 interface CardActivityProps {
@@ -16,6 +18,11 @@ interface CardActivityProps {
  * Only comments can be edited or deleted. The events are the record of what
  * happened to the card, and a history worth having is not one the card's owner
  * can rewrite.
+ *
+ * Comments are Markdown, written with the editor's toolbar and read formatted.
+ * Events are drawn as plain text on purpose: their wording is composed by the
+ * reducer and quotes card and list titles, and a title with an asterisk in it
+ * must not turn the history line italic.
  */
 export function CardActivity({ card, dispatch }: CardActivityProps) {
   const [draft, setDraft] = useState('');
@@ -52,20 +59,18 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
       </h3>
 
       <div className="activity__compose">
-        <textarea
-          className="field"
-          rows={2}
+        {/*
+          Enter breaks the line and Ctrl+Enter sends. It used to be the other
+          way round, as in the composers, but a comment now has lists, and a
+          list is written one Enter per item.
+        */}
+        <RichEditor
+          compact
           value={draft}
           placeholder="Escreva um comentario..."
-          aria-label="Escreva um comentario"
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter sends and Shift+Enter breaks the line, as in the composers.
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              submit();
-            }
-          }}
+          ariaLabel="Escreva um comentario"
+          onChange={setDraft}
+          onSubmit={submit}
         />
         <button type="button" className="btn btn--primary" disabled={!draft.trim()} onClick={submit}>
           Comentar
@@ -81,20 +86,15 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
               <li key={entry.id} className="activity__item activity__item--comment">
                 {editingId === entry.id ? (
                   <>
-                    <textarea
-                      className="field"
-                      rows={2}
+                    <RichEditor
                       autoFocus
                       value={editDraft}
-                      aria-label="Editar comentario"
-                      onChange={(event) => setEditDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault();
-                          commitEdit(entry.id);
-                        }
-                        if (event.key === 'Escape') setEditingId(null);
-                      }}
+                      ariaLabel="Editar comentario"
+                      onChange={setEditDraft}
+                      onSubmit={() => commitEdit(entry.id)}
+                      // Escape cancels the edit. It used to also reach the
+                      // window and close the whole card.
+                      onCancel={() => setEditingId(null)}
                     />
                     <div className="activity__actions">
                       <button
@@ -115,7 +115,7 @@ export function CardActivity({ card, dispatch }: CardActivityProps) {
                   </>
                 ) : (
                   <>
-                    <p className="activity__text">{entry.text}</p>
+                    <RichText className="activity__text" source={entry.text} />
                     <div className="activity__actions">
                       <span className="activity__when">
                         {relativeTime(entry.at)}

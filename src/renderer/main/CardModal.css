@@ -240,10 +240,61 @@
  * pointer, so the card would sit still while the user scrolled a textarea.
  * `field-sizing` is what the title already uses.
  */
-.modal__description {
-  field-sizing: content;
+.modal__description .rich__input {
   min-height: 96px;
-  resize: vertical;
+}
+
+.modal__description-actions {
+  display: flex;
+  gap: var(--space-50);
+  margin-top: var(--space-100);
+}
+
+.modal__description-edit {
+  float: right;
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: underline;
+}
+
+.modal__description-edit:hover {
+  color: var(--text);
+}
+
+.modal__description-view {
+  margin: 0 -8px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: text;
+  transition: background var(--motion-fast) var(--ease);
+}
+
+.modal__description-view:hover {
+  background: var(--surface-hover);
+}
+
+.modal__description-view:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+/* The empty state is a field-shaped prompt, so it reads as "type here". */
+.modal__description-empty {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-subtle);
+  text-align: left;
+  transition: background var(--motion-fast) var(--ease);
+}
+
+.modal__description-empty:hover {
+  background: var(--surface-hover);
 }
 
 .modal__progress {

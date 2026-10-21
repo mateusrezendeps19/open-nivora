@@ -268,6 +268,7 @@ próprio:
 | Estado "concluído" do cartão | `shared/types.ts`, `main/CardModal.tsx` | O Trello marca conclusão pelo `dueComplete` do prazo; aqui é um booleano no cartão, que funciona sem prazo e sem checklist. |
 | Anexos e imagens | `electron/assets.ts`, `main/Attachments.tsx` | Loja de ativos em `userData/assets` e protocolo `nivora://`. Os canais `assets-*` são invenção do Nivora, marcados como tal em `electron/channels.ts`. |
 | Automações | `shared/automations.ts`, `shared/settings/AutomationsSettings.tsx` | Inspirado no Butler do Trello, mas o motor, os gatilhos, as ações e as travas contra loop são desenho próprio. |
+| Texto formatado em descrição e comentários | `shared/markdown.ts`, `shared/textEdit.ts`, `main/RichEditor.tsx`, `main/RichText.tsx` | O editor do Trello não está no asar: varredura dos bundles por `prosemirror`, `tiptap`, `@atlaskit/editor`, `markdown-it` e `remark` dá zero, e os acertos de "Bold" são tokens de cor (`color.background.brand.bold`). Do Trello vem só o contrato - o texto é guardado em Markdown. O Trello edita em WYSIWYG; aqui é um textarea de Markdown com a barra de ferramentas e uma pré-visualização. |
 
 Os temas Atlaskit embutidos no asar provam que o app original usa um sistema de tokens, e
 `tokens.css` segue essa mesma estrutura — mas com cores e escalas próprias, nunca os valores da

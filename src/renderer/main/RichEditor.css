@@ -1,0 +1,147 @@
+/*
+ * The editor reads as one field: the toolbar and the textarea share the
+ * field's border and its focus ring, as in Trello, instead of a toolbar
+ * floating over a separate box.
+ */
+.rich {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  transition:
+    border-color var(--motion-fast) var(--ease),
+    background var(--motion-fast) var(--ease);
+}
+
+.rich:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.rich__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-50);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/*
+ * A compact box shows its toolbar from the first focus on, coming in on the
+ * recovered popup entrance - the same kind of thing appearing next to what
+ * the user is looking at. It never folds back; see RichEditor's `opened`.
+ */
+.rich--folded .rich__toolbar {
+  display: none;
+}
+
+.rich:not(.rich--folded) .rich__toolbar {
+  animation: var(--enter-popup);
+}
+
+.rich__group {
+  display: flex;
+  gap: 2px;
+}
+
+.rich__group + .rich__group {
+  margin-left: 2px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border-subtle);
+}
+
+/*
+ * 26px wide so the whole toolbar fits on one row in the card's side column,
+ * where the comment box lives.
+ */
+.rich__tool {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 28px;
+  /* The browser's own button padding would make every icon 28px regardless. */
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  transition:
+    background var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
+}
+
+.rich__tool:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.rich__tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.rich__glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.rich__glyph--heading {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.rich__glyph--bold {
+  font-weight: 800;
+}
+
+.rich__glyph--italic {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.rich__glyph--strike {
+  text-decoration: line-through;
+}
+
+.rich__mode {
+  margin-left: auto;
+}
+
+.rich__mode--on {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+/*
+ * Grows with what is typed instead of scrolling: the card body is the only
+ * scroller in the card, and a textarea with a scrollbar of its own would
+ * catch the wheel and leave the card standing still.
+ */
+.rich__input {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  field-sizing: content;
+  resize: none;
+  line-height: 1.5;
+}
+
+.rich__input:focus {
+  outline: none;
+}
+
+.rich__preview {
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.rich__preview:focus {
+  outline: none;
+}
+
+.rich__empty {
+  margin: 0;
+  color: var(--text-disabled);
+}
