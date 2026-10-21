@@ -129,6 +129,66 @@ Bundles de token do Atlaskit embutidos: `atlassian-light`, `atlassian-dark`,
 `atlassian-dark-increased-contrast`, `atlassian-custom-theme`, `atlassian-typography`,
 `atlassian-spacing`, `atlassian-shape`, `atlassian-motion`.
 
+### Movimento
+
+Segunda passagem da análise, feita sobre o mesmo asar (SHA-256 confere) com o REA 6.7.0:
+
+```bash
+rea extract-artifact /caminho/para/app.asar --format json
+```
+
+| | |
+|---|---|
+| `evidence_id` | `ev_6da7c2d721fc825268f5f6d8616c298fe9ff4089bed20922d0cc0b5ac8b6daa6` |
+| Provider | `rea-artifact-graph` v1 |
+| `confidence` | `observed` |
+| `authority` | `shipped-artifact` |
+| Arquivo | `.webpack/renderer/@atlaskit-internal_atlassian-motion/index.js`, 9.196 bytes |
+| SHA-256 | `e26b5e0a5d46dd5c885f32706f5fdc7f347d562088fa714acaa02e1ea8b38270` |
+
+O bundle é uma folha de estilo inteira em uma string: **20 keyframes** e **46 custom properties**
+sob `html[data-theme~="motion:motion"]`. Literalmente, dele:
+
+```css
+--ds-duration-xxshort: 50ms;   --ds-duration-xshort: 100ms;  --ds-duration-short: 150ms;
+--ds-duration-medium: 200ms;   --ds-duration-long: 250ms;    --ds-duration-xlong: 400ms;
+--ds-duration-xxlong: 600ms;   --ds-duration-instant: 0ms;
+
+--ds-easing-out-practical: cubic-bezier(0.4, 1, 0.6, 1);
+--ds-easing-out-bold:      cubic-bezier(0, 0.4, 0, 1);
+--ds-easing-in-practical:  cubic-bezier(0.6, 0, 0.8, 0.6);
+--ds-easing-inout-bold:    cubic-bezier(0.4, 0, 0, 1);
+--ds-easing-spring:        linear(0, 0.021, 0.058, ... 0.999, 1);   /* 65 paradas */
+
+--ds-modal-enter:    250ms cubic-bezier(0.4, 0, 0, 1) ScaleIn95to100 backwards;
+--ds-modal-exit:     200ms cubic-bezier(0.6, 0, 0.8, 0.6) ScaleOut100to95 forwards;
+--ds-blanket-enter:  250ms cubic-bezier(0.4, 0, 0, 1) FadeIn0to100 backwards;
+--ds-blanket-exit:   200ms cubic-bezier(0.6, 0, 0.8, 0.6) FadeOut100to0 forwards;
+--ds-popup-enter-bottom: 150ms cubic-bezier(0.4, 1, 0.6, 1) SlideInBottom8px backwards, ... ;
+--ds-popup-exit-bottom:  100ms cubic-bezier(0.6, 0, 0.8, 0.6) SlideOutBottom8px forwards, ... ;
+--ds-flag-reposition: transform 250ms cubic-bezier(0.4, 0, 0, 1);
+--ds-button-hovered:  background-color 150ms cubic-bezier(0.4, 1, 0.6, 1);
+--ds-listitem-hovered: background-color 50ms cubic-bezier(0.4, 1, 0.6, 1), ... ;
+```
+
+Três fatos saem daí, e nenhum deles é questão de gosto:
+
+1. **Entrar e sair não são simétricos.** O que entra leva 150–250 ms e desacelera (`out-*`,
+   `inout-bold`); o que sai leva 100–200 ms e acelera embora (`in-practical`). Uma curva só para
+   as duas direções é o que produz a sensação de "quase certo".
+2. **Reposicionar um elemento tem um token próprio** — `--ds-flag-reposition`, 250 ms em
+   `inout-bold`. É a resposta da própria evidência para "uma coisa indo para outro lugar".
+3. **As durações são uma escala**, não números avulsos: 50/100/150/200/250/400/600.
+
+Os outros bundles confirmam a escala em uso: `preferences/index.js` tem
+`animation-timing-function:cubic-bezier(0.4, 0.15, 0.6, 0.85)` em um spinner, e os preloads trazem
+três keyframes de carregamento e `transition: all .2s ease` no cromo injetado em `trello.com`.
+
+**Arrastar e soltar não está no asar.** Varredura dos 25 bundles por `beautiful-dnd`,
+`pragmatic-drag`, `isDragging` e `droppable`: zero ocorrências. O `cubic-bezier` só aparece nos
+dois arquivos acima. Ou seja: a *gramática* do movimento foi recuperada, o comportamento do
+quadro continua fora do binário, pelo mesmo motivo de sempre — ele vem de `trello.com`.
+
 ### Armazenamento
 
 Chaves de `local-storage` observadas, todas do cliente de analytics:
@@ -175,8 +235,21 @@ O REA reporta 17 limitações. As que importam para este trabalho:
 | `app-store` + `node-persist` | `electron/store.ts` — um JSON em `userData`, escrita atômica |
 | Titlebar desenhada pelo renderer (porque `frame:!1`) | `src/renderer/shared/components/TitleBar.tsx` |
 | Seis canais de `find-in-page` | `electron/main.ts` + `src/renderer/find_in_page/` |
-| Estrutura dos tokens Atlaskit (light/dark/typography/spacing/shape/motion) | `src/renderer/shared/styles/tokens.css`, com valores próprios |
+| Estrutura dos tokens Atlaskit (light/dark/typography/spacing/shape) | `src/renderer/shared/styles/tokens.css`, com valores próprios |
+| Escala de duração, quatro curvas e a mola do `atlassian-motion` | `src/renderer/shared/styles/tokens.css`, **com os valores do bundle** |
+| Formas de `FadeIn0to100`, `ScaleIn95to100`, `SlideInBottom8px` | `tokens.css`, com nomes da casa |
+| Pareamentos `--ds-blanket-enter`, `--ds-modal-enter`, `--ds-popup-enter-bottom` | `--enter-blanket`, `--enter-modal`, `--enter-popup` em `tokens.css`, aplicados ao modal do cartão, ao painel de arquivados, às Configuracoes, ao editor de etiquetas, ao menu da lista e ao dock |
+| `--ds-flag-reposition` (transform 250 ms `inout-bold`) | `src/renderer/main/useFlip.ts`, a animação de reposicionar cartões e listas |
+| `--ds-button-hovered` (150 ms `out-practical`) | `--ease` em `tokens.css`, a curva de todo `transition` de estado do app |
 | React 18.3.1 | `package.json` |
+
+**Sobre os valores de movimento.** As cores dos temas são projeto próprio e seguem só a *estrutura*
+dos bundles Atlaskit. O movimento é a exceção declarada: durações e curvas foram adotadas como
+estão no bundle, anotadas como recuperadas em `tokens.css`. Uma curva é a medida de como o app se
+move, da mesma categoria que a geometria das janelas e os nomes de canal que este repositório já
+copiou — e a correspondência é justamente o que foi pedido. O ângulo do cartão em voo, a aparência
+da vaga aberta e o tempo de vida do arraste não vêm daí: são nossos, porque o quadro não está no
+binário.
 
 **Implementação original, sem correspondência no binário:** todo o modelo de dados
 (`src/renderer/shared/types.ts`), o reducer (`reducer.ts`), arrastar e soltar, etiquetas, prazos,

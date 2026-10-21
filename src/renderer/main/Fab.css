@@ -77,6 +77,7 @@
   background: var(--surface-overlay);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-overlay);
+  animation: var(--enter-popup);
 }
 
 .fab-confirm__text {
@@ -112,7 +113,11 @@
   color: var(--text);
   font-weight: 500;
   box-shadow: var(--shadow-overlay);
-  animation: fab-archive-in var(--motion) var(--ease);
+  /*
+   * The same shape as the recovered `--ds-popup-enter-top` (an 8px rise plus a
+   * fade, 150ms on the out curve), with both halves in one keyframe.
+   */
+  animation: fab-archive-in var(--duration-short) var(--ease-out-practical);
   transition:
     background var(--motion-fast) var(--ease),
     border-color var(--motion-fast) var(--ease),

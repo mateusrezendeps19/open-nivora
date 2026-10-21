@@ -1,17 +1,23 @@
-import type { DragEvent } from 'react';
 import { assetUrl } from '../shared/assets';
 import type { Card, Label } from '../shared/types';
+import type { Grab } from './BoardCanvas';
+import { hideNativeDragImage } from './dragPreview';
 import './CardTile.css';
 
 interface CardTileProps {
   card: Card;
   labels: Label[];
+  /**
+   * This card is in flight. It stays in the list, dimmed, at the slot it would
+   * land in - it cannot be hidden, see cardDrag.
+   */
   dragging: boolean;
-  canAcceptDrag: boolean;
+  /** This tile *is* the card at the pointer: visual only, takes no input. */
+  preview?: boolean;
   onOpen: () => void;
-  onDragStart: () => void;
-  /** after = the pointer is past the vertical midpoint of this card. */
-  onHover: (after: boolean) => void;
+  onDragStart: (grab: Grab) => void;
+  /** Pointer position during the drag, for the card the board draws. */
+  onDragMove: (x: number, y: number) => void;
 }
 
 function dueState(due: string | null): 'none' | 'soon' | 'late' {
@@ -28,10 +34,10 @@ export function CardTile({
   card,
   labels,
   dragging,
-  canAcceptDrag,
+  preview = false,
   onOpen,
   onDragStart,
-  onHover,
+  onDragMove,
 }: CardTileProps) {
   const cardLabels = labels.filter((label) => card.labelIds.includes(label.id));
   const done = card.checklist.filter((item) => item.done).length;
@@ -40,25 +46,42 @@ export function CardTile({
     ? card.attachments.find((a) => a.id === card.coverAttachmentId && a.isImage)
     : undefined;
 
-  function onDragOver(event: DragEvent<HTMLButtonElement>) {
-    if (!canAcceptDrag) return;
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    onHover(event.clientY > rect.top + rect.height / 2);
-  }
-
   return (
     <button
       type="button"
-      className={`tile${dragging ? ' tile--dragging' : ''}${card.done ? ' tile--done' : ''}`}
-      draggable
-      onClick={onOpen}
+      className={[
+        'tile',
+        dragging ? 'tile--dragging' : '',
+        preview ? 'tile--preview' : '',
+        card.done ? 'tile--done' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      // The preview is a copy of a card that is also still in the list; one
+      // flip key per card, or the two would be measured as the same element.
+      data-flip={preview ? undefined : card.id}
+      draggable={!preview}
+      tabIndex={preview ? -1 : undefined}
+      onClick={preview ? undefined : onOpen}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', card.id);
-        onDragStart();
+        const rect = event.currentTarget.getBoundingClientRect();
+        onDragStart({
+          width: rect.width,
+          height: rect.height,
+          grabX: event.clientX - rect.left,
+          grabY: event.clientY - rect.top,
+          x: event.clientX,
+          y: event.clientY,
+          drawn: hideNativeDragImage(event.dataTransfer),
+        });
       }}
-      onDragOver={onDragOver}
+      // Chromium reports 0,0 for the last drag event of a gesture, which would
+      // throw the card into the top left corner right before it is dropped.
+      onDrag={(event) => {
+        if (event.clientX !== 0 || event.clientY !== 0) onDragMove(event.clientX, event.clientY);
+      }}
     >
       {cover && (
         <img className="tile__cover" src={assetUrl(cover.asset)} alt="" loading="lazy" />

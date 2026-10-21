@@ -516,6 +516,13 @@ try {
     await column.locator('.composer__input').press('Escape');
     await page.waitForSelector(`.tile__title:text-is("${title}")`, { timeout: 5_000 });
     const before = await page.locator('.tile').count();
+    const order = () =>
+      page.$$eval('.column', (columns) =>
+        columns.map((column) =>
+          [...column.querySelectorAll('.tile__title')].map((node) => node.textContent.trim()),
+        ),
+      );
+    const orderBefore = await order();
 
     // A caixa de arquivo so existe durante o arraste, entao o alvo tem de ser
     // resolvido com o cartao ja no ar: dragTo nao serve aqui.
@@ -558,6 +565,10 @@ try {
         .find((entry) => entry.title === title);
       return card?.archivedAt === null;
     }, `"${title}" nao foi restaurado no boards.json`);
+    // Levar o cartao ao dock arquiva, e so arquiva. O quadro desenha o arraste
+    // movendo o cartao de lugar, e sair do quadro tem de descartar esse
+    // movimento em vez de grava-lo junto com o arquivamento.
+    assert.deepEqual(await order(), orderBefore, 'o arraste ate a caixa de arquivo mexeu na ordem');
 
     // Sem arquivados, nem o painel nem a entrada na barra lateral continuam.
     assert.equal(await page.locator('.archive').count(), 0, 'o painel ficou aberto e vazio');
@@ -597,6 +608,14 @@ try {
 
     // O cartao abre com um tamanho fixo: enche-lo de conteudo nao o estica, a
     // rolagem acontece dentro dele e o fundo atras fica parado.
+    //
+    // A medida espera a animacao de abertura terminar. O cartao entra em
+    // escala (--enter-modal, recuperado do bundle de movimento), e uma caixa
+    // medida no meio da animacao vem 5% menor - o que a asercao abaixo leria
+    // como o cartao tendo crescido depois.
+    await page
+      .locator('.modal')
+      .evaluate((node) => Promise.all(node.getAnimations().map((a) => a.finished)));
     const opened = await page.locator('.modal').boundingBox();
     const checkField = page.locator('.modal__section:has-text("CHECKLIST") .field');
     for (let item = 1; item <= 12; item += 1) {
@@ -664,6 +683,71 @@ try {
     }, `o comentario, a atividade ou a etiqueta "${label}" nao chegaram ao boards.json`);
 
     await page.locator('.modal__close').click();
+  });
+
+  await check('o cartao cai onde o arraste mostrou que ele cairia', async () => {
+    const storePath = path.join(userData, 'boards.json');
+    /** A ordem visivel do quadro inteiro, lista por lista. */
+    const onScreen = () =>
+      page.$$eval('.column', (columns) =>
+        columns.map((column) =>
+          [...column.querySelectorAll('.tile__title')].map((node) => node.textContent.trim()),
+        ),
+      );
+    const inStore = async () => {
+      const doc = JSON.parse(await fs.readFile(storePath, 'utf8'));
+      return doc.boards[0].lists.map((list) =>
+        list.cards.filter((card) => !card.archivedAt).map((card) => card.title),
+      );
+    };
+
+    const column = page.locator('.column').nth(0);
+    const tile = column.locator('.tile').first();
+    const moving = (await tile.locator('.tile__title').textContent()).trim();
+    const before = await onScreen();
+
+    // Do topo para o fim da propria lista: e o caso em que o indice que o
+    // reducer espera nao e o indice que o quadro desenha, porque tirar o
+    // cartao da lista desloca todos os que vem depois.
+    const from = await tile.boundingBox();
+    const last = await column.locator('.tile').last().boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2 + 10, {
+      steps: 4,
+    });
+    // Abaixo do meio do ultimo cartao: depois dele. O segundo movimento, de um
+    // pixel, e para o dragover da posicao final chegar: o Chromium agrupa os
+    // eventos de arraste e o ultimo de um movimento rapido so sairia no drop.
+    await page.mouse.move(last.x + last.width / 2, last.y + last.height * 0.8, { steps: 12 });
+    await page.mouse.move(last.x + last.width / 2 + 1, last.y + last.height * 0.8, { steps: 2 });
+
+    // O quadro desenha o arraste com o movimento ja aplicado: o cartao ja esta
+    // no fim da lista e o lugar de onde saiu ja fechou. O que esta na tela
+    // agora e o que o drop tem de gravar.
+    await waitFor(
+      async () => (await onScreen())[0].at(-1) === moving,
+      `"${moving}" nao foi para o fim da lista durante o arraste`,
+    );
+    const drawn = await onScreen();
+    assert.notDeepEqual(drawn, before, 'o arraste nao mudou nada na tela');
+
+    await page.mouse.up();
+
+    // O desenho e o que ficou gravado tem de ser a mesma ordem. Com a conversao
+    // de indice de cardDrag.ts errada, o cartao cai uma casa ao lado do que o
+    // arraste prometeu, e so o caminho inteiro mostra isso.
+    await waitFor(
+      async () => JSON.stringify(await inStore()) === JSON.stringify(drawn),
+      `a ordem gravada nao e a que o arraste mostrou: esperava ${JSON.stringify(drawn)}`,
+    );
+    assert.deepEqual(await onScreen(), drawn, 'a ordem na tela mudou depois do drop');
+    assert.equal(
+      await page.locator('.tile--dragging').count(),
+      0,
+      'o cartao ficou com a aparencia de arraste depois do drop',
+    );
+    assert.equal(await page.locator('.drag-layer').count(), 0, 'a camada de arraste nao sumiu');
   });
 } finally {
   await app?.close().catch(() => undefined);

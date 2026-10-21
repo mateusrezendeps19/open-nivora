@@ -59,9 +59,50 @@
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --motion-fast: 100ms;
-  --motion: 180ms;
-  --ease: cubic-bezier(0.2, 0, 0, 1);
+  /*
+   * Motion, unlike the colors above, is recovered LITERAL from
+   * `.webpack/renderer/@atlaskit-internal_atlassian-motion/index.js` in the
+   * asar: the whole duration scale, the four easing curves and the spring, as
+   * the shipped bundle writes them. Colors are the product's own look and are
+   * ours; timing is a measurement of how the real app moves, the same kind of
+   * interface fact as the recovered window geometry, and the point of matching
+   * it is that the app should feel the same. See docs/REVERSE-ENGINEERING.md.
+   *
+   * The asymmetry is the part that matters: what enters takes longer and
+   * decelerates (out/inout), what leaves is quicker and accelerates away
+   * (in-practical). One curve for both directions is what reads as "almost
+   * right" - which is exactly the complaint this came from.
+   */
+  --duration-xxshort: 50ms;
+  --duration-xshort: 100ms;
+  --duration-short: 150ms;
+  --duration-medium: 200ms;
+  --duration-long: 250ms;
+  --duration-xlong: 400ms;
+  --duration-xxlong: 600ms;
+
+  --ease-out-practical: cubic-bezier(0.4, 1, 0.6, 1);
+  --ease-out-bold: cubic-bezier(0, 0.4, 0, 1);
+  --ease-in-practical: cubic-bezier(0.6, 0, 0.8, 0.6);
+  --ease-inout-bold: cubic-bezier(0.4, 0, 0, 1);
+  --ease-spring: linear(
+    0, 0.021, 0.058, 0.107, 0.164, 0.227, 0.292, 0.359, 0.425, 0.49, 0.552,
+    0.61, 0.664, 0.714, 0.759, 0.8, 0.837, 0.869, 0.898, 0.922, 0.943, 0.961,
+    0.976, 0.988, 0.998, 1.006, 1.013, 1.017, 1.02, 1.023, 1.024, 1.024, 1.024,
+    1.024, 1.023, 1.022, 1.02, 1.019, 1.017, 1.015, 1.014, 1.012, 1.011, 1.009,
+    1.008, 1.007, 1.006, 1.005, 1.004, 1.003, 1.002, 1.002, 1.001, 1.001,
+    1.001, 1, 1, 1, 1, 1, 0.999, 0.999, 0.999, 0.999, 1
+  );
+
+  /*
+   * The three names the components already used, now pointing at the recovered
+   * scale. `--ease` is the state-change curve the real app uses for hover and
+   * press (`--ds-button-hovered`: 150ms out-practical), which is what almost
+   * every `transition` in this app is.
+   */
+  --motion-fast: var(--duration-xshort);
+  --motion: var(--duration-medium);
+  --ease: var(--ease-out-practical);
 
   --titlebar-height: 38px;
   --sidebar-width: 248px;
@@ -95,4 +136,61 @@
 
   --shadow-raised: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
   --shadow-overlay: 0 8px 12px rgb(9 30 66 / 0.15), 0 0 1px rgb(9 30 66 / 0.31);
+}
+
+/*
+ * The enter animations the recovered bundle ships, kept in the same file as
+ * the tokens because that is where the real app keeps them: one bundle holds
+ * both the curves and the keyframes they are paired with.
+ *
+ * The keyframes are the recovered shapes under house names - `FadeIn0to100`,
+ * `ScaleIn95to100` and `SlideInBottom8px` - and the three values below are the
+ * recovered pairings, `--ds-blanket-enter`, `--ds-modal-enter` and
+ * `--ds-popup-enter-bottom`, built out of the tokens above. `backwards` is
+ * kept from the evidence; with no delay to fill it changes nothing, but the
+ * value is what the bundle says it is.
+ *
+ * Only the enter halves. The exits are in the evidence too, faster and on
+ * `--ease-in-practical`, but nothing here has an exit to animate: every
+ * overlay in this app unmounts the moment it closes, so there is no element
+ * left on screen to animate out. Giving them one is a change to the
+ * components, not to this file.
+ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in-95 {
+  from {
+    transform: scale(0.95);
+  }
+}
+
+@keyframes slide-in-8 {
+  from {
+    transform: translateY(-8px);
+  }
+}
+
+:root {
+  --enter-blanket: var(--duration-long) var(--ease-inout-bold) fade-in backwards;
+  --enter-modal: var(--duration-long) var(--ease-inout-bold) scale-in-95 backwards;
+  --enter-popup:
+    var(--duration-short) var(--ease-out-practical) slide-in-8 backwards,
+    var(--duration-short) var(--ease-out-practical) fade-in backwards;
+}
+
+/*
+ * One place to turn all of it off. A surface that only animates on the way in
+ * is still a surface that appears, so the state it lands in is never the thing
+ * being suppressed here - only the travel.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --enter-blanket: none;
+    --enter-modal: none;
+    --enter-popup: none;
+  }
 }

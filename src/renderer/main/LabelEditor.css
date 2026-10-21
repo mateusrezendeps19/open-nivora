@@ -19,6 +19,7 @@
   border-radius: var(--radius);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
+  animation: var(--enter-popup);
 }
 
 .labels__head {

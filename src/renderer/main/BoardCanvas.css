@@ -30,3 +30,22 @@
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/*
+ * The card under the pointer, drawn by the board instead of by Chromium (see
+ * dragPreview.ts). Above the floating dock (z 20), so a card on its way to the
+ * trash passes over the button rather than under it, and below the card modal
+ * and the settings panel (50 and 60).
+ *
+ * Positioned against the viewport, which is why it is a child of the canvas
+ * and not of the scrolling list area: the pointer coordinates it is placed
+ * with are viewport coordinates.
+ */
+.drag-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  pointer-events: none;
+  will-change: transform;
+}

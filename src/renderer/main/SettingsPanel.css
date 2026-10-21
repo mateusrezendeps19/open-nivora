@@ -8,6 +8,7 @@
   padding: 40px var(--space-200);
   background: rgb(9 30 66 / 0.54);
   overflow-y: auto;
+  animation: var(--enter-blanket);
 }
 
 .settings__modal {
@@ -19,6 +20,7 @@
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
   overflow: hidden;
+  animation: var(--enter-modal);
 }
 
 .settings__header {

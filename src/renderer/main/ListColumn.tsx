@@ -1,7 +1,7 @@
-import { useState, type DragEvent } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 import type { Action } from '../shared/reducer';
 import type { Card, Label, List } from '../shared/types';
-import type { CardDrop, Drag } from './BoardCanvas';
+import type { Drag, Grab } from './BoardCanvas';
 import { CardComposer } from './CardComposer';
 import { CardTile } from './CardTile';
 import { InlineTitle } from './InlineTitle';
@@ -9,19 +9,18 @@ import './ListColumn.css';
 
 interface ListColumnProps {
   list: List;
-  /** Visible cards paired with their index in the unfiltered list. */
-  cards: { card: Card; index: number }[];
+  /** The cards this list draws: archived and filtered-out ones are not here. */
+  cards: Card[];
   listIndex: number;
   filtered: boolean;
   labels: Label[];
   drag: Drag;
-  cardDrop: CardDrop | null;
   listDrop: number | null;
-  onDragStart: (drag: Drag) => void;
-  onCardHover: (drop: CardDrop | null) => void;
+  onDragStart: (drag: Drag, grab: Grab | null) => void;
+  onCardMove: (x: number, y: number) => void;
+  /** Where the pointer is inside this list's card area, in its content space. */
+  onCardHover: (listId: string, y: number) => void;
   onListHover: (index: number | null) => void;
-  onCardDrop: () => void;
-  onListDrop: () => void;
   onOpenCard: (cardId: string) => void;
   dispatch: (action: Action) => void;
 }
@@ -33,17 +32,16 @@ export function ListColumn({
   filtered,
   labels,
   drag,
-  cardDrop,
   listDrop,
   onDragStart,
+  onCardMove,
   onCardHover,
   onListHover,
-  onCardDrop,
-  onListDrop,
   onOpenCard,
   dispatch,
 }: ListColumnProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const draggingThisList = drag?.kind === 'list' && drag.listId === list.id;
 
@@ -51,30 +49,28 @@ export function ListColumn({
   // query filter above it nor by the archived cards still held in the list.
   const active = list.cards.reduce((total, card) => total + (card.archivedAt ? 0 : 1), 0);
 
+  /**
+   * One handler for the whole column, cards included - the events from the
+   * tiles bubble up to here. What is under the pointer is deliberately not
+   * consulted: only where the pointer is, which the board then reads against
+   * the frozen geometry (see cardDrag). Above the first card, below the last
+   * one, over the header or over the composer all fall out of that on their
+   * own.
+   */
   function onColumnDragOver(event: DragEvent<HTMLDivElement>) {
-    if (drag?.kind !== 'list') return;
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const after = event.clientX > rect.left + rect.width / 2;
-    onListHover(after ? listIndex + 1 : listIndex);
-  }
-
-  /** Dropping on the empty area below the cards appends to the end. */
-  function onBodyDragOver(event: DragEvent<HTMLDivElement>) {
+    if (drag?.kind === 'list') {
+      event.preventDefault();
+      const rect = event.currentTarget.getBoundingClientRect();
+      const after = event.clientX > rect.left + rect.width / 2;
+      onListHover(after ? listIndex + 1 : listIndex);
+      return;
+    }
     if (drag?.kind !== 'card') return;
     event.preventDefault();
-    if (event.target === event.currentTarget) {
-      onCardHover({ listId: list.id, index: list.cards.length });
-    }
+    const body = bodyRef.current;
+    if (!body) return;
+    onCardHover(list.id, event.clientY - body.getBoundingClientRect().top + body.scrollTop);
   }
-
-  function onDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    if (drag?.kind === 'card') onCardDrop();
-    else if (drag?.kind === 'list') onListDrop();
-  }
-
-  const showLine = (index: number) => cardDrop?.listId === list.id && cardDrop.index === index;
 
   return (
     <div
@@ -86,8 +82,12 @@ export function ListColumn({
       ]
         .filter(Boolean)
         .join(' ')}
+      // Reordered lists slide the same way reordered cards do. The key is
+      // prefixed because a list and a card can hold the same id only by
+      // accident, and the flip map is one namespace.
+      data-flip={`list:${list.id}`}
+      data-list={list.id}
       onDragOver={onColumnDragOver}
-      onDrop={onDrop}
     >
       <header
         className="column__header"
@@ -95,7 +95,9 @@ export function ListColumn({
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move';
           event.dataTransfer.setData('text/plain', list.id);
-          onDragStart({ kind: 'list', listId: list.id });
+          // A whole column is too big to carry under the pointer, so the
+          // native drag image is left in place for a list drag.
+          onDragStart({ kind: 'list', listId: list.id }, null);
         }}
       >
         <InlineTitle
@@ -141,22 +143,20 @@ export function ListColumn({
         )}
       </header>
 
-      <div className="column__cards" onDragOver={onBodyDragOver} onDrop={onDrop}>
-        {showLine(0) && <div className="column__drop-line" />}
-
-        {cards.map(({ card, index }) => (
-          <div key={card.id}>
-            <CardTile
-              card={card}
-              labels={labels}
-              dragging={drag?.kind === 'card' && drag.cardId === card.id}
-              onOpen={() => onOpenCard(card.id)}
-              onDragStart={() => onDragStart({ kind: 'card', cardId: card.id, fromListId: list.id })}
-              onHover={(after) => onCardHover({ listId: list.id, index: after ? index + 1 : index })}
-              canAcceptDrag={drag?.kind === 'card'}
-            />
-            {showLine(index + 1) && <div className="column__drop-line" />}
-          </div>
+      {/* data-cards: freezeLists measures the drag against this box. */}
+      <div className="column__cards" ref={bodyRef} data-cards>
+        {cards.map((card) => (
+          <CardTile
+            key={card.id}
+            card={card}
+            labels={labels}
+            dragging={drag?.kind === 'card' && drag.cardId === card.id}
+            onOpen={() => onOpenCard(card.id)}
+            onDragStart={(grab) =>
+              onDragStart({ kind: 'card', cardId: card.id, fromListId: list.id }, grab)
+            }
+            onDragMove={onCardMove}
+          />
         ))}
 
         {cards.length === 0 && (

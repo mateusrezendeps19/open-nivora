@@ -9,6 +9,7 @@
   padding: 64px var(--space-200);
   background: rgb(9 30 66 / 0.54);
   overflow-y: auto;
+  animation: var(--enter-blanket);
 }
 
 .archive {
@@ -16,6 +17,7 @@
   border-radius: var(--radius-lg);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
+  animation: var(--enter-modal);
 }
 
 .archive__header {

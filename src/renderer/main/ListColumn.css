@@ -102,6 +102,7 @@ input.column__title {
   border-radius: var(--radius);
   background: var(--surface-overlay);
   box-shadow: var(--shadow-overlay);
+  animation: var(--enter-popup);
 }
 
 .column__menu button {
@@ -126,13 +127,6 @@ input.column__title {
   min-height: 12px;
   padding: 0 var(--space-50);
   overflow-y: auto;
-}
-
-.column__drop-line {
-  height: 3px;
-  margin: 2px 0;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
 }
 
 .column__empty {

@@ -20,8 +20,54 @@
   border-color: var(--border-strong);
 }
 
+/*
+ * The card in flight, drawn where it would land rather than where it came
+ * from, so the list reads as having made room for it. It stays a painted,
+ * in-flow element for the whole drag because Chromium requires that of a
+ * native drag source - see cardDrag.ts - which is why this is a dimmed card
+ * and not a hole.
+ */
 .tile--dragging {
-  opacity: 0.35;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-sunken);
+  box-shadow: none;
+}
+
+/*
+ * Only the contents go: the tile itself has to keep being painted and keep
+ * its box, and `visibility` leaves both alone while making the slot read as
+ * empty - the height it holds is still the height of the card.
+ */
+.tile--dragging > * {
+  visibility: hidden;
+}
+
+/*
+ * The card under the pointer. It tilts into the lift with the recovered spring
+ * and holds the angle until it is dropped. The tilted state is on the rule
+ * itself and the keyframe only says where it comes *from*, so switching the
+ * animation off leaves the card lifted rather than flat. The angle is ours:
+ * the asar has the curves, not a board.
+ */
+.tile--preview {
+  transform: rotate(3deg) scale(1.02);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-overlay);
+  cursor: grabbing;
+  animation: tile-lift var(--duration-short) var(--ease-spring);
+}
+
+@keyframes tile-lift {
+  from {
+    transform: rotate(0deg) scale(1);
+    box-shadow: var(--shadow-raised);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile--preview {
+    animation: none;
+  }
 }
 
 .tile__cover {
