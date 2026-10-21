@@ -14,7 +14,6 @@ interface ToolbarProps {
   onQueryChange: (value: string) => void;
   onViewChange: (view: AppView) => void;
   onToggleSidebar: () => void;
-  onNewCard: () => void;
   onFind: () => void;
   onSettings: () => void;
 }
@@ -26,7 +25,6 @@ export function Toolbar({
   onQueryChange,
   onViewChange,
   onToggleSidebar,
-  onNewCard,
   onFind,
   onSettings,
 }: ToolbarProps) {
@@ -84,14 +82,9 @@ export function Toolbar({
 
       <div className="toolbar__actions">
         {hasShell() && (
-          <>
-            <button type="button" className="btn btn--subtle" onClick={onNewCard}>
-              Novo cartao
-            </button>
-            <button type="button" className="btn btn--subtle" onClick={onFind}>
-              Localizar
-            </button>
-          </>
+          <button type="button" className="btn btn--subtle" onClick={onFind}>
+            Localizar
+          </button>
         )}
         <button type="button" className="btn btn--subtle" onClick={onSettings}>
           Configuracoes

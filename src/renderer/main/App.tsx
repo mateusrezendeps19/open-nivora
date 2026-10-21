@@ -119,7 +119,6 @@ export function App() {
           onQueryChange={setQuery}
           onViewChange={(next) => setPrefs({ view: next })}
           onToggleSidebar={() => setPrefs({ sidebarCollapsed: !sidebarCollapsed })}
-          onNewCard={openNewCard}
           onFind={openFind}
           onSettings={() => setSettingsTab('appearance')}
         />
@@ -155,6 +154,20 @@ export function App() {
           />
         )}
       </div>
+
+      {hasShell() && (
+        <button
+          type="button"
+          className="fab"
+          onClick={openNewCard}
+          aria-label="Novo cartao"
+          title="Novo cartao (Ctrl+N)"
+        >
+          <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
 
       {settingsTab && (
         <SettingsPanel

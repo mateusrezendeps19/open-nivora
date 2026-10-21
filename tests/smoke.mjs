@@ -417,8 +417,8 @@ try {
     await page.waitForSelector('.canvas__lists');
   });
 
-  await check('a janela newcard abre com seu proprio bundle', async () => {
-    await page.evaluate(() => window.electron.ipc.send('window-open', 'newcard'));
+  await check('o botao flutuante abre a janela newcard com seu proprio bundle', async () => {
+    await page.click('.fab');
     const newcard = await app.waitForEvent('window', { timeout: 10_000 });
     await newcard.waitForSelector('.newcard__body', { timeout: 10_000 });
     const shape = await newcard.evaluate(() => ({

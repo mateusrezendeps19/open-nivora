@@ -38,6 +38,7 @@ repository came from which piece of evidence — is in
 - **Automations** — per-board rules, in the spirit of Trello's Butler
 - **Filter** — by title and description, preserving real indices so a drop still lands correctly
 - **Light and dark themes**
+- **Quick card** — a floating button in the bottom right corner opens the quick-card window
 - **Shortcuts** — `Ctrl+N` new card, `Ctrl+F` find, `Ctrl+K` filter, `Ctrl+,` settings
 - **Local storage** — one JSON file in `userData`, written atomically
 

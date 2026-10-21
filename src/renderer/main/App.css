@@ -21,3 +21,36 @@
   place-items: center;
   color: var(--text-subtle);
 }
+
+/*
+ * The floating new-card button, over the bottom right corner of the board or
+ * the calendar. It sits above the board content but below the card modal and
+ * the settings panel (z 50 and 60), so an open overlay covers it rather than
+ * leaving a button floating over the dimmed page.
+ */
+.fab {
+  position: fixed;
+  right: var(--space-300);
+  bottom: var(--space-300);
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-overlay);
+  transition:
+    background var(--motion-fast) var(--ease),
+    transform var(--motion-fast) var(--ease);
+}
+
+.fab:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.fab:active {
+  transform: translateY(0);
+}
